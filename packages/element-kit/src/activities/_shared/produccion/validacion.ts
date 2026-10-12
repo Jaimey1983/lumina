@@ -1,11 +1,12 @@
 /**
  * U12 / DU9 — punto de entrada de la validación: `validarActividad(actividad)` despacha por `tipo`.
- * Un tipo sin validador devuelve `[]` (no se inventan problemas). U12.1b suma el Grupo 4.
+ * Un tipo sin validador devuelve `[]` (no se inventan problemas). Cubre las 29 actividades.
  */
 import type { Activity } from '@lumina/types/slide';
 
 import type { ProblemaActividad, Validador } from './problemas.js';
 import * as clasicos from './validadores-clasicos.js';
+import * as g4 from './validadores-grupo4.js';
 
 /** Validador por `tipo`. Agregar un tipo = agregar una línea acá. */
 const VALIDADORES: Partial<Record<Activity['tipo'], Validador<never>>> = {
@@ -23,6 +24,21 @@ const VALIDADORES: Partial<Record<Activity['tipo'], Validador<never>>> = {
   balancear_ecuacion: clasicos.validarBalancearEcuacion,
   ubicar_elemento: clasicos.validarUbicarElemento,
   formular_compuesto: clasicos.validarFormularCompuesto,
+  clasificar: g4.validarClasificar,
+  memoria: g4.validarMemoria,
+  puzzle_imagen: g4.validarPuzzleImagen,
+  sopa_letras: g4.validarSopaLetras,
+  crucigrama: g4.validarCrucigrama,
+  anagrama: g4.validarAnagrama,
+  ahorcado: g4.validarAhorcado,
+  puzzle_palabras: g4.validarPuzzlePalabras,
+  abrir_caja: g4.validarAbrirCaja,
+  globos: g4.validarGlobos,
+  topo: g4.validarTopo,
+  historia_ramificada: g4.validarHistoriaRamificada,
+  ruleta: g4.validarRuleta,
+  torneo: g4.validarTorneo,
+  escape_room: g4.validarEscapeRoom,
 };
 
 /** Tipos que ya tienen validador. */
