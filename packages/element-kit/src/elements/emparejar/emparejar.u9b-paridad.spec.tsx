@@ -48,10 +48,10 @@ const unir = (izq: string, der: string) => {
 const enviar = () => screen.getByRole("button", { name: "Enviar" }) as HTMLButtonElement;
 /** Insignias numéricas visibles (1, 2, 3…) en el orden del documento. */
 const insignias = () =>
-  [...document.querySelectorAll("span")].map((s) => s.textContent!.trim()).filter((t) => /^\d+$/.test(t));
+  [...document.querySelectorAll("span")].filter((s) => s.children.length === 0).map((s) => s.textContent!.trim()).filter((t) => /^\d+$/.test(t));
 /** Textos de la columna derecha, en orden (los de `Guau/Miau/Muu`). */
 const derecha = () =>
-  [...document.querySelectorAll("span")].map((s) => s.textContent!.trim()).filter((t) => ["Guau", "Miau", "Muu"].includes(t));
+  [...document.querySelectorAll("span")].filter((s) => s.children.length === 0).map((s) => s.textContent!.trim()).filter((t) => ["Guau", "Miau", "Muu"].includes(t));
 const CORRECTAS: [string, string][] = [["Perro", "Guau"], ["Gato", "Miau"], ["Vaca", "Muu"]];
 
 describe("Emparejar — paridad con el comportamiento anterior (U9b.3)", () => {

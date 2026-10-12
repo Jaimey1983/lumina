@@ -1,1 +1,196 @@
-/* emparejar.module.css — reservado para estilos específicos si se necesitan */
+/*
+ * U9b.3 — estilos del viewer de Emparejar sobre los tokens `--la-*` del shell.
+ * Dos variantes: `claro` (fondo claro) y `oscuro` (sobre fondo oscuro del slide).
+ */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-radius: var(--la-radio-xl);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.claro {
+  color: var(--la-color-texto);
+  background: color-mix(in srgb, var(--la-color-superficie) 90%, transparent);
+  border: 1px solid var(--la-color-borde);
+}
+
+.oscuro {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.2);
+}
+
+.instruccion {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.columnas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 36px;
+  padding: 0.75rem;
+  overflow: hidden;
+  font: inherit;
+  font-size: 0.875rem;
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  background: var(--la-color-superficie);
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.lado:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--la-color-seleccionado-suave);
+}
+
+.lado:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.lado:disabled {
+  cursor: default;
+}
+
+.lado[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.conImagen {
+  min-height: 64px;
+}
+
+.sinElegir {
+  opacity: 0.7;
+}
+
+.elegido {
+  color: var(--la-color-seleccionado-texto);
+  background: var(--la-color-seleccionado-suave);
+  border-color: var(--la-color-seleccionado);
+  box-shadow: 0 0 0 1px var(--la-color-seleccionado);
+}
+
+.unido {
+  background: var(--la-color-seleccionado-suave);
+  border-color: color-mix(in srgb, var(--la-color-seleccionado) 50%, transparent);
+}
+
+.oscuro .lado {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.15);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+.oscuro .lado:hover:not(:disabled):not([aria-disabled='true']) {
+  background: rgb(255 255 255 / 0.25);
+}
+
+.oscuro .elegido {
+  background: color-mix(in srgb, var(--la-color-seleccionado) 80%, transparent);
+  border-color: var(--la-color-seleccionado);
+}
+
+.oscuro .unido {
+  background: color-mix(in srgb, var(--la-color-seleccionado) 40%, transparent);
+  border-color: var(--la-color-seleccionado);
+}
+
+.contenido {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.textoClaro {
+  color: var(--la-color-superficie);
+}
+
+.insignia {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.625rem;
+  color: var(--la-color-superficie);
+  background: var(--la-color-seleccionado);
+  border-radius: 9999px;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.enviar {
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--la-color-superficie);
+  cursor: pointer;
+  background: var(--la-color-seleccionado);
+  border: 0;
+  border-radius: var(--la-radio-md);
+}
+
+.enviar:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.enviar:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.enviada {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+  border-radius: var(--la-radio-md);
+}
+
+.tiempo {
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--la-color-pista-texto);
+  background: var(--la-color-pista-suave);
+  border-radius: var(--la-radio-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lado {
+    transition: none;
+  }
+}

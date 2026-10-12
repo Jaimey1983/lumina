@@ -60,7 +60,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "crucigrama/crucigrama-editor.tsx": 3,
   "crucigrama/crucigrama-properties.tsx": 1,
   "crucigrama/crucigrama-viewer.tsx": 9,
-  "emparejar/emparejar-viewer.tsx": 27,
   "globos/globos-config.ts": 8,
   "globos/globos-defaults.ts": 6,
   "globos/globos-properties.tsx": 2,
