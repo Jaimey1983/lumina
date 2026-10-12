@@ -45,10 +45,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "_classic/quiz/quiz-synced-viewer.tsx": 19,
   "_classic/video-interactive.tsx": 43,
   "_shared/activity-result-overlay.tsx": 1,
-  "historia-ramificada/historia-ramificada-config.ts": 5,
-  "historia-ramificada/historia-ramificada-editor.tsx": 2,
-  "historia-ramificada/historia-ramificada-node-editor.tsx": 6,
-  "historia-ramificada/historia-ramificada-viewer.tsx": 1,
 };
 
 /**

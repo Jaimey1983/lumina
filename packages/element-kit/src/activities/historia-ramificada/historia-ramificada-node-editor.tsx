@@ -2,7 +2,8 @@
 
 import React, { useCallback } from 'react'
 import { HistoriaNodo, HistoriaOpcion, HistoriaNodoTipo } from '@lumina/types/slide'
-import { generarIdHR, ETIQUETAS_NODO, esNodoFinal } from './historia-ramificada-config.js'
+import { laVar } from '../_shared/activity-tokens.js'
+import { generarIdHR, ETIQUETAS_NODO, COLORES_NODO, COLOR_NODO_DEFAULT, esNodoFinal } from './historia-ramificada-config.js'
 
 interface NodeEditorProps {
   nodo: HistoriaNodo
@@ -41,7 +42,7 @@ export function HistoriaRamificadaNodeEditor({ nodo, onUpdate, onClose }: NodeEd
         <div className="flex items-center gap-2">
           <div
             className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: nodo.tipo === 'narracion' ? '#2563EB' : nodo.tipo === 'decision' ? '#D97706' : nodo.tipo === 'pregunta' ? '#7C3AED' : nodo.tipo === 'final_bueno' ? '#16A34A' : '#DC2626' }}
+            style={{ backgroundColor: COLORES_NODO[nodo.tipo] ?? COLOR_NODO_DEFAULT }}
           />
           <span className="text-sm font-semibold text-gray-700">
             {ETIQUETAS_NODO[nodo.tipo]}
@@ -110,7 +111,8 @@ export function HistoriaRamificadaNodeEditor({ nodo, onUpdate, onClose }: NodeEd
               <label className="text-xs text-gray-500">Opciones de respuesta</label>
               <button
                 onClick={addOpcion}
-                className="text-xs px-2 py-0.5 rounded bg-[#2563EB] text-white"
+                className="text-xs px-2 py-0.5 rounded text-white"
+                style={{ backgroundColor: laVar('color-seleccionado') }}
               >
                 + Añadir
               </button>

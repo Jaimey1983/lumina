@@ -106,6 +106,8 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   topo: { mostrarNota: true, semilla: true, sonido: true, estilo: true },
   // Abrir la caja (U9d.3): el viewer lee nota (solo si es evaluable), tiempo, sonido y estilo
   abrir_caja: { mostrarNota: true, tiempo: true, sonido: true, estilo: true },
+  // Historia ramificada (U9d.4): el viewer lee nota (solo si es evaluable), tiempo, sonido y estilo; «progreso» y «volver atrás» siguen siendo del tipo
+  historia_ramificada: { mostrarNota: true, tiempo: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

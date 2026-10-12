@@ -1,1 +1,178 @@
-/* historia-ramificada.module.css — reservado para estilos específicos si se necesitan */
+/*
+ * U9d.4 — estilos del viewer de Historia ramificada sobre los tokens `--la-*` del shell.
+ * El color del nodo (`--color-nodo`) sale de `COLORES_NODO`, que ya usa esos tokens.
+ */
+.shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.raiz {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  color: var(--la-color-texto);
+}
+
+.progreso {
+  padding: 0.75rem 1rem 0.25rem;
+}
+
+.progresoTexto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--la-color-texto-suave);
+}
+
+.progresoPista {
+  width: 100%;
+  height: 0.375rem;
+  overflow: hidden;
+  background: var(--la-color-borde);
+  border-radius: 9999px;
+}
+
+.progresoRelleno {
+  height: 100%;
+  background: var(--color-nodo);
+  border-radius: 9999px;
+  transition: width 0.5s;
+}
+
+.nodo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.insignia {
+  align-self: flex-start;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--la-color-superficie);
+  background: var(--color-nodo);
+  border-radius: 9999px;
+}
+
+.imagen {
+  max-height: 8rem;
+  object-fit: cover;
+  border-radius: var(--la-radio-xl);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.texto {
+  max-width: 28rem;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.feedback {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--la-color-seleccionado-texto);
+  background: var(--la-color-seleccionado-suave);
+  border: 1px solid var(--la-color-seleccionado);
+  border-radius: var(--la-radio-xl);
+}
+
+.opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 24rem;
+}
+
+.opcion {
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border: 2px solid var(--la-color-borde);
+  border-radius: var(--la-radio-xl);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.opcion:hover:not(:disabled) {
+  background: var(--la-color-seleccionado-suave);
+  border-color: var(--la-color-seleccionado);
+}
+
+.opcion:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.opcion:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.sinConexion {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--la-color-texto-suave);
+}
+
+.final {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.emoji {
+  font-size: 2.25rem;
+}
+
+.correctas {
+  font-size: 0.875rem;
+  color: var(--la-color-texto-suave);
+}
+
+.volver {
+  padding: 0 1rem 0.75rem;
+}
+
+.volverBoton {
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: var(--la-color-texto-suave);
+  background: none;
+  border: 0;
+}
+
+.volverBoton:hover {
+  color: var(--la-color-texto);
+}
+
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
