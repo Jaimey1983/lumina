@@ -344,14 +344,14 @@ const estado = (team) => ({
 
 function crearSocket(respuestas: Record<string, unknown>) {
   const handlers = new Map<string, Set<Handler>>();
-  const emitidos: { evento: string; payload: any }[] = [];
+  const emitidos: { evento: string; payload: Record<string, unknown> }[] = [];
   const socket = {
     on: (e: string, fn: Handler) => {
       if (!handlers.has(e)) handlers.set(e, new Set());
       handlers.get(e)!.add(fn);
     },
     off: (e: string, fn: Handler) => void handlers.get(e)?.delete(fn),
-    emit: (e: string, payload: any, cb?: (r: unknown) => void) => {
+    emit: (e: string, payload: Record<string, unknown>, cb?: (r: unknown) => void) => {
       emitidos.push({ evento: e, payload });
       const r = respuestas[e];
       if (cb) cb(typeof r === 'function' ? r(payload) : r ?? { ok: false });
