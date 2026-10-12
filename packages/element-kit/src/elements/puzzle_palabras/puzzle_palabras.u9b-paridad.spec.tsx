@@ -69,7 +69,7 @@ const origen = () => {
   return within(zona).queryAllByRole("button").map((b) => b.textContent!.trim());
 };
 /** Textos de las piezas ya colocadas (todo botón que no es de origen ni de acción). */
-const ACCIONES = /^(Verificar|Reintentar|Siguiente|Finalizar)$/;
+const ACCIONES = /^(Verificar|Reintentar|Siguiente|Finalizar|Modo:.*)$/;
 const destino = () => {
   const todas = screen
     .queryAllByRole("button")

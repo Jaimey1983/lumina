@@ -24,6 +24,11 @@ export interface CapacidadesAjustes {
   readonly pistas?: boolean;
   /** Barajar y «mismo orden para todos» (`ajustes.barajar` / `semilla`). */
   readonly barajar?: boolean;
+  /**
+   * Solo «mismo orden para todos» (`ajustes.semilla`), sin el interruptor de barajar: para las
+   * actividades cuya mecánica ES reordenar (puzzles, emparejar…) y no tiene sentido no barajar.
+   */
+  readonly semilla?: boolean;
   /** Momentos de retroalimentación que el viewer distingue; sin lista, no se ofrece. */
   readonly retroalimentacion?: readonly ActivityRetroMomento[];
   /** Mostrar la explicación/solución (`ajustes.mostrarSolucion`). */
@@ -66,6 +71,10 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   formular_compuesto: { tiempo: true, sonido: true, estilo: true },
   // Ubicar elemento (U9a.8): un solo envío; tiempo, sonido y estilo.
   ubicar_elemento: { tiempo: true, sonido: true, estilo: true },
+  // Puzzle de palabras (U9b.1): nota y reintento de TODA la actividad en la pantalla final,
+  // tiempo, «mismo orden para todos» (barajar es la mecánica, no una opción), sonido y estilo.
+  // «Mostrar pista» y «Permitir reintento» (por oración) siguen siendo datos de su editor.
+  puzzle_palabras: { mostrarNota: true, intentos: true, tiempo: true, semilla: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */
@@ -79,7 +88,7 @@ export const seccionesVisibles = (c: CapacidadesAjustes) => ({
   tiempoEIntentos: c.tiempo === true || c.intentos === true,
   vidas: c.vidas === true,
   pistas: c.pistas === true,
-  orden: c.barajar === true,
+  orden: c.barajar === true || c.semilla === true,
   retroalimentacion: (c.retroalimentacion?.length ?? 0) > 0 || c.mostrarSolucion === true,
   sonidoYAspecto: c.sonido === true || c.estilo === true,
 });

@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Activity, MemoriaActivity, TrueFalse } from "@lumina/types/slide";
 
 import { createDefaultMemoria } from "../memoria/index.js";
-import { CAPACIDADES_AJUSTES, capacidadesDe, seccionesVisibles } from "./activity-ajustes-capacidades.js";
+import { CAPACIDADES_AJUSTES, capacidadesDe, seccionesVisibles, type CapacidadesAjustes } from "./activity-ajustes-capacidades.js";
 import {
   ActividadAjustesPanel,
   TIEMPO_POR_DEFECTO_SEG,
@@ -26,9 +26,9 @@ const vf = (): TrueFalse => ({
 });
 
 /** Monta el panel y devuelve la última actividad que el panel pidió guardar. */
-function montar<T extends Activity>(a: T) {
+function montar<T extends Activity>(a: T, capacidades?: CapacidadesAjustes) {
   const onChange = vi.fn();
-  const view = render(<ActividadAjustesPanel actividad={a} onChange={onChange} />);
+  const view = render(<ActividadAjustesPanel actividad={a} onChange={onChange} capacidades={capacidades} />);
   const ultima = () => onChange.mock.calls.at(-1)![0] as T;
   return { onChange, ultima, ...view };
 }
@@ -36,7 +36,7 @@ function montar<T extends Activity>(a: T) {
 describe("capacidades por tipo", () => {
   it("solo las actividades migradas usan el panel común; el resto devuelve null", () => {
     // Crece una por una con U9 (cada migración agrega su tipo acá y a `CAPACIDADES_AJUSTES`).
-    expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["balancear_ecuacion", "completar_blancos", "encuesta_viva", "formular_compuesto", "memoria", "nube_palabras", "respuesta_matematica", "short_answer", "ubicar_elemento", "verdadero_falso"]);
+    expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["balancear_ecuacion", "completar_blancos", "encuesta_viva", "formular_compuesto", "memoria", "nube_palabras", "puzzle_palabras", "respuesta_matematica", "short_answer", "ubicar_elemento", "verdadero_falso"]);
     expect(capacidadesDe("memoria")).not.toBeNull();
     expect(capacidadesDe("topo")).toBeNull();
   });
@@ -157,6 +157,13 @@ describe("controles", () => {
     expect((screen.getByLabelText("Mismo orden para todos") as HTMLElement).getAttribute("aria-checked")).toBe("true");
     fireEvent.click(screen.getByLabelText("Mismo orden para todos"));
     expect(onChange.mock.lastCall![0].ajustes.semilla).toBeNull();
+  });
+
+  it("capacidad `semilla`: solo «mismo orden para todos», sin el interruptor de Barajar", () => {
+    const { onChange } = montar(memoria(), { semilla: true });
+    expect(screen.queryByLabelText("Barajar")).toBeNull();
+    fireEvent.click(screen.getByLabelText("Mismo orden para todos"));
+    expect(Number.isInteger(onChange.mock.lastCall![0].ajustes.semilla)).toBe(true);
   });
 
   it("retroalimentación (V/F): dos momentos con aria-pressed y explicación opcional", () => {

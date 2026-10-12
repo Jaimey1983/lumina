@@ -1,296 +1,326 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+/**
+ * Viewer de Puzzle de palabras sobre el `ActivityShell` (U9b.1).
+ *
+ * El shell aporta fases, cronómetro, progreso y la pantalla de resultados; el estado de cada
+ * oración es puro (`puzzle-palabras-estado.ts`). Lo que sale hacia `@lumina/scoring` NO cambió:
+ * una sola respuesta final `{ tokensPorOracion }` al finalizar, sin borradores. Sale por
+ * `onResponse` (canal unificado, DU2); `onComplete` se acepta solo como alias transitorio.
+ * Se puede arrastrar (ratón, táctil o teclado) o usar «tocar y colocar» (DU8).
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDroppable, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
-import { PuzzlePalabrasActivity } from '@lumina/types/slide'
+import type { PuzzlePalabrasActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
-import { ActivityDragWord } from '../_shared/activity-drag-word.js'
-import { ActivityDndRoot } from '../_shared/activity-dnd-root.js'
-import { ActivityResultOverlay } from '../_shared/activity-result-overlay.js'
-import { tokenizarOracion, mezclarTokens } from './puzzle-palabras-config.js'
 
-// ── Zona droppable genérica ───────────────────────────────────────────────────
+import { ActivityDndRoot } from '../_shared/activity-dnd-root.js'
+import { ActivityDragWord } from '../_shared/activity-drag-word.js'
+import { useActivityFeedback } from '../_shared/activity-feedback.js'
+import { normalizarAjustes } from '../_shared/activity-settings.js'
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js'
+import {
+  AnuncioTocarColocar,
+  ModoEntradaToggle,
+  useModoEntrada,
+  useTocarColocar,
+} from '../_shared/activity-tap-place.js'
+import {
+  ZONA_DESTINO,
+  ZONA_ORIGEN,
+  crearEstadoOracion,
+  moverToken,
+  verificarOracion,
+  type EstadoOracion,
+} from './puzzle-palabras-estado.js'
+import styles from './puzzle-palabras.module.css'
+
+// ── Zona droppable ────────────────────────────────────────────────────────────
 function ZonaDroppable({
   id,
-  children,
+  etiqueta,
   className,
+  children,
+  propsTocar,
 }: {
   id: string
+  etiqueta: string
+  className: string
   children: React.ReactNode
-  className?: string
+  propsTocar?: React.HTMLAttributes<HTMLElement>
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id })
+  // `data.etiqueta` es el nombre que oyen los lectores de pantalla al arrastrar con teclado.
+  const { setNodeRef, isOver } = useDroppable({ id, data: { etiqueta } })
   return (
     <div
       ref={setNodeRef}
-      className={`
-        transition-all duration-200
-        ${isOver ? 'bg-blue-100 border-blue-400' : 'bg-gray-50 border-gray-200'}
-        ${className}
-      `}
+      {...propsTocar}
+      aria-label={propsTocar ? etiqueta : undefined}
+      className={[styles.zona, className, isOver ? styles.zonaSobre : ''].join(' ')}
     >
       {children}
     </div>
   )
 }
 
-// ── Viewer principal ──────────────────────────────────────────────────────────
-interface PuzzlePalabrasViewerProps {
+export interface PuzzlePalabrasViewerProps {
   actividad: PuzzlePalabrasActivity
+  /** Canal de respuesta unificado (DU2). */
+  onResponse?: (response: unknown) => void
+  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
   onComplete?: (response: unknown) => void
 }
 
-interface EstadoOracion {
-  tokensOrigen: { id: string; texto: string }[]
-  tokensDestino: { id: string; texto: string }[]
-  verificado: boolean
-  correcta: boolean | null
+interface CuerpoProps {
+  actividad: PuzzlePalabrasActivity
+  estados: EstadoOracion[]
+  setEstados: React.Dispatch<React.SetStateAction<EstadoOracion[]>>
+  indice: number
+  setIndice: (n: number | ((n: number) => number)) => void
+  crear: (texto: string, sal: number, prefijo?: string) => EstadoOracion
+  ctx: ActivityShellContext
+  responder: (r: unknown) => void
+  alEvaluar: (e: ActivityEvaluationResult) => void
 }
 
-export function PuzzlePalabrasViewer({ actividad, onComplete }: PuzzlePalabrasViewerProps) {
+function Cuerpo({ actividad, estados, setEstados, indice, setIndice, crear, ctx, responder, alEvaluar }: CuerpoProps) {
   const { configuracion, oraciones } = actividad
-  const [indiceOracion, setIndiceOracion] = useState(0)
-  const [estados, setEstados] = useState<EstadoOracion[]>(() =>
-    oraciones.map(o => {
-      const tokens = tokenizarOracion(o.texto)
-      const mezclados = mezclarTokens(tokens)
-      return {
-        tokensOrigen: mezclados.map((t, i) => ({ id: `tok-${i}-${t}`, texto: t })),
-        tokensDestino: [],
-        verificado: false,
-        correcta: null,
-      } as EstadoOracion
-    })
+  const oracion = oraciones[indice]
+  const estado = estados[indice]
+  const jugando = ctx.sesion.fase === 'jugando'
+  const { setProgreso, completar } = ctx
+  const [activo, setActivo] = useState<string | null>(null)
+  const reintentos = useRef<Record<number, number>>({})
+  const entrada = useModoEntrada()
+  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido })
+  const tocar = entrada.modo === 'tocar'
+
+  // El encabezado del shell cuenta las oraciones ya verificadas.
+  const verificadas = estados.filter((e) => e.verificado).length
+  useEffect(() => {
+    setProgreso(verificadas)
+  }, [verificadas, setProgreso])
+
+  const aplicar = useCallback(
+    (id: string, sobre: string) => {
+      if (!jugando) return
+      setEstados((prev) => prev.map((e, i) => (i === indice ? moverToken(e, id, sobre) : e)))
+    },
+    [indice, jugando, setEstados],
   )
-  const [activeDragId, setActiveDragId] = useState<string | null>(null)
-  const [mostrarResultado, setMostrarResultado] = useState(false)
-  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
 
-  const oracionActual = oraciones[indiceOracion]
-  const estadoActual = estados[indiceOracion]
+  const textoDe = useCallback(
+    (id: string) =>
+      [...estado.tokensOrigen, ...estado.tokensDestino].find((t) => t.id === id)?.texto,
+    [estado],
+  )
+  const nombreZona = useCallback(
+    (id: string) => (id === ZONA_DESTINO ? 'la zona de la oración' : 'las palabras disponibles'),
+    [],
+  )
 
-  const handleDragStart = useCallback((e: DragStartEvent) => {
-    setActiveDragId(e.active.id as string)
-  }, [])
+  const tocarColocar = useTocarColocar({
+    onColocar: aplicar,
+    etiquetaItem: textoDe,
+    etiquetaZona: nombreZona,
+    deshabilitado: !tocar || !jugando || estado.verificado,
+  })
 
-  const handleDragEnd = useCallback((e: DragEndEvent) => {
-    const { active, over } = e
-    setActiveDragId(null)
-    if (!over || estadoActual.verificado) return
+  const alSoltar = useCallback(
+    (e: DragEndEvent) => {
+      setActivo(null)
+      if (!e.over) return
+      aplicar(e.active.id as string, e.over.id as string)
+    },
+    [aplicar],
+  )
 
-    const activeId = active.id as string
-    const overId = over.id as string
+  const verificar = () => {
+    if (!jugando) return
+    const verificado = verificarOracion(estado, oracion.texto)
+    setEstados((prev) => prev.map((e, i) => (i === indice ? verificado : e)))
+    // Solo suena: no hay animación en las piezas.
+    feedback.emitir(verificado.correcta ? 'acierto' : 'error', { movimiento: false })
+  }
 
-    setEstados(prev => prev.map((est, i) => {
-      if (i !== indiceOracion) return est
+  const reintentar = () => {
+    if (!jugando) return
+    const n = (reintentos.current[indice] = (reintentos.current[indice] ?? 0) + 1)
+    setEstados((prev) =>
+      prev.map((e, i) => (i === indice ? crear(oracion.texto, indice * 100 + n, 'tok-r') : e)),
+    )
+  }
 
-      const enOrigen = est.tokensOrigen.find(t => t.id === activeId)
-      const enDestino = est.tokensDestino.find(t => t.id === activeId)
-      const token = enOrigen ?? enDestino
-      if (!token) return est
-
-      if (overId === 'zona-destino') {
-        if (enDestino) return est  // ya está en destino
-        return {
-          ...est,
-          tokensOrigen: est.tokensOrigen.filter(t => t.id !== activeId),
-          tokensDestino: [...est.tokensDestino, token],
-        }
-      } else if (overId === 'zona-origen') {
-        if (enOrigen) return est  // ya está en origen
-        return {
-          ...est,
-          tokensDestino: est.tokensDestino.filter(t => t.id !== activeId),
-          tokensOrigen: [...est.tokensOrigen, token],
-        }
-      }
-      return est
-    }))
-  }, [estadoActual.verificado, indiceOracion])
-
-  const handleVerificar = useCallback(() => {
-    const respuesta = estadoActual.tokensDestino.map(t => t.texto).join(' ')
-    const correcta = respuesta === oracionActual.texto.trim()
-
-    setEstados(prev => prev.map((e, i) =>
-      i === indiceOracion ? { ...e, verificado: true as const, correcta } : e
-    ) as EstadoOracion[])
-  }, [estadoActual, oracionActual, indiceOracion])
-
-  const handleReintentar = useCallback(() => {
-    const tokens = tokenizarOracion(oracionActual.texto)
-    const mezclados = mezclarTokens(tokens)
-    setEstados(prev => prev.map((e, i) =>
-      i !== indiceOracion ? e : {
-        tokensOrigen: mezclados.map((t, idx) => ({ id: `tok-r${idx}-${t}`, texto: t })),
-        tokensDestino: [],
-        verificado: false,
-        correcta: null,
-      }
-    ))
-  }, [oracionActual, indiceOracion])
-
-  const handleSiguiente = useCallback(() => {
-    if (indiceOracion < oraciones.length - 1) {
-      setIndiceOracion(i => i + 1)
-    } else {
-      const raw = {
-        tokensPorOracion: estados.map((e) => e.tokensDestino.map((t) => t.texto)),
-      }
-      const evaluated = evaluateActivityResponse('puzzle_palabras', actividad, raw)
-      setEvaluation(evaluated)
-      onComplete?.(raw)
-      setMostrarResultado(true)
+  const siguiente = () => {
+    if (!jugando) return
+    if (indice < oraciones.length - 1) {
+      setIndice((i) => i + 1)
+      return
     }
-  }, [indiceOracion, oraciones.length, estados, actividad, onComplete])
+    const raw = { tokensPorOracion: estados.map((e) => e.tokensDestino.map((t) => t.texto)) }
+    alEvaluar(evaluateActivityResponse('puzzle_palabras', actividad, raw))
+    responder(raw)
+    completar()
+  }
 
-  const activeToken =
-    activeDragId
-      ? (estadoActual.tokensOrigen.find(t => t.id === activeDragId) ??
-         estadoActual.tokensDestino.find(t => t.id === activeDragId))
-      : null
+  const arrastrada = activo ? textoDe(activo) : undefined
+  const sinTiempo = ctx.sesion.motivoFin === 'sin_tiempo'
 
+  const pieza = ({ id, texto }: { id: string; texto: string }) => (
+    <ActivityDragWord
+      key={id}
+      id={id}
+      texto={texto}
+      variant="palabra"
+      disabled={estado.verificado || !jugando}
+      propsTocar={tocar ? tocarColocar.propsItem(id) : undefined}
+    />
+  )
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-y-auto p-4 bg-white">
-      {/* Progreso */}
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-medium text-gray-700">
-          Oración {indiceOracion + 1} de {oraciones.length}
+    <div className={styles.raiz}>
+      <div className={styles.cabecera}>
+        <span className={styles.progreso}>
+          Oración {indice + 1} de {oraciones.length}
         </span>
+        <ModoEntradaToggle modo={entrada.modo} onAlternar={entrada.alternar} />
       </div>
 
-      {/* Pista */}
-      {configuracion.mostrarPista && oracionActual.pista && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-3">
-          <p className="text-sm text-blue-900">
-            💡 &quot;{oracionActual.pista}&quot;
-          </p>
+      {configuracion.mostrarPista && oracion.pista && (
+        <div className={styles.pista}>
+          <p>💡 &quot;{oracion.pista}&quot;</p>
         </div>
       )}
 
       <ActivityDndRoot
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        overlay={
-          activeToken ? (
-            <div className="whitespace-nowrap rounded-full border-2 border-blue-600 bg-blue-500 px-3 py-2 text-sm font-medium text-white shadow-lg">
-              {activeToken.texto}
-            </div>
-          ) : null
-        }
+        arrastreActivo={!tocar}
+        onDragStart={(e: DragStartEvent) => setActivo(e.active.id as string)}
+        onDragEnd={alSoltar}
+        overlay={arrastrada ? <div className={styles.fantasma}>{arrastrada}</div> : null}
       >
-        {/* Zona origen */}
-        <ZonaDroppable id="zona-origen" className="p-4 rounded border border-gray-200">
-          <p className="text-xs text-gray-600 mb-2">Palabras disponibles:</p>
-          <div className="flex gap-2 flex-wrap">
-            {estadoActual.tokensOrigen.map(({ id, texto }) => (
-              <ActivityDragWord
-                key={id}
-                id={id}
-                texto={texto}
-                variant="palabra"
-                disabled={estadoActual.verificado}
-              />
-            ))}
-          </div>
+        <ZonaDroppable
+          id={ZONA_ORIGEN}
+          etiqueta="Palabras disponibles"
+          className={styles.origen}
+          propsTocar={tocar ? tocarColocar.propsZona(ZONA_ORIGEN) : undefined}
+        >
+          <p className={styles.rotulo}>Palabras disponibles:</p>
+          <div className={styles.piezas}>{estado.tokensOrigen.map(pieza)}</div>
         </ZonaDroppable>
 
-        {/* Zona destino */}
         <ZonaDroppable
-          id="zona-destino"
-          className="p-4 rounded border-2 border-dashed min-h-20 flex items-center"
+          id={ZONA_DESTINO}
+          etiqueta="Tu oración"
+          className={styles.destino}
+          propsTocar={tocar ? tocarColocar.propsZona(ZONA_DESTINO) : undefined}
         >
-          <div className="w-full">
-            {estadoActual.tokensDestino.length > 0 ? (
-              <div className="flex gap-2 flex-wrap">
-                {estadoActual.tokensDestino.map(({ id, texto }) => (
-                  <ActivityDragWord
-                    key={id}
-                    id={id}
-                    texto={texto}
-                    variant="palabra"
-                    disabled={estadoActual.verificado}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">Arrastra las palabras aquí</p>
-            )}
-          </div>
+          {estado.tokensDestino.length > 0 ? (
+            <div className={styles.piezas}>{estado.tokensDestino.map(pieza)}</div>
+          ) : (
+            <p className={styles.vacio}>Arrastra las palabras aquí</p>
+          )}
         </ZonaDroppable>
       </ActivityDndRoot>
+      <AnuncioTocarColocar anuncio={tocarColocar.anuncio} />
 
-      {/* Acciones */}
-      {!estadoActual.verificado ? (
+      {!estado.verificado ? (
         <button
-          onClick={handleVerificar}
-          disabled={estadoActual.tokensDestino.length === 0}
-          className="px-4 py-2 rounded bg-[#2563EB] hover:bg-blue-600 text-white font-medium text-sm disabled:opacity-40"
+          type="button"
+          className={styles.accion}
+          onClick={verificar}
+          disabled={!jugando || estado.tokensDestino.length === 0}
         >
           Verificar
         </button>
       ) : (
-        <div className="space-y-3">
-          <div className={`p-3 rounded border ${
-            estadoActual.correcta
-              ? 'bg-green-50 border-green-200 text-green-800'
-              : 'bg-red-50 border-red-200 text-red-800'
-          }`}>
-            {estadoActual.correcta ? (
-              <p className="text-sm font-medium">✓ ¡Correcto!</p>
+        <div className={styles.resultadoOracion}>
+          <div
+            role="status"
+            className={[styles.mensaje, estado.correcta ? styles.mensajeAcierto : styles.mensajeError].join(' ')}
+          >
+            {estado.correcta ? (
+              <p className={styles.mensajeTitulo}>✓ ¡Correcto!</p>
             ) : (
-              <div className="space-y-1">
-                <p className="text-sm font-medium">✗ Incorrecto</p>
-                <p className="text-xs opacity-80">
-                  Respuesta: {oracionActual.texto}
-                </p>
+              <div>
+                <p className={styles.mensajeTitulo}>✗ Incorrecto</p>
+                <p className={styles.mensajeDetalle}>Respuesta: {oracion.texto}</p>
               </div>
             )}
           </div>
-
-          <div className="flex gap-2">
-            {configuracion.permitirReintento && !estadoActual.correcta && (
-              <button
-                onClick={handleReintentar}
-                className="px-3 py-2 text-sm rounded bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium"
-              >
+          <div className={styles.acciones}>
+            {configuracion.permitirReintento && !estado.correcta && (
+              <button type="button" className={styles.secundario} onClick={reintentar} disabled={!jugando}>
                 Reintentar
               </button>
             )}
-            <button
-              onClick={handleSiguiente}
-              className="px-3 py-2 text-sm rounded bg-[#2563EB] hover:bg-blue-600 text-white font-medium"
-            >
-              {indiceOracion < oraciones.length - 1 ? 'Siguiente' : 'Finalizar'}
+            <button type="button" className={styles.accion} onClick={siguiente} disabled={!jugando}>
+              {indice < oraciones.length - 1 ? 'Siguiente' : 'Finalizar'}
             </button>
           </div>
         </div>
       )}
-
-      {/* Resultado final */}
-      {mostrarResultado && (
-        <ActivityResultOverlay
-          evaluation={evaluation ?? undefined}
-          onReintentar={() => {
-            // Reintentar toda la actividad
-            setEstados(oraciones.map(o => {
-              const tokens = tokenizarOracion(o.texto)
-              const mezclados = mezclarTokens(tokens)
-              return {
-                tokensOrigen: mezclados.map((t, i) => ({ id: `tok-${i}-${t}`, texto: t })),
-                tokensDestino: [],
-                verificado: false,
-                correcta: null,
-              }
-            }))
-            setIndiceOracion(0)
-            setMostrarResultado(false)
-            setEvaluation(null)
-          }}
-          mostrarReintentar={true}
-        />
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
       )}
     </div>
+  )
+}
+
+export function PuzzlePalabrasViewer({ actividad, onResponse, onComplete }: PuzzlePalabrasViewerProps) {
+  const { oraciones } = actividad
+  const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad])
+  const semilla = ajustes.semilla
+  const corrida = useRef(0)
+
+  const crear = useCallback(
+    (texto: string, sal: number, prefijo = 'tok-') =>
+      // `corrida` separa el orden de cada intento completo dentro de la misma semilla.
+      crearEstadoOracion(texto, semilla, corrida.current * 10_000 + sal, prefijo),
+    [semilla],
+  )
+  const [estados, setEstados] = useState<EstadoOracion[]>(() =>
+    oraciones.map((o, i) => crearEstadoOracion(o.texto, semilla, i)),
+  )
+  const [indice, setIndice] = useState(0)
+  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
+
+  // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
+  const salida = useRef(onResponse ?? onComplete)
+  useEffect(() => {
+    salida.current = onResponse ?? onComplete
+  }, [onResponse, onComplete])
+  const responder = useCallback((r: unknown) => salida.current?.(r), [])
+
+  const alReintentar = useCallback(() => {
+    corrida.current += 1
+    setEstados(oraciones.map((o, i) => crear(o.texto, i)))
+    setIndice(0)
+    setEvaluation(null)
+  }, [oraciones, crear])
+
+  return (
+    <ActivityShell
+      ajustes={ajustes}
+      total={oraciones.length}
+      evaluation={evaluation}
+      onReintentar={alReintentar}
+      className={styles.shell}
+    >
+      {(ctx) => (
+        <Cuerpo
+          actividad={actividad}
+          estados={estados}
+          setEstados={setEstados}
+          indice={indice}
+          setIndice={setIndice}
+          crear={crear}
+          ctx={ctx}
+          responder={responder}
+          alEvaluar={setEvaluation}
+        />
+      )}
+    </ActivityShell>
   )
 }

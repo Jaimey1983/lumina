@@ -248,13 +248,15 @@ export function ActividadAjustesPanel<T extends Activity>({
 
       {ver.orden && (
         <CollapsibleSection title="Orden" storageKey={clave('orden')}>
-          <Interruptor
-            id={`${base}-barajar`}
-            etiqueta="Barajar"
-            checked={r.barajar}
-            onChange={(v) => escribir({ barajar: v })}
-          />
-          {r.barajar && (
+          {capacidades.barajar && (
+            <Interruptor
+              id={`${base}-barajar`}
+              etiqueta="Barajar"
+              checked={r.barajar}
+              onChange={(v) => escribir({ barajar: v })}
+            />
+          )}
+          {(capacidades.semilla || (capacidades.barajar && r.barajar)) && (
             <Interruptor
               id={`${base}-mismo-orden`}
               etiqueta="Mismo orden para todos"

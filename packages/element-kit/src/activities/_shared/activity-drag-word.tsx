@@ -43,19 +43,28 @@ export function ActivityDragWord({
         ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
         : undefined
 
+  // Colores de estado por token `--la-*`; el hex solo es el respaldo fuera de un shell
+  // (así las actividades aún sin migrar se ven exactamente igual que antes).
   const borderColor =
     estado === 'correcto'
-      ? '#16A34A'
+      ? 'var(--la-color-correcto, #16A34A)'
       : estado === 'incorrecto'
-      ? '#DC2626'
-      : '#D1D5DB'
+      ? 'var(--la-color-incorrecto, #DC2626)'
+      : 'var(--la-color-borde, #D1D5DB)'
 
   const bgColor =
     estado === 'correcto'
-      ? '#F0FDF4'
+      ? 'var(--la-color-correcto-suave, #F0FDF4)'
       : estado === 'incorrecto'
-      ? '#FEF2F2'
-      : '#FFFFFF'
+      ? 'var(--la-color-incorrecto-suave, #FEF2F2)'
+      : 'var(--la-color-superficie, #FFFFFF)'
+
+  const colorTexto =
+    estado === 'correcto'
+      ? 'var(--la-color-correcto, #16A34A)'
+      : estado === 'incorrecto'
+      ? 'var(--la-color-incorrecto, #DC2626)'
+      : 'var(--la-color-texto, #000)'
 
   const isLetra = variant === 'letra'
 
@@ -86,7 +95,7 @@ export function ActivityDragWord({
           style={{
             borderColor,
             backgroundColor: bgColor,
-            color: estado === 'correcto' ? '#16A34A' : estado === 'incorrecto' ? '#DC2626' : '#000',
+            color: colorTexto,
           }}
         >
           {texto}
@@ -100,7 +109,7 @@ export function ActivityDragWord({
           style={{
             borderColor,
             backgroundColor: bgColor,
-            color: estado === 'correcto' ? '#16A34A' : estado === 'incorrecto' ? '#DC2626' : '#000',
+            color: colorTexto,
           }}
         >
           {texto}
