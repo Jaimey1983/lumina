@@ -31,7 +31,8 @@
     "balancear_ecuacion",
     "ubicar_elemento",
     "formular_compuesto",
-    "relacionar_lineas"
+    "relacionar_lineas",
+    "problema_pasos"
   ],
   "notaCases": [
     {
@@ -1244,6 +1245,401 @@
       "correctEsperado": null,
       "detailsEsperados": 0,
       "scoreEsperado": null
+    },
+    {
+      "case": "u15_problema_perfecto_algebra_equivalente",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2(x+1)",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3.17",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 3,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u15_problema_perfecto_con_pista_y_costo",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ],
+        "ajustes": {
+          "pistas": {
+            "costoPct": 20
+          }
+        }
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 1
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2x+2",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3,14",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "scoreEsperado": 4.7
+    },
+    {
+      "case": "u15_problema_pistas_sin_costo_no_restan",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 3
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2x+2",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3,14",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u15_problema_pista_con_costo_total",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          }
+        ],
+        "ajustes": {
+          "pistas": {
+            "costoPct": 100
+          }
+        }
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 1
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2x+2",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u15_problema_dos_de_tres",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "x+1",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3,14",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u15_problema_fuera_de_tolerancia",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2x+2",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3,30",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": false,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u15_problema_sin_respuestas",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u15_problema_sin_pasos",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "x",
+        "pasos": []
+      },
+      "respuesta": [],
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
+    },
+    {
+      "case": "u15_problema_solo_pasos_legibles_cuentan",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "x",
+            "instruccion": "?",
+            "modo": "numerico",
+            "respuesta": "doce",
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 1,
+      "scoreEsperado": 5
     }
   ],
   "expectedKinds": {
@@ -1253,6 +1649,7 @@
     "arrastrar_soltar": "partial",
     "emparejar": "partial",
     "relacionar_lineas": "partial",
+    "problema_pasos": "partial",
     "ordenar_pasos": "partial",
     "video_interactivo": "partial",
     "short_answer": "manual",
@@ -1802,6 +2199,29 @@
         {
           "leftId": "a",
           "rightId": "x"
+        }
+      ]
+    },
+    {
+      "case": "contrato_problema_pasos_perfecto",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "E",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "I",
+            "modo": "numerico",
+            "respuesta": "2",
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "2",
+          "pistasUsadas": 0
         }
       ]
     }

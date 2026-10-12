@@ -92,6 +92,9 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   balancear_ecuacion: 'binary',
   formular_compuesto: 'partial',
 
+  // Problema paso a paso (etapa U / U15): crédito por paso, con costo por pista usada.
+  problema_pasos: 'partial',
+
   // Participación (no entra al promedio académico; columna opcional "participó")
   encuesta_viva: 'participation',
   nube_palabras: 'participation',
@@ -160,6 +163,7 @@ const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'ahorcado',
   'ubicar_elemento',
   'formular_compuesto',
+  'problema_pasos',
 ]);
 
 /** `partial` cuyo promedio de gradebook aún no está conectado (p. ej. `orden_rango`). */
@@ -529,36 +533,82 @@ function toleranciaMatematica(def: Record<string, unknown>, esperado: number): n
   return def.toleranciaTipo === 'porcentual' ? (Math.abs(esperado) * declarada) / 100 : declarada;
 }
 
+/**
+ * ¿La definición de una respuesta matemática se puede evaluar? (numérica legible, o expresión
+ * algebraica legible). Compartida por `respuesta_matematica` y `problema_pasos`.
+ */
+function definicionMatematicaValida(def: Record<string, unknown>): boolean {
+  if (def.modo === 'algebraico') {
+    if (typeof def.respuesta !== 'string' || def.respuesta.trim() === '') return false;
+    return expresionesEquivalentes(def.respuesta, def.respuesta) !== null;
+  }
+  return parseRespuestaNumerica(def.respuesta) !== null;
+}
+
+/**
+ * Compara lo que escribió el alumno con la respuesta modelo (numérica con tolerancia, o algebraica
+ * por equivalencia). `null` = no se puede evaluar (definición ilegible, o respuesta ausente o en
+ * blanco). Es la regla de `respuesta_matematica` extraída tal cual para compartirla.
+ */
+function compararRespuestaMatematica(def: Record<string, unknown>, respuesta: unknown): boolean | null {
+  if (!definicionMatematicaValida(def)) return null;
+  if (respuesta === null || respuesta === undefined) return null;
+  if (def.modo === 'algebraico') {
+    if (typeof respuesta !== 'string' || respuesta.trim() === '') return null;
+    return expresionesEquivalentes(def.respuesta, respuesta) === true;
+  }
+  if (typeof respuesta === 'string' && respuesta.trim() === '') return null;
+  const esperado = parseRespuestaNumerica(def.respuesta) as number;
+  const tolerancia = toleranciaMatematica(def, esperado);
+  return candidatosNumericos(respuesta).some((dado) => Math.abs(dado - esperado) <= tolerancia + 1e-9);
+}
+
 function evaluateRespuestaMatematica(
   def: Record<string, unknown>,
   respuesta: unknown,
 ): ActivityEvaluationResult {
-  if (def.modo === 'algebraico') {
-    if (typeof def.respuesta !== 'string' || def.respuesta.trim() === '') return UNEVALUABLE;
-    if (respuesta === null || respuesta === undefined) return UNEVALUABLE;
-    if (typeof respuesta !== 'string' || respuesta.trim() === '') return UNEVALUABLE;
-    // `null` = alguna de las dos no se puede leer o no hay puntos comparables.
-    const equivalentes = expresionesEquivalentes(def.respuesta, respuesta);
-    if (expresionesEquivalentes(def.respuesta, def.respuesta) === null) return UNEVALUABLE;
-    const ok = equivalentes === true;
-    return {
-      correct: ok,
-      details: [{ index: 0, correct: ok, label: 'Respuesta' }],
-      score: notaColombiana(ok ? 1 : 0, 1, true),
-    };
-  }
-  const esperado = parseRespuestaNumerica(def.respuesta);
-  if (esperado === null) return UNEVALUABLE;
-  if (respuesta === null || respuesta === undefined) return UNEVALUABLE;
-  if (typeof respuesta === 'string' && respuesta.trim() === '') return UNEVALUABLE;
-  const tolerancia = toleranciaMatematica(def, esperado);
-  const ok = candidatosNumericos(respuesta).some(
-    (dado) => Math.abs(dado - esperado) <= tolerancia + 1e-9,
-  );
+  const ok = compararRespuestaMatematica(def, respuesta);
+  if (ok === null) return UNEVALUABLE;
   return {
     correct: ok,
     details: [{ index: 0, correct: ok, label: 'Respuesta' }],
     score: notaColombiana(ok ? 1 : 0, 1, true),
+  };
+}
+
+/**
+ * Problema paso a paso (etapa U / U15). Un detalle por paso evaluable. Cada paso se compara con la
+ * regla de `respuesta_matematica`; cada pista usada resta `ajustes.pistas.costoPct` % del crédito de
+ * ese paso (0–100, por defecto 0). `correct` = todos los pasos bien (con o sin pistas); `score` =
+ * nota sobre el crédito acumulado. Respuesta: `[{ pasoId, respuesta, pistasUsadas }]`.
+ */
+function evaluateProblemaPasos(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const pasos = (Array.isArray(def.pasos) ? def.pasos : [])
+    .map((p) => asRecord(p))
+    .filter((p): p is Record<string, unknown> => p !== null && definicionMatematicaValida(p));
+  if (pasos.length === 0) return UNEVALUABLE;
+  const costoRaw = asRecord(asRecord(def.ajustes)?.pistas)?.costoPct;
+  const costo =
+    typeof costoRaw === 'number' && Number.isFinite(costoRaw) ? Math.min(100, Math.max(0, costoRaw)) : 0;
+  const dadas = Array.isArray(respuesta) ? respuesta : [];
+  let credito = 0;
+  const details: ActivityEvaluationDetail[] = pasos.map((paso, i) => {
+    const dada = asRecord(dadas.find((d) => asRecord(d)?.pasoId === paso.id));
+    const ok = dada ? compararRespuestaMatematica(paso, dada.respuesta) === true : false;
+    const usadas =
+      typeof dada?.pistasUsadas === 'number' && Number.isFinite(dada.pistasUsadas)
+        ? Math.max(0, Math.floor(dada.pistasUsadas))
+        : 0;
+    if (ok) credito += Math.max(0, 1 - (usadas * costo) / 100);
+    const texto = String(paso.instruccion ?? '');
+    const label = texto.length > 30 ? `${texto.slice(0, 30)}…` : texto || `Paso ${i + 1}`;
+    return { index: i, correct: ok, label };
+  });
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(credito, pasos.length, true),
   };
 }
 
@@ -1123,6 +1173,8 @@ function evaluatePartial(
       return evaluateEmparejar(definicion, respuesta);
     case 'relacionar_lineas':
       return evaluateRelacionarLineas(definicion, respuesta);
+    case 'problema_pasos':
+      return evaluateProblemaPasos(definicion, respuesta);
     case 'ordenar_pasos':
       return evaluateOrdenar(definicion, respuesta);
     case 'video_interactivo':

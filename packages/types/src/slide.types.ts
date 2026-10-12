@@ -287,6 +287,36 @@ export interface MathAnswerActivity extends ActivityBase {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Un paso de un problema paso a paso (etapa U / U15). */
+export interface ProblemaPaso {
+  id: string;
+  instruccion: string;
+  /** `numerico`: se compara el número con una tolerancia; `algebraico`: equivalencia de expresiones. */
+  modo: 'numerico' | 'algebraico';
+  /** Respuesta modelo (texto numérico, o una expresión en modo algebraico). */
+  respuesta: string;
+  tolerancia?: number;
+  toleranciaTipo?: 'absoluta' | 'porcentual';
+  unidad?: string;
+  /** Pistas escalonadas: la n-ésima se revela al pedir la n-ésima. */
+  pistas: string[];
+}
+
+/**
+ * Problema paso a paso (etapa U / U15): un enunciado y una secuencia de pasos, cada uno con su
+ * respuesta numérica o algebraica y pistas escalonadas. `ajustes.pistas` (cantidad y costo por pista)
+ * manda sobre la cantidad de pistas escritas.
+ */
+export interface ProblemaPasosActivity extends ActivityBase {
+  tipo: 'problema_pasos';
+  enunciado: string;
+  imagen?: string;
+  pasos: ProblemaPaso[];
+  /** No se ve el paso siguiente hasta resolver el actual. */
+  secuencial: boolean;
+  retroalimentacion?: Feedback;
+}
+
 export interface FillBlank {
   id: string;
   respuesta: string;
@@ -763,6 +793,7 @@ export type Activity =
   | TrueFalse
   | ShortAnswerActivity
   | MathAnswerActivity
+  | ProblemaPasosActivity
   | BalancearEcuacionActivity
   | UbicarElementoActivity
   | FormularCompuestoActivity
