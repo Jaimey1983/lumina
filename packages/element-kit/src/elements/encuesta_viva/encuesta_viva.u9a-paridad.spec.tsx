@@ -36,14 +36,16 @@ const encuesta = (parche: Partial<LivePoll> = {}): LivePoll => ({
 });
 
 const opcion = (t: string) => screen.getByRole("button", { name: t });
-/** Porcentajes mostrados tras votar, por texto de opción (`N%` de la barra). */
+/** Porcentajes mostrados tras votar, por texto de opción (el primer `N%` de su fila). */
 const porcentajes = () =>
   Object.fromEntries(
     ["Uno", "Dos", "Tres", "Cuatro"]
       .filter((t) => screen.queryByText(t))
       .map((t) => {
-        const fila = screen.getByText(t).closest("div.space-y-1")!;
-        return [t, fila.textContent!.match(/(\d+)%/)![1] + "%"];
+        // Sube desde el texto hasta el primer ancestro que ya incluye su porcentaje.
+        let fila: HTMLElement | null = screen.getByText(t);
+        while (fila && !/\d+%/.test(fila.textContent ?? "")) fila = fila.parentElement;
+        return [t, (fila!.textContent!.match(/(\d+)%/)![1]) + "%"];
       }),
   );
 
