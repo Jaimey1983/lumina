@@ -12,13 +12,10 @@
  * Vidas y tiempo siguen viniendo de `configuracion.vidas` / `configuracion.tiempoLimite`
  * (`normalizarAjustes` los deriva). Un globo que se escapa por arriba cuesta una vida.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { GlobosActivity } from '@lumina/types/slide'
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 
-import { useActivityFeedback } from '../_shared/activity-feedback.js'
-import { normalizarAjustes } from '../_shared/activity-settings.js'
-import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js'
+import { ArcadeActividad, useMotorArcade, type CuerpoArcadeProps } from '../_shared/motor-arcade.js'
 import { VELOCIDAD_PX, globosFingerprint, mezclarOpcionesGlobos, normalizarGlobos } from './globos-config.js'
 import { useGloboMetrics } from './globos-shared.js'
 import styles from './globos.module.css'
@@ -52,62 +49,29 @@ const LIMITE_SUPERIOR = -18
 const MS_ESTALLIDO = 320
 const MS_AVANCE = 450
 
-interface CuerpoProps {
-  actividad: GlobosActivity
-  ctx: ActivityShellContext
-  responder: (r: unknown) => void
-  alEvaluar: (e: ActivityEvaluationResult) => void
-}
-
-function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
+function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoArcadeProps<GlobosActivity>) {
   const { configuracion, preguntas } = actividad
   const velBase = VELOCIDAD_PX[configuracion.velocidad]
-  const jugando = ctx.sesion.fase === 'jugando'
-  const motivoFin = ctx.sesion.motivoFin
-  const { setProgreso, completar, perderVida } = ctx
-  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido })
+  const motor = useMotorArcade({ actividad, tipo: 'globos', ctx, responder, alEvaluar })
+  const { jugando, jugandoRef, perderVida, despues, indicePregunta, anuncio, setAnuncio, lanzarRef } = motor
 
-  const [indicePregunta, setIndicePregunta] = useState(0)
   const [globos, setGlobos] = useState<GloboState[]>([])
-  const [puntaje, setPuntaje] = useState(0)
-  const [anuncio, setAnuncio] = useState('')
-
   const containerRef = useRef<HTMLDivElement>(null)
   const globosRef = useRef<GloboState[]>([])
-  const jugandoRef = useRef(jugando)
   const respondidaRef = useRef(false)
-  const emitidaRef = useRef(false)
   const frameRef = useRef<number | null>(null)
   const lastTimeRef = useRef(0)
-  const temporizadores = useRef<number[]>([])
-  const perderVidaRef = useRef(perderVida)
-  const completarRef = useRef(completar)
 
   const preguntaActual = preguntas[indicePregunta]
   const metrics = useGloboMetrics(containerRef, preguntaActual?.opciones.length ?? 0)
-
-  useEffect(() => {
-    jugandoRef.current = jugando
-    perderVidaRef.current = perderVida
-    completarRef.current = completar
-  })
-
-  useEffect(() => {
-    setProgreso(puntaje, preguntas.length)
-  }, [puntaje, preguntas.length, setProgreso])
 
   const poner = useCallback((lista: GloboState[]) => {
     globosRef.current = lista
     setGlobos(lista)
   }, [])
 
-  const despues = useCallback((fn: () => void, ms: number) => {
-    temporizadores.current.push(window.setTimeout(fn, ms))
-  }, [])
-
   useEffect(
     () => () => {
-      temporizadores.current.forEach((t) => window.clearTimeout(t))
       if (frameRef.current) cancelAnimationFrame(frameRef.current)
     },
     [],
@@ -140,6 +104,10 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
   )
 
   useEffect(() => {
+    lanzarRef.current = lanzarGlobos
+  })
+
+  useEffect(() => {
     lanzarGlobos(0)
     // Solo al montar: cada contenido nuevo remonta el cuerpo (`key` de la huella).
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -161,7 +129,7 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
       poner(escapados > 0 ? subidos.filter((g) => g.y >= LIMITE_SUPERIOR || g.explotando) : subidos)
       if (escapados > 0) {
         setAnuncio(escapados === 1 ? 'Se escapó un globo.' : `Se escaparon ${escapados} globos.`)
-        for (let i = 0; i < escapados; i++) perderVidaRef.current()
+        for (let i = 0; i < escapados; i++) perderVida()
       }
       frameRef.current = requestAnimationFrame(loop)
     }
@@ -169,18 +137,7 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
     return () => {
       if (frameRef.current) cancelAnimationFrame(frameRef.current)
     }
-  }, [jugando, poner])
-
-  // Al terminar (completar, sin vidas o sin tiempo) sale UNA respuesta con lo acertado.
-  useEffect(() => {
-    if (!motivoFin || emitidaRef.current) return
-    emitidaRef.current = true
-    const raw = { puntosObtenidos: puntaje, puntosMaximos: Math.max(preguntas.length, 1) }
-    alEvaluar(evaluateActivityResponse('globos', actividad, raw))
-    responder(raw)
-    // Solo reacciona al fin de la partida.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [motivoFin])
+  }, [jugando, poner, perderVida, setAnuncio])
 
   const pinchar = (globo: GloboState) => {
     // Una respuesta por pregunta: pinchar un segundo globo antes del avance no cuenta.
@@ -188,27 +145,8 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
     respondidaRef.current = true
     poner(globosRef.current.map((g) => (g.id === globo.id ? { ...g, explotando: true } : g)))
     despues(() => poner(globosRef.current.filter((g) => g.id !== globo.id)), MS_ESTALLIDO)
-
-    if (globo.correcta) {
-      setPuntaje((p) => p + 1)
-      feedback.emitir('acierto', { movimiento: false })
-      setAnuncio(`Correcto: ${globo.texto}.`)
-    } else {
-      feedback.emitir('error', { movimiento: false })
-      setAnuncio(`Incorrecto: ${globo.texto}.`)
-      perderVida()
-    }
-
-    const siguiente = indicePregunta + 1
-    despues(() => {
-      if (!jugandoRef.current) return
-      if (siguiente >= preguntas.length) {
-        completarRef.current()
-      } else {
-        setIndicePregunta(siguiente)
-        lanzarGlobos(siguiente)
-      }
-    }, MS_AVANCE)
+    motor.responder(globo.correcta, globo.texto)
+    motor.programarAvance(indicePregunta, MS_AVANCE)
   }
 
   return (
@@ -244,33 +182,15 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
 }
 
 export function GlobosViewer({ actividad, onResponse }: GlobosViewerProps) {
-  const fingerprint = globosFingerprint(actividad)
-  // El contenido normalizado (vidas y tiempo con su valor por defecto) alimenta también los ajustes.
-  const normalizada = useMemo(
-    () => normalizarGlobos(actividad),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fingerprint],
-  )
-  const ajustes = useMemo(() => normalizarAjustes(normalizada), [normalizada])
-  // Se juega una sola vez (como siempre): no se ofrece «Reintentar».
-  const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes])
-  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
-
-  const salida = useRef(onResponse)
-  useEffect(() => {
-    salida.current = onResponse
-  }, [onResponse])
-  const responder = useCallback((r: unknown) => salida.current?.(r), [])
-
   return (
-    <ActivityShell
-      key={fingerprint}
-      ajustes={ajustesShell}
-      total={normalizada.preguntas.length}
-      evaluation={evaluation}
+    <ArcadeActividad
+      actividad={actividad}
+      normalizar={normalizarGlobos}
+      huella={globosFingerprint}
+      onResponse={onResponse}
       className={styles.shell}
     >
-      {(ctx) => <Cuerpo actividad={normalizada} ctx={ctx} responder={responder} alEvaluar={setEvaluation} />}
-    </ActivityShell>
+      {(props) => <Cuerpo {...props} />}
+    </ArcadeActividad>
   )
 }

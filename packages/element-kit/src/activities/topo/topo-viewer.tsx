@@ -13,13 +13,10 @@
  * (`normalizarAjustes` los deriva). Un golpe equivocado cuesta una vida y, si los topos se
  * esconden sin que acertes, cuesta otra (una por pregunta, no por topo).
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { TopoActivity } from '@lumina/types/slide'
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 
-import { useActivityFeedback } from '../_shared/activity-feedback.js'
-import { normalizarAjustes } from '../_shared/activity-settings.js'
-import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js'
+import { ArcadeActividad, useMotorArcade, type CuerpoArcadeProps } from '../_shared/motor-arcade.js'
 import {
   TIEMPO_VISIBLE_MS,
   mezclarIndicesTopo,
@@ -46,85 +43,25 @@ export interface TopoViewerProps {
 
 const MS_AVANCE = 400
 
-interface CuerpoProps {
-  actividad: TopoActivity
-  ctx: ActivityShellContext
-  responder: (r: unknown) => void
-  alEvaluar: (e: ActivityEvaluationResult) => void
-}
-
-function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
+function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoArcadeProps<TopoActivity>) {
   const { configuracion, preguntas } = actividad
   const { filas, columnas } = configuracion
   const totalHuecos = filas * columnas
   const tiempoVisible = TIEMPO_VISIBLE_MS[configuracion.velocidad]
-  const jugando = ctx.sesion.fase === 'jugando'
-  const motivoFin = ctx.sesion.motivoFin
-  const { setProgreso, completar, perderVida } = ctx
-  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido })
+  const motor = useMotorArcade({ actividad, tipo: 'topo', ctx, responder, alEvaluar })
+  const { jugandoRef, perderVida, despues, limpiar, indicePregunta, anuncio, setAnuncio, lanzarRef } = motor
 
-  const [indicePregunta, setIndicePregunta] = useState(0)
   const [topos, setTopos] = useState<TopoState[]>([])
-  const [puntaje, setPuntaje] = useState(0)
-  const [anuncio, setAnuncio] = useState('')
-
   const gridAreaRef = useRef<HTMLDivElement>(null)
   const toposRef = useRef<TopoState[]>([])
-  const temporizadores = useRef<number[]>([])
-  const jugandoRef = useRef(jugando)
-  const emitidaRef = useRef(false)
-  const perderVidaRef = useRef(perderVida)
-  const completarRef = useRef(completar)
-  const lanzarRef = useRef<(idx: number) => void>(() => {})
 
   const cellSize = useTopoCellSize(gridAreaRef, filas, columnas)
   const labelSize = tamanoTextoTopo(cellSize || 48, 'Ejemplo')
-
-  useEffect(() => {
-    jugandoRef.current = jugando
-    perderVidaRef.current = perderVida
-    completarRef.current = completar
-  })
-
-  useEffect(() => {
-    setProgreso(puntaje, preguntas.length)
-  }, [puntaje, preguntas.length, setProgreso])
 
   const poner = useCallback((lista: TopoState[]) => {
     toposRef.current = lista
     setTopos(lista)
   }, [])
-
-  const limpiar = useCallback(() => {
-    temporizadores.current.forEach((t) => window.clearTimeout(t))
-    temporizadores.current = []
-  }, [])
-
-  const despues = useCallback((fn: () => void, ms: number) => {
-    temporizadores.current.push(window.setTimeout(fn, ms))
-  }, [])
-
-  // Al terminar la partida (cualquier motivo) no queda nada pendiente.
-  useEffect(() => {
-    if (!jugando) limpiar()
-  }, [jugando, limpiar])
-  useEffect(() => limpiar, [limpiar])
-
-  const avanzar = useCallback(
-    (desde: number, espera: number) => {
-      const siguiente = desde + 1
-      despues(() => {
-        if (!jugandoRef.current) return
-        if (siguiente >= preguntas.length) {
-          completarRef.current()
-        } else {
-          setIndicePregunta(siguiente)
-          lanzarRef.current(siguiente)
-        }
-      }, espera)
-    },
-    [preguntas.length, despues],
-  )
 
   const lanzarTopos = useCallback(
     (idx: number) => {
@@ -153,19 +90,22 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
         poner(toposRef.current.map((t) => ({ ...t, visible: false })))
         if (escaparon) {
           setAnuncio('Los topos se escondieron.')
-          perderVidaRef.current()
+          perderVida()
         }
         if (!jugandoRef.current) return
-        if (idx + 1 >= preguntas.length) completarRef.current()
-        else avanzar(idx, MS_AVANCE)
+        // Si era la última pregunta, termina; si no, pasa a la siguiente tras la pausa.
+        if (idx + 1 >= preguntas.length) ctx.completar()
+        else motor.programarAvance(idx, MS_AVANCE)
       }, tiempoVisible)
     },
-    [preguntas, totalHuecos, tiempoVisible, ctx.ajustes.semilla, poner, despues, avanzar],
+    // `motor` y `ctx` cambian en cada render: el lanzador usa sus miembros estables.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [preguntas, totalHuecos, tiempoVisible, ctx.ajustes.semilla, poner, despues, perderVida, setAnuncio, jugandoRef],
   )
 
   useEffect(() => {
     lanzarRef.current = lanzarTopos
-  }, [lanzarTopos])
+  })
 
   useEffect(() => {
     lanzarTopos(0)
@@ -173,33 +113,16 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Al terminar (completar, sin vidas o sin tiempo) sale UNA respuesta con lo acertado.
-  useEffect(() => {
-    if (!motivoFin || emitidaRef.current) return
-    emitidaRef.current = true
-    const raw = { puntosObtenidos: puntaje, puntosMaximos: Math.max(preguntas.length, 1) }
-    alEvaluar(evaluateActivityResponse('topo', actividad, raw))
-    responder(raw)
-    // Solo reacciona al fin de la partida.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [motivoFin])
-
   const golpear = (huecoIdx: number) => {
     const idx = toposRef.current.findIndex((t) => t.huecoIdx === huecoIdx)
     const topo = toposRef.current[idx]
     if (!topo?.visible || topo.golpeado || !jugandoRef.current) return
     poner(toposRef.current.map((t, i) => (i === idx ? { ...t, golpeado: true, visible: false } : t)))
-
+    motor.responder(topo.correcta, topo.texto)
     if (topo.correcta) {
-      setPuntaje((p) => p + 1)
-      feedback.emitir('acierto', { movimiento: false })
-      setAnuncio(`Correcto: ${topo.texto}.`)
+      // Acertar corta el reloj de la pregunta y pasa a la siguiente.
       limpiar()
-      avanzar(indicePregunta, MS_AVANCE)
-    } else {
-      feedback.emitir('error', { movimiento: false })
-      setAnuncio(`Incorrecto: ${topo.texto}.`)
-      perderVida()
+      motor.programarAvance(indicePregunta, MS_AVANCE)
     }
   }
 
@@ -254,33 +177,15 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
 }
 
 export function TopoViewer({ actividad, onResponse }: TopoViewerProps) {
-  const fingerprint = topoFingerprint(actividad)
-  // El contenido normalizado (vidas y tiempo con su valor por defecto) alimenta también los ajustes.
-  const normalizada = useMemo(
-    () => normalizarTopo(actividad),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fingerprint],
-  )
-  const ajustes = useMemo(() => normalizarAjustes(normalizada), [normalizada])
-  // Se juega una sola vez (como siempre): no se ofrece «Reintentar».
-  const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes])
-  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
-
-  const salida = useRef(onResponse)
-  useEffect(() => {
-    salida.current = onResponse
-  }, [onResponse])
-  const responder = useCallback((r: unknown) => salida.current?.(r), [])
-
   return (
-    <ActivityShell
-      key={fingerprint}
-      ajustes={ajustesShell}
-      total={normalizada.preguntas.length}
-      evaluation={evaluation}
+    <ArcadeActividad
+      actividad={actividad}
+      normalizar={normalizarTopo}
+      huella={topoFingerprint}
+      onResponse={onResponse}
       className={styles.shell}
     >
-      {(ctx) => <Cuerpo actividad={normalizada} ctx={ctx} responder={responder} alEvaluar={setEvaluation} />}
-    </ActivityShell>
+      {(props) => <Cuerpo {...props} />}
+    </ArcadeActividad>
   )
 }
