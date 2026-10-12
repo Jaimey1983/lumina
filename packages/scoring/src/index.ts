@@ -80,6 +80,7 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   completar_blancos: 'partial',
   arrastrar_soltar: 'partial',
   emparejar: 'partial',
+  relacionar_lineas: 'partial',
   ordenar_pasos: 'partial',
   video_interactivo: 'partial',
 
@@ -142,6 +143,7 @@ const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'completar_blancos',
   'arrastrar_soltar',
   'emparejar',
+  'relacionar_lineas',
   'ordenar_pasos',
   'video_interactivo',
   'clasificar',
@@ -668,6 +670,40 @@ function evaluateEmparejar(definicion: unknown, respuesta: unknown): ActivityEva
   };
 }
 
+/**
+ * Relacionar con líneas (etapa U / U14). Un detalle por cada izquierda que tiene relación declarada
+ * (la primera declarada gana); acierta si el alumno trazó EXACTAMENTE una línea desde ella y llega a
+ * la derecha correcta. Una línea de más hacia un distractor, o dos líneas desde la misma izquierda,
+ * la hace incorrecta. La respuesta usa la forma de `emparejar`: `[{ leftId, rightId }]`.
+ */
+function evaluateRelacionarLineas(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const izquierda = Array.isArray(def.izquierda) ? def.izquierda : [];
+  const relaciones = Array.isArray(def.relaciones) ? def.relaciones : [];
+  const esperadas = new Map<string, string>();
+  for (const raw of relaciones) {
+    const r = asRecord(raw) ?? {};
+    const l = String(r.izquierdaId ?? '');
+    const d = String(r.derechaId ?? '');
+    if (l && d && !esperadas.has(l)) esperadas.set(l, d);
+  }
+  if (esperadas.size === 0) return UNEVALUABLE;
+  const lineas = Array.isArray(respuesta) ? respuesta : [];
+  const details: ActivityEvaluationDetail[] = [...esperadas].map(([izqId, derId], i) => {
+    const item = asRecord(izquierda.find((x) => asRecord(x)?.id === izqId));
+    const label =
+      (typeof item?.texto === 'string' && item.texto) || (item?.imagen ? '[Imagen]' : `Elemento ${i + 1}`);
+    const dadas = lineas.filter((m) => asRecord(m)?.leftId === izqId);
+    return { index: i, correct: dadas.length === 1 && asRecord(dadas[0])?.rightId === derId, label };
+  });
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, esperadas.size, true),
+  };
+}
+
 function evaluateOrdenar(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
   const pasos = Array.isArray(def.pasos) ? def.pasos : [];
@@ -1085,6 +1121,8 @@ function evaluatePartial(
       return evaluateDragDrop(definicion, unwrapActivityDraftResponse(respuesta));
     case 'emparejar':
       return evaluateEmparejar(definicion, respuesta);
+    case 'relacionar_lineas':
+      return evaluateRelacionarLineas(definicion, respuesta);
     case 'ordenar_pasos':
       return evaluateOrdenar(definicion, respuesta);
     case 'video_interactivo':

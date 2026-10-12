@@ -358,6 +358,31 @@ export type EmparejarActivity = MatchPairs;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Un elemento de una de las dos columnas de «relacionar con líneas». */
+export interface RelacionarLineasItem {
+  id: string;
+  texto?: string;
+  imagen?: string;
+}
+
+/**
+ * Relacionar con líneas (etapa U / U14): dos columnas independientes; el alumno traza líneas de la
+ * izquierda a la derecha. La derecha puede traer distractores (elementos sin relación). Una
+ * izquierda tiene a lo sumo una relación correcta.
+ */
+export interface RelacionarLineasActivity extends ActivityBase {
+  tipo: 'relacionar_lineas';
+  instruccion: string;
+  izquierda: RelacionarLineasItem[];
+  derecha: RelacionarLineasItem[];
+  /** Las relaciones correctas: `izquierdaId` → `derechaId`. */
+  relaciones: { izquierdaId: string; derechaId: string }[];
+  puntos?: number;
+  retroalimentacion?: Feedback;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface OrderStep {
   id: string;
   contenido: string;
@@ -744,6 +769,7 @@ export type Activity =
   | FillBlanks
   | DragDrop
   | MatchPairs
+  | RelacionarLineasActivity
   | OrderSteps
   | VideoInteractive
   | LivePoll

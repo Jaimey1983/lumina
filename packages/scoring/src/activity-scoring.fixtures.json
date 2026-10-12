@@ -30,7 +30,8 @@
     "escape_room",
     "balancear_ecuacion",
     "ubicar_elemento",
-    "formular_compuesto"
+    "formular_compuesto",
+    "relacionar_lineas"
   ],
   "notaCases": [
     {
@@ -962,6 +963,287 @@
         }
       },
       "correctEsperado": false
+    },
+    {
+      "case": "u14_relacionar_perfecto",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "x"
+        },
+        {
+          "leftId": "b",
+          "rightId": "y"
+        }
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 2,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u14_relacionar_una_de_dos",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "x"
+        },
+        {
+          "leftId": "b",
+          "rightId": "z"
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 2,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u14_relacionar_distractor_elegido",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "z"
+        },
+        {
+          "leftId": "b",
+          "rightId": "y"
+        }
+      ],
+      "correctEsperado": false,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u14_relacionar_dos_lineas_desde_una_izquierda",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "x"
+        },
+        {
+          "leftId": "b",
+          "rightId": "y"
+        },
+        {
+          "leftId": "a",
+          "rightId": "z"
+        }
+      ],
+      "correctEsperado": false,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u14_relacionar_sin_lineas",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [],
+      "correctEsperado": false,
+      "detailsEsperados": 2,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u14_relacionar_definicion_sin_relaciones",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "A"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "X"
+          }
+        ],
+        "relaciones": []
+      },
+      "respuesta": [],
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
     }
   ],
   "expectedKinds": {
@@ -970,6 +1252,7 @@
     "completar_blancos": "partial",
     "arrastrar_soltar": "partial",
     "emparejar": "partial",
+    "relacionar_lineas": "partial",
     "ordenar_pasos": "partial",
     "video_interactivo": "partial",
     "short_answer": "manual",
@@ -1491,6 +1774,36 @@
           "q1": "H2O"
         }
       }
+    },
+    {
+      "case": "contrato_relacionar_lineas_perfecto",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "A"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "X"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "x"
+        }
+      ]
     }
   ]
 }
