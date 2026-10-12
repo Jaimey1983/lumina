@@ -340,6 +340,7 @@ const ACTIVITY_LABEL: Record<string, string> = {
   completar_blancos: 'Completar blancos',
   arrastrar_soltar: 'Arrastrar y soltar',
   emparejar: 'Emparejar',
+  relacionar_lineas: 'Relacionar con líneas',
   ordenar_pasos: 'Ordenar pasos',
   video_interactivo: 'Video interactivo',
   short_answer: 'Respuesta corta',

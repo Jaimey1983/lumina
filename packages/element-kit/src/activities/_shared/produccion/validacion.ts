@@ -1,12 +1,13 @@
 /**
  * U12 / DU9 — punto de entrada de la validación: `validarActividad(actividad)` despacha por `tipo`.
- * Un tipo sin validador devuelve `[]` (no se inventan problemas). Cubre las 29 actividades.
+ * Un tipo sin validador devuelve `[]` (no se inventan problemas). Cubre todas las actividades (las nuevas, U14+, en `validadores-nuevos`).
  */
 import type { Activity } from '@lumina/types/slide';
 
 import type { ProblemaActividad, Validador } from './problemas.js';
 import * as clasicos from './validadores-clasicos.js';
 import * as g4 from './validadores-grupo4.js';
+import * as nuevos from './validadores-nuevos.js';
 
 /** Validador por `tipo`. Agregar un tipo = agregar una línea acá. */
 const VALIDADORES: Partial<Record<Activity['tipo'], Validador<never>>> = {
@@ -39,6 +40,7 @@ const VALIDADORES: Partial<Record<Activity['tipo'], Validador<never>>> = {
   ruleta: g4.validarRuleta,
   torneo: g4.validarTorneo,
   escape_room: g4.validarEscapeRoom,
+  relacionar_lineas: nuevos.validarRelacionarLineas,
 };
 
 /** Tipos que ya tienen validador. */

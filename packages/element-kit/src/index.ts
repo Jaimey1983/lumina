@@ -257,6 +257,20 @@ export {
 } from "./elements/puzzle_palabras/index.js";
 
 export {
+  relacionarLineasDefinition,
+  registrarRelacionarLineas,
+  evaluarRelacionarLineas,
+  RELACIONAR_LINEAS_TIPO,
+  RelacionarLineasEditor,
+  RelacionarLineasViewer,
+  RelacionarLineasPropiedades,
+  type RelacionarLineasConfig,
+  type RelacionarLineasEstado,
+  type RelacionarLineasDefinition,
+} from "./elements/relacionar_lineas/index.js";
+export { createDefaultRelacionarLineas } from "./activities/relacionar-lineas/index.js";
+
+export {
   torneoDefinition,
   registrarTorneo,
   TORNEO_TIPO,
@@ -481,6 +495,7 @@ import { clasificarDefinition } from "./elements/clasificar/clasificar-definitio
 import { crucigramaDefinition } from "./elements/crucigrama/crucigrama-definition.js";
 import { globosDefinition } from "./elements/globos/globos-definition.js";
 import { torneoDefinition } from "./elements/torneo/torneo-definition.js";
+import { relacionarLineasDefinition } from "./elements/relacionar_lineas/relacionar_lineas-definition.js";
 import { escapeRoomDefinition } from "./elements/escape-room/escape-room-definition.js";
 import { historiaRamificadaDefinition } from "./elements/historia_ramificada/historia_ramificada-definition.js";
 import { memoriaDefinition } from "./elements/memoria/memoria-definition.js";
@@ -531,6 +546,7 @@ export type ElementCatalog = {
   puzzle_palabras: typeof puzzlePalabrasDefinition;
   globos: typeof globosDefinition;
   torneo: typeof torneoDefinition;
+  relacionar_lineas: typeof relacionarLineasDefinition;
   escape_room: typeof escapeRoomDefinition;
   topo: typeof topoDefinition;
   historia_ramificada: typeof historiaRamificadaDefinition;
@@ -583,6 +599,7 @@ elementRegistry.registrar(ahorcadoDefinition);
 elementRegistry.registrar(puzzlePalabrasDefinition);
 elementRegistry.registrar(globosDefinition);
 elementRegistry.registrar(torneoDefinition);
+elementRegistry.registrar(relacionarLineasDefinition);
 elementRegistry.registrar(escapeRoomDefinition);
 elementRegistry.registrar(topoDefinition);
 elementRegistry.registrar(quizMultipleDefinition);

@@ -6,6 +6,7 @@ import type { Activity } from '@lumina/types/slide';
 
 import type { Importador, ModoImportacion, ResultadoImportacion } from './importacion.js';
 import * as listas from './importadores-listas.js';
+import * as nuevos from './importadores-nuevos.js';
 import * as preguntas from './importadores-preguntas.js';
 import { parsearTabla } from './tabla.js';
 
@@ -30,6 +31,7 @@ const IMPORTADORES: Partial<Record<Activity['tipo'], Importador>> = {
   clasificar: listas.importadorClasificar,
   arrastrar_soltar: listas.importadorArrastrarSoltar,
   abrir_caja: listas.importadorAbrirCaja,
+  relacionar_lineas: nuevos.importadorRelacionarLineas,
 };
 
 export function importadorDe(tipo: Activity['tipo']): Importador | undefined {

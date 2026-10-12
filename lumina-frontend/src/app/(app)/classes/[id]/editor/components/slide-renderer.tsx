@@ -175,6 +175,7 @@ const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
   completar_blancos: 'Actividad · Completar blancos',
   arrastrar_soltar: 'Actividad · Arrastrar y soltar',
   emparejar: 'Actividad · Emparejar',
+  relacionar_lineas: 'Actividad · Relacionar con líneas',
   ordenar_pasos: 'Actividad · Ordenar pasos',
   video_interactivo: 'Actividad · Video interactivo',
   encuesta_viva: 'Actividad · Encuesta en vivo',

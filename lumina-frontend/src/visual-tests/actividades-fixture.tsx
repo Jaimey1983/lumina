@@ -16,7 +16,7 @@ import { elementRegistry } from '@/lib/element-registry-bootstrap';
 export const ACTIVIDAD_VISUAL_WIDTH = 640;
 export const ACTIVIDAD_VISUAL_HEIGHT = 420;
 
-/** Las 26 actividades del kit (`familia: 'actividad'`), por `tipo` del registry. */
+/** Las 27 actividades del kit (`familia: 'actividad'`), por `tipo` del registry. */
 export const ACTIVIDAD_TIPOS = [
   // Clásicas
   'quiz_multiple',
@@ -46,6 +46,8 @@ export const ACTIVIDAD_TIPOS = [
   'globos',
   'topo',
   'historia_ramificada',
+  // Catálogo nuevo (U14+)
+  'relacionar_lineas',
 ] as const;
 
 export type ActividadTipo = (typeof ACTIVIDAD_TIPOS)[number];

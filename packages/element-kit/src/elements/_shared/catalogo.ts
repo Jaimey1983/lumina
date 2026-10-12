@@ -210,6 +210,11 @@ export const CATALOGO_ELEMENTOS = {
     familia: "actividad",
   },
   arrastrar_soltar: { nombre: "Arrastrar y soltar", familia: "actividad" },
+  relacionar_lineas: {
+    nombre: "Relacionar con líneas",
+    descripcion: "Une dos columnas trazando líneas; la de la derecha puede traer distractores",
+    familia: "actividad",
+  },
   emparejar: { nombre: "Emparejar", familia: "actividad" },
   ordenar_pasos: { nombre: "Ordenar pasos", familia: "actividad" },
   video_interactivo: { nombre: "Video interactivo", familia: "actividad" },

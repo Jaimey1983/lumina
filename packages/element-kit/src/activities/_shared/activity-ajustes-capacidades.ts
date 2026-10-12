@@ -81,6 +81,9 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // Emparejar (U9b.3): un solo envío con el sonido de acierto/error; tiempo, «mismo orden para
   // todos» (el orden de la columna derecha), sonido y estilo. No tiene nota ni reintento.
   emparejar: { tiempo: true, semilla: true, sonido: true, estilo: true },
+  // Relacionar con líneas (U14): nota y reintento en la pantalla final, tiempo, «mismo orden para todos»
+  // (el orden de las dos columnas), sonido y estilo. Las dos columnas se mezclan siempre: es la mecánica.
+  relacionar_lineas: { mostrarNota: true, intentos: true, tiempo: true, semilla: true, sonido: true, estilo: true },
   // Ordenar pasos (U9b.4): un solo envío con sonido de acierto/error; tiempo, «mismo orden para
   // todos» (el orden inicial de los pasos), sonido y estilo. «Mostrar números» sigue siendo un
   // dato del editor.
