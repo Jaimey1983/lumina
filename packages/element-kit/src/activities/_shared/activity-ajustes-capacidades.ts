@@ -102,6 +102,8 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   sopa_letras: { mostrarNota: true, tiempo: true, semilla: true, sonido: true, estilo: true },
   // Globos (U9d.1): el viewer lee nota, semilla (mismo orden de globos para toda la clase), sonido y estilo; vidas y tiempo siguen en el panel de siempre (`configuracion`)
   globos: { mostrarNota: true, semilla: true, sonido: true, estilo: true },
+  // Topo (U9d.2): el viewer lee nota, semilla (mismo orden de huecos para toda la clase), sonido y estilo; vidas y tiempo siguen en el panel de siempre (`configuracion`)
+  topo: { mostrarNota: true, semilla: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

@@ -54,10 +54,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "historia-ramificada/historia-ramificada-editor.tsx": 2,
   "historia-ramificada/historia-ramificada-node-editor.tsx": 6,
   "historia-ramificada/historia-ramificada-viewer.tsx": 1,
-  "topo/topo-editor.tsx": 1,
-  "topo/topo-properties.tsx": 1,
-  "topo/topo-viewer.tsx": 1,
-  "topo/topo.module.css": 4,
 };
 
 /**
@@ -101,6 +97,10 @@ const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly 
   "memoria/memoria-properties.tsx": {
     hex: 1,
     motivo: "valor inicial del <input type=color>, que solo acepta #rrggbb",
+  },
+  "topo/topo.module.css": {
+    hex: 5,
+    motivo: "tierra del hueco (dos marrones) y texto blanco sobre ella: colores de la ilustración, no de interfaz ni de tema",
   },
 };
 

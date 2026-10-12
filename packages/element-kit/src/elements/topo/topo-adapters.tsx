@@ -23,7 +23,7 @@ export function TopoViewer({
   config,
 }: ElementViewerProps<TopoEstado, TopoConfig>) {
   return (
-    <LegacyTopoViewer actividad={estado} onComplete={config.onComplete} />
+    <LegacyTopoViewer actividad={estado} onResponse={config.onResponse ?? config.onComplete} />
   );
 }
 

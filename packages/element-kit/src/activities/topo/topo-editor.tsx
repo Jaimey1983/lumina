@@ -69,7 +69,6 @@ export function TopoEditor({ actividad }: TopoEditorProps) {
                     width: cellSize,
                     height: cellSize,
                     fontSize: labelSize,
-                    color: '#fff',
                   }}
                 >
                   {activo ? (

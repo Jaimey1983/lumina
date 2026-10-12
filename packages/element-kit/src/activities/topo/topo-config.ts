@@ -75,6 +75,8 @@ export function normalizarTopo(act: TopoActivity): TopoActivity {
 
   return {
     tipo: 'topo',
+    // `ajustes` (etapa U) viaja intacto: antes se descartaba al hidratar el slide.
+    ...(act.ajustes ? { ajustes: act.ajustes } : {}),
     configuracion: {
       velocidad: cfg.velocidad === 'lenta' || cfg.velocidad === 'rapida' ? cfg.velocidad : 'normal',
       vidas: typeof cfg.vidas === 'number' && cfg.vidas >= 1 ? Math.min(5, cfg.vidas) : 3,
@@ -87,8 +89,11 @@ export function normalizarTopo(act: TopoActivity): TopoActivity {
   }
 }
 
+/** Huella del CONTENIDO: cambiar un ajuste (estilo, sonido…) no reinicia la partida. */
 export function topoFingerprint(act: TopoActivity): string {
-  return JSON.stringify(normalizarTopo(act))
+  const { ajustes: _ajustes, ...contenido } = normalizarTopo(act)
+  void _ajustes
+  return JSON.stringify(contenido)
 }
 
 /** Tamaño cuadrado de cada hueco para que el grid quepa en el lienzo. */
@@ -118,6 +123,7 @@ export function tamanoTextoTopo(cellSize: number, texto = ''): number {
   return Math.max(14, Math.min(24, size))
 }
 
-export function mezclarIndicesTopo(count: number): number[] {
-  return barajar(Array.from({ length: count }, (_, i) => i))
+/** Orden de los huecos; con `semilla` (`ajustes.semilla`, DU3) es el mismo para toda la clase. */
+export function mezclarIndicesTopo(count: number, semilla?: number | null, sal = 0): number[] {
+  return barajar(Array.from({ length: count }, (_, i) => i), semilla, sal)
 }

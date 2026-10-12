@@ -36,9 +36,9 @@ function montar<T extends Activity>(a: T, capacidades?: CapacidadesAjustes) {
 describe("capacidades por tipo", () => {
   it("solo las actividades migradas usan el panel común; el resto devuelve null", () => {
     // Crece una por una con U9 (cada migración agrega su tipo acá y a `CAPACIDADES_AJUSTES`).
-    expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["ahorcado", "anagrama", "arrastrar_soltar", "balancear_ecuacion", "clasificar", "completar_blancos", "crucigrama", "emparejar", "encuesta_viva", "formular_compuesto", "globos", "memoria", "nube_palabras", "ordenar_pasos", "puzzle_imagen", "puzzle_palabras", "respuesta_matematica", "short_answer", "sopa_letras", "ubicar_elemento", "verdadero_falso"]);
+    expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["ahorcado", "anagrama", "arrastrar_soltar", "balancear_ecuacion", "clasificar", "completar_blancos", "crucigrama", "emparejar", "encuesta_viva", "formular_compuesto", "globos", "memoria", "nube_palabras", "ordenar_pasos", "puzzle_imagen", "puzzle_palabras", "respuesta_matematica", "short_answer", "sopa_letras", "topo", "ubicar_elemento", "verdadero_falso"]);
     expect(capacidadesDe("memoria")).not.toBeNull();
-    expect(capacidadesDe("topo")).toBeNull();
+    expect(capacidadesDe("tipo_sin_capacidades")).toBeNull();
   });
 
   it("`seccionesVisibles` oculta las secciones sin opciones", () => {
@@ -73,7 +73,7 @@ describe("qué se muestra", () => {
   });
 
   it("sin capacidades (tipo no migrado) no dibuja nada", () => {
-    const { container } = montar({ tipo: "topo" } as unknown as Activity);
+    const { container } = montar({ tipo: "tipo_sin_capacidades" } as unknown as Activity);
     expect(container.firstChild).toBeNull();
   });
 
