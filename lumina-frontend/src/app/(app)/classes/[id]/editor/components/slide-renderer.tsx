@@ -78,14 +78,8 @@ import {
 } from '@/lib/slide-background';
 import { BackgroundImageLayer } from './background-image-layer';
 
-import { TorneoActivityEditor } from './activities/torneo-activity';
 import type { Socket } from 'socket.io-client';
-import { TorneoViewer } from '@/components/viewers/torneo-viewer';
-import { EscapeRoomActivityEditor } from './activities/escape-room-activity';
-import {
-  EscapeRoomViewer,
-  bloquesVisiblesDeSala,
-} from '@/components/viewers/escape-room-viewer';
+import { bloquesVisiblesDeSala } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
 import type { TabsInnerSelection } from '@lumina/element-kit/widgets/tabs/tabs-config';
 import type { CarouselInnerSelection } from '@lumina/element-kit/widgets/carousel/carousel-config';
@@ -106,7 +100,7 @@ import { SlideCanvasRootContext } from '@lumina/editor-shared/slide-canvas-root-
 import { SlideThemeProvider } from '@lumina/editor-shared/slide-theme-context';
 import { getPredefinedSlideTheme } from '@/lib/slide-themes';
 import { isWidgetTipo } from '@lumina/types/widget';
-import type { WidgetBlock } from '@lumina/types/slide';
+import type { EscapeRoomSala, WidgetBlock } from '@lumina/types/slide';
 import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
 import type { ImageCompareInnerSelection } from '@lumina/element-kit';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
@@ -181,6 +175,11 @@ const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
   completar_blancos: 'Actividad · Completar blancos',
   arrastrar_soltar: 'Actividad · Arrastrar y soltar',
   emparejar: 'Actividad · Emparejar',
+  relacionar_lineas: 'Actividad · Relacionar con líneas',
+  problema_pasos: 'Actividad · Problema paso a paso',
+  etiquetar_imagen: 'Actividad · Etiquetar imagen',
+  linea_tiempo: 'Actividad · Línea de tiempo',
+  cloze_banco: 'Actividad · Cloze con banco',
   ordenar_pasos: 'Actividad · Ordenar pasos',
   video_interactivo: 'Actividad · Video interactivo',
   encuesta_viva: 'Actividad · Encuesta en vivo',
@@ -257,6 +256,27 @@ function RenderActivity({
   const act = block.actividad;
   const syncKey = `${slideId}-${blockId}`;
 
+  // El lienzo de cada sala del escape room se pinta con este mismo renderer (el kit no lo importa).
+  const renderSalaCanvas = (sala: EscapeRoomSala) => (
+    <SlideRenderer
+      slide={{
+        id: `${slideId}-sala-${sala.id}`,
+        order: 0,
+        type: 'CONTENT',
+        title: sala.nombre,
+        bloques: bloquesVisiblesDeSala(sala),
+        fondo: sala.fondo ?? ESCAPE_ROOM_SALA_FONDO_DEFAULT,
+        content: null,
+      }}
+      modo="viewer"
+      viewerStudentId={viewerStudentId}
+      viewerStudentName={viewerStudentName}
+      viewerClassId={viewerClassId}
+      liveSocket={liveSocket}
+      className="h-full w-full"
+    />
+  );
+
   const def = elementRegistry.obtener<Activity, ActivityRuntimeConfig>(act.tipo);
   if (def) {
     if (modo === 'editor') {
@@ -265,7 +285,6 @@ function RenderActivity({
           estado={act}
           config={{
             onResponse,
-            onComplete: onResponse,
             variant,
             editorSyncKey: syncKey,
             isSelected,
@@ -280,7 +299,6 @@ function RenderActivity({
         estado={act}
         config={{
           onResponse,
-          onComplete: onResponse,
           variant,
           editorSyncKey: syncKey,
           liveSocket,
@@ -289,88 +307,9 @@ function RenderActivity({
           viewerStudentName,
           viewerClassId,
           blockId,
+          slideId,
+          renderSalaCanvas,
         }}
-      />
-    );
-  }
-
-  if (act.tipo === 'torneo') {
-    if (modo === 'editor') {
-      return (
-        <TorneoActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          canvasLayout={!!activityCanvasLayout}
-          isSelected={isSelected}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
-        />
-      );
-    }
-    return (
-      <TorneoViewer
-        activity={act}
-        variant={variant}
-        studentId={viewerStudentId ?? ''}
-        studentName={viewerStudentName ?? ''}
-        classId={viewerClassId ?? ''}
-        editorSyncKey={syncKey}
-        liveSocket={torneoSocket ?? liveSocket}
-        onAnswer={(payload) => onResponse?.(payload)}
-      />
-    );
-  }
-
-  if (act.tipo === 'escape_room') {
-    if (modo === 'editor') {
-      return (
-        <EscapeRoomActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          canvasLayout={!!activityCanvasLayout}
-          isSelected={isSelected}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
-        />
-      );
-    }
-    return (
-      <EscapeRoomViewer
-        activity={act}
-        variant={variant}
-        studentId={viewerStudentId ?? ''}
-        studentName={viewerStudentName ?? ''}
-        classId={viewerClassId ?? ''}
-        slideId={slideId}
-        editorSyncKey={syncKey}
-        liveSocket={liveSocket}
-        onComplete={(puntos, timeMs) =>
-          // Canal propio de cierre: estos puntos son gamificación narrativa, no
-          // una nota 0–5, así que nunca deben alimentar `activity:complete`.
-          onResponse?.({ tipo: 'escape_room:finished', puntos, timeMs })
-        }
-        onAnswer={(roomId, answer, correct, intento) =>
-          onResponse?.({ roomId, answer, correct, intento })
-        }
-        renderSalaCanvas={(sala) => (
-          <SlideRenderer
-            slide={{
-              id: `${slideId}-sala-${sala.id}`,
-              order: 0,
-              type: 'CONTENT',
-              title: sala.nombre,
-              bloques: bloquesVisiblesDeSala(sala),
-              fondo: sala.fondo ?? ESCAPE_ROOM_SALA_FONDO_DEFAULT,
-              content: null,
-            }}
-            modo="viewer"
-            viewerStudentId={viewerStudentId}
-            viewerStudentName={viewerStudentName}
-            viewerClassId={viewerClassId}
-            liveSocket={liveSocket}
-            className="h-full w-full"
-          />
-        )}
       />
     );
   }

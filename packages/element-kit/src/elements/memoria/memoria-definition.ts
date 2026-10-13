@@ -7,6 +7,7 @@ import {
   MemoriaPropiedades,
   MemoriaViewer,
 } from "./memoria-adapters.js";
+import { PRESETS_MEMORIA } from "./memoria-estilos.js";
 import { MEMORIA_TIPO, type MemoriaConfig, type MemoriaEstado } from "./memoria-types.js";
 
 /** Delegado puro a `@lumina/scoring`. */
@@ -21,11 +22,14 @@ export const memoriaDefinition = {
   Editor: MemoriaEditor,
   Viewer: MemoriaViewer,
   Propiedades: MemoriaPropiedades,
+  // U8: el estilo (`ajustes.estilo`) y el color del dorso son color; la tipografía no se toca y
+  // los movimientos del feedback no son configurables (solo respetan «reducir movimiento»).
   apariencia: {
-    color: false,
+    color: true,
     tipografia: false,
     animacion: false,
   },
+  presets: PRESETS_MEMORIA,
   puntuacion: (estado: MemoriaEstado, respuesta?: unknown) =>
     evaluarMemoria(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["memoria"],

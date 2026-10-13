@@ -15,6 +15,9 @@ import type { QuizLayoutVariant, QuizOption } from '@lumina/types/slide';
 import { cn } from '@lumina/ui/lib/utils';
 import { MathText } from '@lumina/editor-shared/rich-text/math-text';
 
+import styles from './quiz.module.css';
+
+/** Paleta «Kahoot» de los layouts `color-grid` y `two-col-color-list` (identidad del layout). */
 const KAHOOT_COLORS = ['#e21b3c', '#1368ce', '#d89e00', '#26890c', '#8540df', '#0aa865'] as const;
 
 const ICON_SHAPES = [Circle, Square, Triangle, Diamond] as const;
@@ -56,6 +59,8 @@ export interface QuizOptionsLayoutProps {
   onSelectSingle: (id: string) => void;
 }
 
+type LayoutProps = Omit<QuizOptionsLayoutProps, 'layoutVariant'>;
+
 function optionFeedbackFlags(
   op: QuizOption,
   selectedIds: string[],
@@ -72,145 +77,105 @@ function optionFeedbackFlags(
   return { isSel, showAuto, showCorrectReveal, selectedWrong, selectedRight };
 }
 
-function FeedbackIcons({
-  isSel,
-  selectedWrong,
-  selectedRight,
-  showCorrectReveal,
-}: {
-  isSel: boolean;
-  selectedWrong: boolean;
-  selectedRight: boolean;
-  showCorrectReveal: boolean;
-}) {
-  return (
-    <>
-      <span className="flex min-w-0 flex-1 items-center gap-3">
-        {isSel ? (
-          selectedWrong ? (
-            <Circle className="size-4 shrink-0 text-[#DC2626]" />
-          ) : (
-            <CheckCircle className="size-4 shrink-0 text-[#16A34A]" />
-          )
-        ) : (
-          <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
-        )}
-      </span>
-      {selectedRight && <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />}
-      {selectedWrong && <XCircle className="size-5 shrink-0 text-[#DC2626]" aria-hidden />}
-      {showCorrectReveal && !isSel && (
-        <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
-      )}
-    </>
-  );
+type Flags = ReturnType<typeof optionFeedbackFlags>;
+
+/** Lo que el lector de pantalla debe oír de una opción ya corregida (los iconos son decorativos). */
+function EstadoParaLector({ flags }: { flags: Flags }) {
+  const texto = flags.selectedRight
+    ? ' — tu respuesta, correcta'
+    : flags.selectedWrong
+      ? ' — tu respuesta, incorrecta'
+      : flags.showCorrectReveal
+        ? ' — la respuesta correcta'
+        : '';
+  return texto ? <span className={styles.soloLector}>{texto}</span> : null;
 }
 
-function classicOptionClasses(
-  flags: ReturnType<typeof optionFeedbackFlags>,
-  isDark: boolean,
-  disabled: boolean,
-): string {
-  const { isSel, showAuto, showCorrectReveal, selectedWrong, selectedRight } = flags;
+/** Clases de estado de una opción (selección, acierto, error, revelada, atenuada). */
+function claseEstado(flags: Flags, phase: 'selecting' | 'feedback'): string {
   return cn(
-    'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
-    !disabled &&
-      !isSel &&
-      (isDark
-        ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
-        : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
-    !disabled &&
-      isSel &&
-      (isDark
-        ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
-        : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
-    selectedRight &&
-      (isDark
-        ? 'origin-center border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
-        : 'origin-center border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
-    selectedWrong &&
-      (isDark
-        ? 'border-red-400 bg-red-500/30 text-red-300 lumina-viewer-shake'
-        : 'border-[#f87171] bg-[#fee2e2] text-[#f87171] lumina-viewer-shake'),
-    showCorrectReveal &&
-      (isDark
-        ? 'border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
-        : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
-    showAuto &&
-      !isSel &&
-      !showCorrectReveal &&
-      !selectedRight &&
-      (isDark ? 'border-white/20 opacity-50' : 'border-[#e5e7eb] opacity-50'),
+    flags.isSel && phase === 'selecting' && styles.elegida,
+    flags.selectedRight && cn(styles.bien, 'animate-in zoom-in-95 duration-300'),
+    flags.selectedWrong && cn(styles.mal, 'lumina-viewer-shake'),
+    flags.showCorrectReveal && cn(styles.revela, 'animate-in zoom-in-95 duration-300'),
+    flags.showAuto && !flags.isSel && !flags.showCorrectReveal && styles.tenue,
   );
 }
 
-function ClassicListLayout({
-  opciones,
-  variant,
-  phase,
-  selectedIds,
-  hasDefinedCorrect,
-  questionCorrect,
-  isMultiSelect,
-  disabled,
-  onToggle,
-  onSelectSingle,
-}: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
-  const isDark = variant === 'dark';
+interface OpcionProps {
+  op: QuizOption;
+  flags: Flags;
+  phase: 'selecting' | 'feedback';
+  disabled: boolean;
+  isMultiSelect: boolean;
+  onToggle: (id: string) => void;
+  onSelectSingle: (id: string) => void;
+  className: string;
+  style?: React.CSSProperties;
+  children: ReactNode;
+}
 
+/** Botón de una opción: mismo comportamiento en todos los layouts. */
+function Opcion({ op, flags, phase, disabled, isMultiSelect, onToggle, onSelectSingle, className, style, children }: OpcionProps) {
   return (
-    <ul className="space-y-2">
+    <button
+      type="button"
+      disabled={disabled}
+      aria-pressed={isMultiSelect ? flags.isSel : undefined}
+      onClick={() => {
+        if (disabled) return;
+        if (isMultiSelect) onToggle(op.id);
+        else onSelectSingle(op.id);
+      }}
+      className={cn(styles.opcion, className, claseEstado(flags, phase))}
+      style={style}
+    >
+      {children}
+      <EstadoParaLector flags={flags} />
+    </button>
+  );
+}
+
+function ClassicListLayout(props: LayoutProps) {
+  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect } = props;
+  return (
+    <ul className={cn(styles.lista, styles.vertical, variant === 'dark' ? styles.oscuro : styles.claro)}>
       {opciones.map((op) => {
-        const flags = optionFeedbackFlags(
-          op,
-          selectedIds,
-          phase,
-          hasDefinedCorrect,
-          questionCorrect,
-        );
+        const flags = optionFeedbackFlags(op, selectedIds, phase, hasDefinedCorrect, questionCorrect);
         return (
           <li key={op.id}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                if (disabled) return;
-                if (isMultiSelect) onToggle(op.id);
-                else onSelectSingle(op.id);
-              }}
-              className={classicOptionClasses(flags, isDark, disabled)}
-            >
+            <Opcion op={op} flags={flags} {...props} className={styles.clasica}>
               {flags.showAuto ? (
                 <>
-                  <span className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className={styles.grupoIcono}>
                     {flags.isSel ? (
                       flags.selectedWrong ? (
-                        <Circle className="size-4 shrink-0 text-[#DC2626]" />
+                        <Circle className={cn(styles.icono, styles.iconoMal)} aria-hidden />
                       ) : (
-                        <CheckCircle className="size-4 shrink-0 text-[#16A34A]" />
+                        <CheckCircle className={cn(styles.icono, styles.iconoBien)} aria-hidden />
                       )
                     ) : (
-                      <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                      <Circle className={cn(styles.icono, styles.iconoNeutro)} aria-hidden />
                     )}
-                    <span className="min-w-0 flex-1"><MathText text={op.texto} /></span>
+                    <span className={styles.texto}><MathText text={op.texto} /></span>
                   </span>
-                  <FeedbackIcons
-                    isSel={flags.isSel}
-                    selectedWrong={flags.selectedWrong}
-                    selectedRight={flags.selectedRight}
-                    showCorrectReveal={flags.showCorrectReveal}
-                  />
+                  {flags.selectedRight && <CheckCircle2 className={cn(styles.iconoGrande, styles.iconoBien)} aria-hidden />}
+                  {flags.selectedWrong && <XCircle className={cn(styles.iconoGrande, styles.iconoMal)} aria-hidden />}
+                  {flags.showCorrectReveal && !flags.isSel && (
+                    <CheckCircle2 className={cn(styles.iconoGrande, styles.iconoBien)} aria-hidden />
+                  )}
                 </>
               ) : (
                 <>
                   {flags.isSel ? (
-                    <CheckCircle className="size-4 shrink-0 text-[#2563EB]" />
+                    <CheckCircle className={cn(styles.icono, styles.iconoElegido)} aria-hidden />
                   ) : (
-                    <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                    <Circle className={cn(styles.icono, styles.iconoNeutro)} aria-hidden />
                   )}
                   <MathText text={op.texto} />
                 </>
               )}
-            </button>
+            </Opcion>
           </li>
         );
       })}
@@ -218,42 +183,31 @@ function ClassicListLayout({
   );
 }
 
-function ColorGridLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
-  const { opciones, phase, selectedIds, hasDefinedCorrect, questionCorrect, disabled, isMultiSelect, onToggle, onSelectSingle } = props;
-
+function ColorGridLayout(props: LayoutProps) {
+  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect } = props;
   return (
-    <ul className="grid grid-cols-2 gap-2 sm:gap-3">
+    <ul className={cn(styles.lista, styles.rejilla, styles.rejillaAmplia, variant === 'dark' ? styles.oscuro : styles.claro)}>
       {opciones.map((op, idx) => {
         const flags = optionFeedbackFlags(op, selectedIds, phase, hasDefinedCorrect, questionCorrect);
         const baseColor = KAHOOT_COLORS[idx % KAHOOT_COLORS.length];
-        const dimmed = phase === 'feedback' && flags.showAuto && !flags.isSel && !flags.showCorrectReveal;
+        const conResultado = flags.showAuto && (flags.selectedWrong || flags.selectedRight || flags.showCorrectReveal);
         return (
           <li key={op.id}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                if (disabled) return;
-                if (isMultiSelect) onToggle(op.id);
-                else onSelectSingle(op.id);
-              }}
-              style={{
-                backgroundColor: flags.showAuto && (flags.selectedWrong || flags.selectedRight || flags.showCorrectReveal)
-                  ? undefined
-                  : baseColor,
-              }}
+            <Opcion
+              op={op}
+              flags={flags}
+              {...props}
               className={cn(
-                'flex min-h-[4.5rem] w-full items-center justify-center rounded-lg px-3 py-4 text-center text-sm font-semibold text-white shadow-md transition-transform',
-                !disabled && !flags.isSel && 'hover:scale-[1.02]',
-                flags.isSel && phase === 'selecting' && 'ring-4 ring-white/80 scale-[1.02]',
-                flags.selectedRight && 'bg-[#16a34a] animate-in zoom-in-95 duration-300',
-                flags.selectedWrong && 'bg-[#dc2626] lumina-viewer-shake',
-                flags.showCorrectReveal && 'bg-[#16a34a]/90 animate-in zoom-in-95 duration-300',
-                dimmed && 'opacity-50',
+                styles.color,
+                flags.isSel && phase === 'selecting' && styles.colorElegida,
+                flags.selectedRight && styles.colorBien,
+                flags.selectedWrong && styles.colorMal,
+                flags.showCorrectReveal && styles.colorRevela,
               )}
+              style={conResultado ? undefined : { backgroundColor: baseColor }}
             >
-              <span className="line-clamp-3"><MathText text={op.texto} /></span>
-            </button>
+              <span className={styles.recorte}><MathText text={op.texto} /></span>
+            </Opcion>
           </li>
         );
       })}
@@ -261,37 +215,19 @@ function ColorGridLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
   );
 }
 
-function IconCardsLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
-  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect, disabled, isMultiSelect, onToggle, onSelectSingle } = props;
-  const isDark = variant === 'dark';
-
+function IconCardsLayout(props: LayoutProps) {
+  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect } = props;
   return (
-    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3">
+    <ul className={cn(styles.lista, styles.rejilla, styles.rejillaAmplia, variant === 'dark' ? styles.oscuro : styles.claro)}>
       {opciones.map((op, idx) => {
         const flags = optionFeedbackFlags(op, selectedIds, phase, hasDefinedCorrect, questionCorrect);
         const Shape = ICON_SHAPES[idx % ICON_SHAPES.length];
         return (
           <li key={op.id}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                if (disabled) return;
-                if (isMultiSelect) onToggle(op.id);
-                else onSelectSingle(op.id);
-              }}
-              className={cn(
-                'flex w-full flex-col items-center gap-2 rounded-xl border p-3 text-center transition-colors',
-                isDark ? 'border-white/20 bg-white/10 text-white' : 'border-[#e5e7eb] bg-white text-[#111827]',
-                flags.isSel && phase === 'selecting' && (isDark ? 'border-[#2563EB] bg-[#2563EB]/30' : 'border-[#2563EB] bg-[#dbeafe]'),
-                flags.selectedRight && 'border-green-400 bg-green-50 text-green-800 animate-in zoom-in-95 duration-300',
-                flags.selectedWrong && 'border-red-400 bg-red-50 text-red-800 lumina-viewer-shake',
-                flags.showCorrectReveal && 'border-green-300 bg-green-50/80 text-green-800',
-              )}
-            >
-              <Shape className="size-8 shrink-0 opacity-90" aria-hidden />
-              <span className="text-xs font-medium leading-snug"><MathText text={op.texto} /></span>
-            </button>
+            <Opcion op={op} flags={flags} {...props} className={styles.tarjetaIcono}>
+              <Shape className={styles.iconoForma} aria-hidden />
+              <span className={styles.tarjetaIconoTexto}><MathText text={op.texto} /></span>
+            </Opcion>
           </li>
         );
       })}
@@ -299,37 +235,17 @@ function IconCardsLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
   );
 }
 
-function PillsHorizontalLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
-  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect, disabled, isMultiSelect, onToggle, onSelectSingle } = props;
-  const isDark = variant === 'dark';
-
+function PillsHorizontalLayout(props: LayoutProps) {
+  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect } = props;
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className={cn(styles.lista, styles.vertical, variant === 'dark' ? styles.oscuro : styles.claro)}>
       {opciones.map((op) => {
         const flags = optionFeedbackFlags(op, selectedIds, phase, hasDefinedCorrect, questionCorrect);
         return (
           <li key={op.id}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                if (disabled) return;
-                if (isMultiSelect) onToggle(op.id);
-                else onSelectSingle(op.id);
-              }}
-              className={cn(
-                'w-full rounded-full border px-5 py-3 text-left text-sm font-medium transition-colors',
-                isDark
-                  ? 'border-white/25 bg-white/10 text-white hover:bg-white/20'
-                  : 'border-[#e5e7eb] bg-[#f9fafb] text-[#111827] hover:bg-[#eff6ff]',
-                flags.isSel && phase === 'selecting' && (isDark ? 'border-[#2563EB] bg-[#2563EB]/40' : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
-                flags.selectedRight && 'border-green-500 bg-green-100 text-green-800 animate-in zoom-in-95 duration-300',
-                flags.selectedWrong && 'border-red-400 bg-red-100 text-red-800 lumina-viewer-shake',
-                flags.showCorrectReveal && 'border-green-400 bg-green-50 text-green-800',
-              )}
-            >
+            <Opcion op={op} flags={flags} {...props} className={styles.pildora}>
               <MathText text={op.texto} />
-            </button>
+            </Opcion>
           </li>
         );
       })}
@@ -338,42 +254,23 @@ function PillsHorizontalLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVarian
 }
 
 /** Lista vertical con barra de color por opción (columna derecha en two-col-color-list). */
-function TwoColColorListLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
-  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect, disabled, isMultiSelect, onToggle, onSelectSingle } = props;
-  const isDark = variant === 'dark';
-
+function TwoColColorListLayout(props: LayoutProps) {
+  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect } = props;
   return (
-    <ul className="space-y-2">
+    <ul className={cn(styles.lista, styles.vertical, variant === 'dark' ? styles.oscuro : styles.claro)}>
       {opciones.map((op, idx) => {
         const flags = optionFeedbackFlags(op, selectedIds, phase, hasDefinedCorrect, questionCorrect);
         const accent = KAHOOT_COLORS[idx % KAHOOT_COLORS.length];
         return (
           <li key={op.id}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                if (disabled) return;
-                if (isMultiSelect) onToggle(op.id);
-                else onSelectSingle(op.id);
-              }}
-              className={cn(
-                'flex w-full items-center gap-3 rounded-md border border-l-[6px] px-3 py-2.5 text-left text-sm transition-colors',
-                isDark ? 'border-white/20 bg-white/10 text-white' : 'border-[#e5e7eb] bg-white text-[#111827]',
-                flags.isSel && phase === 'selecting' && (isDark ? 'bg-white/20' : 'bg-[#eff6ff]'),
-                flags.selectedRight && 'border-green-500 bg-green-50 text-green-800',
-                flags.selectedWrong && 'border-red-400 bg-red-50 text-red-800 lumina-viewer-shake',
-                flags.showCorrectReveal && 'border-green-400 bg-green-50/80 text-green-800',
-              )}
-              style={{ borderLeftColor: accent }}
-            >
+            <Opcion op={op} flags={flags} {...props} className={styles.franja} style={{ borderLeftColor: accent }}>
               {flags.isSel ? (
-                <CheckCircle className="size-4 shrink-0 text-[#2563EB]" />
+                <CheckCircle className={cn(styles.icono, styles.iconoElegido)} aria-hidden />
               ) : (
-                <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                <Circle className={cn(styles.icono, styles.iconoNeutro)} aria-hidden />
               )}
-              <span className="min-w-0 flex-1"><MathText text={op.texto} /></span>
-            </button>
+              <span className={styles.texto}><MathText text={op.texto} /></span>
+            </Opcion>
           </li>
         );
       })}
@@ -382,37 +279,17 @@ function TwoColColorListLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVarian
 }
 
 /** Grid 2×2 neutro (columna derecha en two-col-neutral-grid). */
-function TwoColNeutralGridLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
-  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect, disabled, isMultiSelect, onToggle, onSelectSingle } = props;
-  const isDark = variant === 'dark';
-
+function TwoColNeutralGridLayout(props: LayoutProps) {
+  const { opciones, variant, phase, selectedIds, hasDefinedCorrect, questionCorrect } = props;
   return (
-    <ul className="grid grid-cols-2 gap-2">
+    <ul className={cn(styles.lista, styles.rejilla, variant === 'dark' ? styles.oscuro : styles.claro)}>
       {opciones.map((op) => {
         const flags = optionFeedbackFlags(op, selectedIds, phase, hasDefinedCorrect, questionCorrect);
         return (
           <li key={op.id}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                if (disabled) return;
-                if (isMultiSelect) onToggle(op.id);
-                else onSelectSingle(op.id);
-              }}
-              className={cn(
-                'flex min-h-[4rem] w-full items-center justify-center rounded-lg border px-2 py-3 text-center text-xs font-medium transition-colors',
-                isDark
-                  ? 'border-white/20 bg-[#f3f4f6]/10 text-white hover:bg-white/15'
-                  : 'border-[#d1d5db] bg-[#f9fafb] text-[#374151] hover:bg-[#f3f4f6]',
-                flags.isSel && phase === 'selecting' && (isDark ? 'border-[#2563EB] bg-[#2563EB]/30' : 'border-[#2563EB] bg-[#dbeafe]'),
-                flags.selectedRight && 'border-green-500 bg-green-50 text-green-800',
-                flags.selectedWrong && 'border-red-400 bg-red-50 text-red-800 lumina-viewer-shake',
-                flags.showCorrectReveal && 'border-green-400 bg-green-50 text-green-800',
-              )}
-            >
-              <span className="line-clamp-3"><MathText text={op.texto} /></span>
-            </button>
+            <Opcion op={op} flags={flags} {...props} className={styles.neutra}>
+              <span className={styles.recorte}><MathText text={op.texto} /></span>
+            </Opcion>
           </li>
         );
       })}
@@ -440,52 +317,24 @@ export function QuizOptionsLayout({ layoutVariant, ...props }: QuizOptionsLayout
   }
 }
 
-function QuizQuestionText({
-  texto,
-  variant,
-  className,
-}: {
-  texto: string;
-  variant: 'dark' | 'light';
-  className?: string;
-}) {
+function QuizQuestionText({ texto, variant }: { texto: string; variant: 'dark' | 'light' }) {
   return (
-    <p
-      className={cn(
-        'text-sm font-medium leading-snug sm:text-base',
-        variant === 'dark' ? 'text-white' : 'text-[#111827]',
-        className,
-      )}
-    >
+    <p className={cn(styles.enunciado, variant === 'dark' ? styles.oscuro : styles.claro)}>
       <MathText text={texto} />
     </p>
   );
 }
 
 function QuizQuestionImage({ imagenUrl, variant }: { imagenUrl?: string; variant: 'dark' | 'light' }) {
-  const isDark = variant === 'dark';
   if (imagenUrl?.trim()) {
     return (
-      <div className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-[#f9fafb]">
+      <div className={styles.imagen}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imagenUrl.trim()}
-          alt=""
-          className="aspect-[4/3] w-full object-cover"
-        />
+        <img src={imagenUrl.trim()} alt="" />
       </div>
     );
   }
-  return (
-    <div
-      className={cn(
-        'flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed text-center text-xs',
-        isDark ? 'border-white/25 bg-white/5 text-white/50' : 'border-[#d1d5db] bg-[#f9fafb] text-[#9ca3af]',
-      )}
-    >
-      Sin imagen
-    </div>
-  );
+  return <div className={cn(styles.sinImagen, variant === 'dark' ? styles.oscuro : styles.claro)}>Sin imagen</div>;
 }
 
 export interface QuizQuestionWithOptionsProps extends QuizOptionsLayoutProps {
@@ -512,7 +361,7 @@ export function QuizQuestionWithOptions({
 
   if (!isTwoColumnLayout(resolved)) {
     return (
-      <div className="space-y-4">
+      <div className={styles.apilado}>
         <QuizQuestionText texto={preguntaTexto} variant={variant} />
         {hint}
         {options}
@@ -523,9 +372,9 @@ export function QuizQuestionWithOptions({
 
   if (resolved === 'two-col-image-pills') {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
+      <div className={styles.dosColumnas}>
         <QuizQuestionImage imagenUrl={imagenUrl} variant={variant} />
-        <div className="space-y-3">
+        <div className={styles.apiladoCompacto}>
           <QuizQuestionText texto={preguntaTexto} variant={variant} />
           {hint}
           {options}
@@ -537,12 +386,12 @@ export function QuizQuestionWithOptions({
 
   const showAccent = resolved === 'two-col-color-list';
   return (
-    <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
-      <div className="space-y-2">
+    <div className={styles.dosColumnas}>
+      <div className={styles.apiladoMinimo}>
         {showAccent ? <QuizQuestionAccentBar index={accentIndex} /> : null}
         <QuizQuestionText texto={preguntaTexto} variant={variant} />
       </div>
-      <div className="space-y-3">
+      <div className={styles.apiladoCompacto}>
         {hint}
         {options}
         {footer}
@@ -554,5 +403,5 @@ export function QuizQuestionWithOptions({
 /** Barra superior de acento para classic-list (estilo Kahoot). */
 export function QuizQuestionAccentBar({ index }: { index: number }) {
   const color = KAHOOT_COLORS[index % KAHOOT_COLORS.length];
-  return <div className="h-1.5 w-full rounded-t-xl" style={{ backgroundColor: color }} aria-hidden />;
+  return <div className={styles.acento} style={{ backgroundColor: color }} aria-hidden />;
 }

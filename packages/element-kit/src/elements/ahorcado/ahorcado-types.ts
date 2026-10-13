@@ -3,9 +3,10 @@ import type { AhorcadoActivity } from "../../activities/ahorcado/index.js";
 /** Estado del elemento Ahorcado = la actividad completa. */
 export type AhorcadoEstado = AhorcadoActivity;
 
-/** Config de runtime del viewer. `onComplete` se reenvía al legacy. */
+/** Config de runtime del viewer. */
 export interface AhorcadoConfig {
-  readonly onComplete?: (response: unknown) => void;
+  /** Canal de respuesta unificado (etapa U / DU2). */
+  readonly onResponse?: (response: unknown) => void;
 }
 
 export const AHORCADO_TIPO = "ahorcado" as const;

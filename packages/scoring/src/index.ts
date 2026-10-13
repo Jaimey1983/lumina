@@ -80,6 +80,10 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   completar_blancos: 'partial',
   arrastrar_soltar: 'partial',
   emparejar: 'partial',
+  relacionar_lineas: 'partial',
+  etiquetar_imagen: 'partial',
+  linea_tiempo: 'partial',
+  cloze_banco: 'partial',
   ordenar_pasos: 'partial',
   video_interactivo: 'partial',
 
@@ -90,6 +94,9 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   respuesta_matematica: 'binary',
   balancear_ecuacion: 'binary',
   formular_compuesto: 'partial',
+
+  // Problema paso a paso (etapa U / U15): crédito por paso, con costo por pista usada.
+  problema_pasos: 'partial',
 
   // Participación (no entra al promedio académico; columna opcional "participó")
   encuesta_viva: 'participation',
@@ -142,6 +149,7 @@ const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'completar_blancos',
   'arrastrar_soltar',
   'emparejar',
+  'relacionar_lineas',
   'ordenar_pasos',
   'video_interactivo',
   'clasificar',
@@ -158,6 +166,10 @@ const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'ahorcado',
   'ubicar_elemento',
   'formular_compuesto',
+  'problema_pasos',
+  'etiquetar_imagen',
+  'linea_tiempo',
+  'cloze_banco',
 ]);
 
 /** `partial` cuyo promedio de gradebook aún no está conectado (p. ej. `orden_rango`). */
@@ -527,36 +539,82 @@ function toleranciaMatematica(def: Record<string, unknown>, esperado: number): n
   return def.toleranciaTipo === 'porcentual' ? (Math.abs(esperado) * declarada) / 100 : declarada;
 }
 
+/**
+ * ¿La definición de una respuesta matemática se puede evaluar? (numérica legible, o expresión
+ * algebraica legible). Compartida por `respuesta_matematica` y `problema_pasos`.
+ */
+function definicionMatematicaValida(def: Record<string, unknown>): boolean {
+  if (def.modo === 'algebraico') {
+    if (typeof def.respuesta !== 'string' || def.respuesta.trim() === '') return false;
+    return expresionesEquivalentes(def.respuesta, def.respuesta) !== null;
+  }
+  return parseRespuestaNumerica(def.respuesta) !== null;
+}
+
+/**
+ * Compara lo que escribió el alumno con la respuesta modelo (numérica con tolerancia, o algebraica
+ * por equivalencia). `null` = no se puede evaluar (definición ilegible, o respuesta ausente o en
+ * blanco). Es la regla de `respuesta_matematica` extraída tal cual para compartirla.
+ */
+function compararRespuestaMatematica(def: Record<string, unknown>, respuesta: unknown): boolean | null {
+  if (!definicionMatematicaValida(def)) return null;
+  if (respuesta === null || respuesta === undefined) return null;
+  if (def.modo === 'algebraico') {
+    if (typeof respuesta !== 'string' || respuesta.trim() === '') return null;
+    return expresionesEquivalentes(def.respuesta, respuesta) === true;
+  }
+  if (typeof respuesta === 'string' && respuesta.trim() === '') return null;
+  const esperado = parseRespuestaNumerica(def.respuesta) as number;
+  const tolerancia = toleranciaMatematica(def, esperado);
+  return candidatosNumericos(respuesta).some((dado) => Math.abs(dado - esperado) <= tolerancia + 1e-9);
+}
+
 function evaluateRespuestaMatematica(
   def: Record<string, unknown>,
   respuesta: unknown,
 ): ActivityEvaluationResult {
-  if (def.modo === 'algebraico') {
-    if (typeof def.respuesta !== 'string' || def.respuesta.trim() === '') return UNEVALUABLE;
-    if (respuesta === null || respuesta === undefined) return UNEVALUABLE;
-    if (typeof respuesta !== 'string' || respuesta.trim() === '') return UNEVALUABLE;
-    // `null` = alguna de las dos no se puede leer o no hay puntos comparables.
-    const equivalentes = expresionesEquivalentes(def.respuesta, respuesta);
-    if (expresionesEquivalentes(def.respuesta, def.respuesta) === null) return UNEVALUABLE;
-    const ok = equivalentes === true;
-    return {
-      correct: ok,
-      details: [{ index: 0, correct: ok, label: 'Respuesta' }],
-      score: notaColombiana(ok ? 1 : 0, 1, true),
-    };
-  }
-  const esperado = parseRespuestaNumerica(def.respuesta);
-  if (esperado === null) return UNEVALUABLE;
-  if (respuesta === null || respuesta === undefined) return UNEVALUABLE;
-  if (typeof respuesta === 'string' && respuesta.trim() === '') return UNEVALUABLE;
-  const tolerancia = toleranciaMatematica(def, esperado);
-  const ok = candidatosNumericos(respuesta).some(
-    (dado) => Math.abs(dado - esperado) <= tolerancia + 1e-9,
-  );
+  const ok = compararRespuestaMatematica(def, respuesta);
+  if (ok === null) return UNEVALUABLE;
   return {
     correct: ok,
     details: [{ index: 0, correct: ok, label: 'Respuesta' }],
     score: notaColombiana(ok ? 1 : 0, 1, true),
+  };
+}
+
+/**
+ * Problema paso a paso (etapa U / U15). Un detalle por paso evaluable. Cada paso se compara con la
+ * regla de `respuesta_matematica`; cada pista usada resta `ajustes.pistas.costoPct` % del crédito de
+ * ese paso (0–100, por defecto 0). `correct` = todos los pasos bien (con o sin pistas); `score` =
+ * nota sobre el crédito acumulado. Respuesta: `[{ pasoId, respuesta, pistasUsadas }]`.
+ */
+function evaluateProblemaPasos(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const pasos = (Array.isArray(def.pasos) ? def.pasos : [])
+    .map((p) => asRecord(p))
+    .filter((p): p is Record<string, unknown> => p !== null && definicionMatematicaValida(p));
+  if (pasos.length === 0) return UNEVALUABLE;
+  const costoRaw = asRecord(asRecord(def.ajustes)?.pistas)?.costoPct;
+  const costo =
+    typeof costoRaw === 'number' && Number.isFinite(costoRaw) ? Math.min(100, Math.max(0, costoRaw)) : 0;
+  const dadas = Array.isArray(respuesta) ? respuesta : [];
+  let credito = 0;
+  const details: ActivityEvaluationDetail[] = pasos.map((paso, i) => {
+    const dada = asRecord(dadas.find((d) => asRecord(d)?.pasoId === paso.id));
+    const ok = dada ? compararRespuestaMatematica(paso, dada.respuesta) === true : false;
+    const usadas =
+      typeof dada?.pistasUsadas === 'number' && Number.isFinite(dada.pistasUsadas)
+        ? Math.max(0, Math.floor(dada.pistasUsadas))
+        : 0;
+    if (ok) credito += Math.max(0, 1 - (usadas * costo) / 100);
+    const texto = String(paso.instruccion ?? '');
+    const label = texto.length > 30 ? `${texto.slice(0, 30)}…` : texto || `Paso ${i + 1}`;
+    return { index: i, correct: ok, label };
+  });
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(credito, pasos.length, true),
   };
 }
 
@@ -665,6 +723,126 @@ function evaluateEmparejar(definicion: unknown, respuesta: unknown): ActivityEva
     correct: details.every((d) => d.correct),
     details,
     score: notaColombiana(correctas, pares.length, true),
+  };
+}
+
+/**
+ * Relacionar con líneas (etapa U / U14). Un detalle por cada izquierda que tiene relación declarada
+ * (la primera declarada gana); acierta si el alumno trazó EXACTAMENTE una línea desde ella y llega a
+ * la derecha correcta. Una línea de más hacia un distractor, o dos líneas desde la misma izquierda,
+ * la hace incorrecta. La respuesta usa la forma de `emparejar`: `[{ leftId, rightId }]`.
+ */
+function evaluateRelacionarLineas(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const izquierda = Array.isArray(def.izquierda) ? def.izquierda : [];
+  const relaciones = Array.isArray(def.relaciones) ? def.relaciones : [];
+  const esperadas = new Map<string, string>();
+  for (const raw of relaciones) {
+    const r = asRecord(raw) ?? {};
+    const l = String(r.izquierdaId ?? '');
+    const d = String(r.derechaId ?? '');
+    if (l && d && !esperadas.has(l)) esperadas.set(l, d);
+  }
+  if (esperadas.size === 0) return UNEVALUABLE;
+  const lineas = Array.isArray(respuesta) ? respuesta : [];
+  const details: ActivityEvaluationDetail[] = [...esperadas].map(([izqId, derId], i) => {
+    const item = asRecord(izquierda.find((x) => asRecord(x)?.id === izqId));
+    const label =
+      (typeof item?.texto === 'string' && item.texto) || (item?.imagen ? '[Imagen]' : `Elemento ${i + 1}`);
+    const dadas = lineas.filter((m) => asRecord(m)?.leftId === izqId);
+    return { index: i, correct: dadas.length === 1 && asRecord(dadas[0])?.rightId === derId, label };
+  });
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, esperadas.size, true),
+  };
+}
+
+/**
+ * Etiquetar imagen (U16): un detalle por zona con etiqueta declarada. Es correcta si el alumno
+ * colocó en ella exactamente la etiqueta declarada; una etiqueta distractora o una zona vacía
+ * cuentan como error de esa zona. La respuesta es `[{ zonaId, etiquetaId }]`.
+ */
+function evaluateEtiquetarImagen(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const zonas = (Array.isArray(def.zonas) ? def.zonas : [])
+    .map((z) => asRecord(z) ?? {})
+    .filter((z) => String(z.id ?? '') !== '' && String(z.etiquetaId ?? '') !== '');
+  if (zonas.length === 0) return UNEVALUABLE;
+  const etiquetas = Array.isArray(def.etiquetas) ? def.etiquetas : [];
+  const colocadas = new Map<string, string>();
+  for (const raw of Array.isArray(respuesta) ? respuesta : []) {
+    const r = asRecord(raw) ?? {};
+    const zonaId = String(r.zonaId ?? '');
+    if (zonaId && !colocadas.has(zonaId)) colocadas.set(zonaId, String(r.etiquetaId ?? ''));
+  }
+  const details: ActivityEvaluationDetail[] = zonas.map((z, i) => {
+    const esperada = String(z.etiquetaId);
+    const etiqueta = asRecord(etiquetas.find((e) => asRecord(e)?.id === esperada));
+    const label = (typeof etiqueta?.texto === 'string' && etiqueta.texto) || `Marcador ${i + 1}`;
+    return { index: i, correct: colocadas.get(String(z.id)) === esperada, label };
+  });
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, zonas.length, true),
+  };
+}
+
+/**
+ * Línea de tiempo (U16→U17): el mismo criterio posición a posición que `ordenar_pasos`, pero leyendo
+ * `orden`/`texto` de los eventos. La respuesta es la lista de ids en el orden elegido. Los empates en
+ * `orden` se rompen por posición en la definición.
+ */
+function evaluateLineaTiempo(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const eventos = (Array.isArray(def.eventos) ? def.eventos : [])
+    .map((e, i) => ({ e: asRecord(e) ?? {}, i }))
+    .filter(({ e }) => String(e.id ?? '') !== '');
+  if (eventos.length === 0) return UNEVALUABLE;
+  const correctOrder = [...eventos].sort(
+    (a, b) => Number(a.e.orden ?? 0) - Number(b.e.orden ?? 0) || a.i - b.i,
+  );
+  const ordered = Array.isArray(respuesta) ? respuesta.map(String) : [];
+  const details: ActivityEvaluationDetail[] = correctOrder.map(({ e }, pos) => {
+    const texto = String(e.texto ?? '');
+    const label = texto.length > 30 ? `${texto.slice(0, 30)}…` : texto || `Evento ${pos + 1}`;
+    return { index: pos, correct: ordered[pos] === String(e.id), label };
+  });
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, eventos.length, true),
+  };
+}
+
+/**
+ * Cloze con banco (U18): un detalle por hueco con respuesta declarada. Comparación EXACTA (tras
+ * recortar espacios) con la `respuesta` del hueco: el alumno elige del banco, no escribe, así que no
+ * hay alternativas ni tolerancia. Un hueco vacío o con un distractor es incorrecto. La respuesta es
+ * `Record<idHueco, palabra>`, la misma forma que `completar_blancos`.
+ */
+function evaluateClozeBanco(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const blancos = (Array.isArray(def.blancos) ? def.blancos : [])
+    .map((b) => asRecord(b) ?? {})
+    .filter((b) => String(b.id ?? '') !== '' && String(b.respuesta ?? '').trim() !== '');
+  if (blancos.length === 0) return UNEVALUABLE;
+  const dadas = asRecord(respuesta) ?? {};
+  const details: ActivityEvaluationDetail[] = blancos.map((b, i) => ({
+    index: i,
+    correct: String(dadas[String(b.id)] ?? '').trim() === String(b.respuesta).trim(),
+    label: `Hueco ${i + 1}`,
+  }));
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, blancos.length, true),
   };
 }
 
@@ -1085,6 +1263,16 @@ function evaluatePartial(
       return evaluateDragDrop(definicion, unwrapActivityDraftResponse(respuesta));
     case 'emparejar':
       return evaluateEmparejar(definicion, respuesta);
+    case 'relacionar_lineas':
+      return evaluateRelacionarLineas(definicion, respuesta);
+    case 'problema_pasos':
+      return evaluateProblemaPasos(definicion, respuesta);
+    case 'etiquetar_imagen':
+      return evaluateEtiquetarImagen(definicion, respuesta);
+    case 'linea_tiempo':
+      return evaluateLineaTiempo(definicion, respuesta);
+    case 'cloze_banco':
+      return evaluateClozeBanco(definicion, respuesta);
     case 'ordenar_pasos':
       return evaluateOrdenar(definicion, respuesta);
     case 'video_interactivo':

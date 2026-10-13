@@ -1,4 +1,5 @@
 import type { AbrirCajaActivity, AbrirCajaCaja } from '@lumina/types/slide'
+import { hayJuicioDefinido } from '../_shared/opciones.js'
 
 export const ABRIR_CAJA_MAX_CAJAS = 12
 export const ABRIR_CAJA_MIN_CAJAS = 2
@@ -84,6 +85,8 @@ export function normalizarAbrirCaja(act: AbrirCajaActivity): AbrirCajaActivity {
 
   return {
     tipo: 'abrir_caja',
+    // `ajustes` (etapa U) viaja intacto: antes se descartaba al hidratar el slide.
+    ...(act.ajustes ? { ajustes: act.ajustes } : {}),
     configuracion: {
       filas: clampFilas(cfg.filas),
       columnas: clampColumnas(cfg.columnas),
@@ -100,15 +103,17 @@ export function normalizarAbrirCaja(act: AbrirCajaActivity): AbrirCajaActivity {
   }
 }
 
-/** Huella estable para memoizar normalización y resetear estado del viewer. */
+/** Huella del CONTENIDO: cambiar un ajuste (estilo, sonido…) no reinicia la partida. */
 export function abrirCajaFingerprint(act: AbrirCajaActivity): string {
-  return JSON.stringify(normalizarAbrirCaja(act))
+  const { ajustes: _ajustes, ...contenido } = normalizarAbrirCaja(act)
+  void _ajustes
+  return JSON.stringify(contenido)
 }
 
 // Determina si la actividad es evaluable:
 // lo es si AL MENOS UNA caja tiene esCorrecta !== undefined
 export function esEvaluable(cajas: { contenido: { esCorrecta?: boolean } }[]): boolean {
-  return cajas.some(c => c.contenido.esCorrecta !== undefined)
+  return hayJuicioDefinido(cajas.map((c) => c.contenido))
 }
 
 /** Tamaño cuadrado de cada caja para que el grid quepa en el espacio disponible. */

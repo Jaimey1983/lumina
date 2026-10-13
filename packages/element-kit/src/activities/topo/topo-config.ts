@@ -1,4 +1,6 @@
 import type { TopoActivity, TopoPregunta } from '@lumina/types/slide'
+import { barajar } from '../_shared/barajar.js'
+import { normalizarOpcionesTexto } from '../_shared/opciones.js'
 
 export const TOPO_MAX_PREGUNTAS = 30
 export const TOPO_MIN_PREGUNTAS = 1
@@ -33,21 +35,7 @@ function clampColumnas(value: unknown): 3 | 4 {
 }
 
 function normalizarOpciones(opciones: TopoPregunta['opciones']): TopoPregunta['opciones'] {
-  const limpias = opciones
-    .map((op) => ({
-      texto: typeof op.texto === 'string' ? op.texto.trim() : '',
-      correcta: op.correcta === true,
-    }))
-    .filter((op) => op.texto.length > 0)
-
-  if (limpias.length >= TOPO_MIN_OPCIONES) {
-    if (!limpias.some((op) => op.correcta)) {
-      return limpias.map((op, index) => ({ ...op, correcta: index === 0 }))
-    }
-    return limpias
-  }
-
-  return crearOpcionesTopoDefault()
+  return normalizarOpcionesTexto(opciones, TOPO_MIN_OPCIONES, crearOpcionesTopoDefault)
 }
 
 export function normalizarTopo(act: TopoActivity): TopoActivity {
@@ -74,6 +62,8 @@ export function normalizarTopo(act: TopoActivity): TopoActivity {
 
   return {
     tipo: 'topo',
+    // `ajustes` (etapa U) viaja intacto: antes se descartaba al hidratar el slide.
+    ...(act.ajustes ? { ajustes: act.ajustes } : {}),
     configuracion: {
       velocidad: cfg.velocidad === 'lenta' || cfg.velocidad === 'rapida' ? cfg.velocidad : 'normal',
       vidas: typeof cfg.vidas === 'number' && cfg.vidas >= 1 ? Math.min(5, cfg.vidas) : 3,
@@ -86,8 +76,11 @@ export function normalizarTopo(act: TopoActivity): TopoActivity {
   }
 }
 
+/** Huella del CONTENIDO: cambiar un ajuste (estilo, sonido…) no reinicia la partida. */
 export function topoFingerprint(act: TopoActivity): string {
-  return JSON.stringify(normalizarTopo(act))
+  const { ajustes: _ajustes, ...contenido } = normalizarTopo(act)
+  void _ajustes
+  return JSON.stringify(contenido)
 }
 
 /** Tamaño cuadrado de cada hueco para que el grid quepa en el lienzo. */
@@ -117,11 +110,7 @@ export function tamanoTextoTopo(cellSize: number, texto = ''): number {
   return Math.max(14, Math.min(24, size))
 }
 
-export function mezclarIndicesTopo(count: number): number[] {
-  const result = Array.from({ length: count }, (_, i) => i)
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[result[i], result[j]] = [result[j], result[i]]
-  }
-  return result
+/** Orden de los huecos; con `semilla` (`ajustes.semilla`, DU3) es el mismo para toda la clase. */
+export function mezclarIndicesTopo(count: number, semilla?: number | null, sal = 0): number[] {
+  return barajar(Array.from({ length: count }, (_, i) => i), semilla, sal)
 }

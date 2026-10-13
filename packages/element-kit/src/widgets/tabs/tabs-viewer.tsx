@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-import { WidgetMotion } from '../_motion/widget-motion.js';
+import { WidgetMotion } from '../../_efectos/motion/widget-motion.js';
 
 import type { TabsWidget } from '@lumina/types/widget';
 import { cn } from '@lumina/ui/lib/utils';

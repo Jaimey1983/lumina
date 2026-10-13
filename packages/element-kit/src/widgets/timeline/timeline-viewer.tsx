@@ -8,7 +8,7 @@ import { WidgetHeaderViewer } from '@lumina/editor-shared/widget-header-viewer';
 import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
 import { imageElementStyle, usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
 
-import { WidgetMotionItem } from '../_motion/widget-motion.js';
+import { WidgetMotionItem } from '../../_efectos/motion/widget-motion.js';
 import styles from './timeline.module.css';
 import { entradaDeAnimacion, leerOpcionesT14, useEnVista } from './timeline-t14.js';
 import { normalizeTimelineWidget } from './timeline-config.js';

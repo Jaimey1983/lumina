@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@lumina/ui/lib/utils';
 import type { TimelineConfiguracion, TimelineNodo } from '@lumina/types/widget';
 
-import { WidgetMotion } from '../_motion/widget-motion.js';
+import { WidgetMotion } from '../../_efectos/motion/widget-motion.js';
 import styles from './timeline.module.css';
 import { leerOpcionesT14 } from './timeline-t14.js';
 import { timelineNodeAccentColor, timelineUsesSegmentBar, timelineVariantRootClass } from './timeline-variant-meta.js';

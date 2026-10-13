@@ -1,0 +1,9 @@
+/*
+ * U0 — hoja de estilos del entorno visual de actividades.
+ *
+ * Reutiliza `globals.css`, que desde X.4 declara `@source` para `@lumina/element-kit`:
+ * el entorno visual y producción generan las mismas clases Tailwind. (Antes de X.4
+ * este archivo declaraba el `@source` por su cuenta y las capturas mostraban un
+ * diseño que producción no tenía; ver `docs/tablero/etapa-U-matriz.md` §3.1.)
+ */
+@import '../styles/globals.css';

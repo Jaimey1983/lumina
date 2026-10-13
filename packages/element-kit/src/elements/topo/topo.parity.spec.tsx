@@ -118,8 +118,9 @@ describe("Topo — paridad ElementDefinition vs legacy (E2.4)", () => {
       | undefined;
     expect(def).toBe(topoDefinition);
     expect(def?.puntuacion).toBeTypeOf("function");
+    // U9d.2: el estilo (`ajustes.estilo`) es color.
     expect(def?.apariencia).toEqual({
-      color: false,
+      color: true,
       tipografia: false,
       animacion: false,
     });

@@ -77,7 +77,7 @@ export function PuzzlePalabrasProperties({ actividad, onChange }: PuzzlePalabras
           <button
             onClick={addOracion}
             disabled={oraciones.length >= PUZZLE_PALABRAS_MAX_ORACIONES}
-            className="text-xs px-2 py-1 rounded bg-[#2563EB] text-white disabled:opacity-40 hover:bg-blue-600"
+            className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90"
           >
             + Añadir
           </button>

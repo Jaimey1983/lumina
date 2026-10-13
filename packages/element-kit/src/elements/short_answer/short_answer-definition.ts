@@ -7,19 +7,27 @@ import {
 } from "../../activities/_classic/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
+import { crearPropiedadesConAjustes } from "../_shared/propiedades-con-ajustes.js";
+import { PRESETS_SHORT_ANSWER } from "./short_answer-estilos.js";
 import {
   SHORT_ANSWER_TIPO,
   type ShortAnswerConfig,
   type ShortAnswerEstado,
 } from "./short_answer-types.js";
 
-const { Editor, Viewer, Propiedades } = crearAdaptadoresClasicos<
+const { Editor, Viewer, Propiedades: PropiedadesBase } = crearAdaptadoresClasicos<
   ShortAnswerEstado,
   ShortAnswerConfig
 >({
   Editor: ShortAnswerActivityEditor,
   viewer: { via: "component", Viewer: ShortAnswerViewer },
   editorNeedsSyncKey: true,
+});
+
+/** U9a.1: el panel suma estilos y ajustes comunes al editor de siempre. */
+const Propiedades = crearPropiedadesConAjustes(PropiedadesBase, {
+  presets: PRESETS_SHORT_ANSWER,
+  storageKey: "actividad.short_answer.estilos",
 });
 
 export {
@@ -40,11 +48,13 @@ export const shortAnswerDefinition = {
   Editor,
   Viewer,
   Propiedades,
+  // U9a.1: el estilo (`ajustes.estilo`) es color; la tipografía no se toca y no hay movimiento.
   apariencia: {
-    color: false,
+    color: true,
     tipografia: false,
     animacion: false,
   },
+  presets: PRESETS_SHORT_ANSWER,
   puntuacion: (estado: ShortAnswerEstado, respuesta?: unknown) =>
     evaluarShortAnswer(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["short_answer"],

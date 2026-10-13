@@ -3,9 +3,10 @@ import type { GlobosActivity } from "../../activities/globos/index.js";
 /** Estado del elemento Globos = la actividad completa. */
 export type GlobosEstado = GlobosActivity;
 
-/** Config de runtime del viewer. `onComplete` se reenvía al legacy. */
+/** Config de runtime del viewer. */
 export interface GlobosConfig {
-  readonly onComplete?: (response: unknown) => void;
+  /** Canal de respuesta unificado (etapa U / DU2). */
+  readonly onResponse?: (response: unknown) => void;
 }
 
 export const GLOBOS_TIPO = "globos" as const;

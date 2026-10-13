@@ -1,0 +1,134 @@
+/*
+ * U1 — tokens de estado de las actividades (`--la-*`, etapa U / DU4).
+ *
+ * Es el ÚNICO lugar donde una actividad migrada obtiene sus colores de estado:
+ * acierto, error, pista, selección y bloqueo, más superficies neutras, radios y
+ * elevaciones. Los colores de marca salen del tema del curso (`--lw-*`, ver
+ * `editor-shared/use-widget-theme`); el hex solo vive como *fallback* dentro de
+ * `var(--lw-…, <fallback>)`, así que una actividad fuera de un contenedor
+ * temático se ve igual que antes.
+ *
+ * `ActivityShell` (U3) aplica `.tokens` en su raíz. Los hex de abajo deben coincidir
+ * con `ACTIVITY_TOKENS` en `activity-tokens.ts`; un spec lo hace cumplir.
+ */
+.tokens {
+  /* Estados — color pleno, tinte suave y texto legible sobre el tinte */
+  --la-color-correcto: var(--lw-color-success, #16a34a);
+  --la-color-correcto-suave: color-mix(in srgb, var(--la-color-correcto) 14%, transparent);
+  --la-color-correcto-texto: #166534;
+
+  --la-color-incorrecto: var(--lw-color-danger, #dc2626);
+  --la-color-incorrecto-suave: color-mix(in srgb, var(--la-color-incorrecto) 12%, transparent);
+  --la-color-incorrecto-texto: #991b1b;
+
+  --la-color-pista: var(--lw-color-warning, #d97706);
+  --la-color-pista-suave: color-mix(in srgb, var(--la-color-pista) 16%, transparent);
+  --la-color-pista-texto: #92400e;
+
+  --la-color-seleccionado: var(--lw-color-primary, #2563eb);
+  --la-color-seleccionado-suave: color-mix(in srgb, var(--la-color-seleccionado) 12%, transparent);
+  --la-color-seleccionado-texto: #1e40af;
+
+  --la-color-bloqueado: #9ca3af;
+  --la-color-bloqueado-suave: color-mix(in srgb, var(--la-color-bloqueado) 18%, transparent);
+  --la-color-bloqueado-texto: #4b5563;
+
+  /* Neutros */
+  --la-color-superficie: #ffffff;
+  --la-color-texto: #1f2937;
+  --la-color-texto-suave: #6b7280;
+  --la-color-borde: #e5e7eb;
+
+  /* Forma y relieve */
+  --la-radio-sm: 0.375rem;
+  --la-radio-md: 0.5rem;
+  --la-radio-lg: 0.75rem;
+  --la-radio-xl: 1rem;
+  --la-elevacion-1: 0 1px 2px rgb(15 23 42 / 0.08);
+  --la-elevacion-2: 0 8px 24px rgb(15 23 42 / 0.16);
+}
+
+/*
+ * U8 — estilos de la actividad (`ajustes.estilo`). El shell pone `data-estilo` en su raíz y
+ * estos bloques reemplazan solo lo que cambia; `escolar` es el aspecto de siempre (no
+ * reemplaza nada). Cada texto de estado se lee sobre la superficie de su estilo (≥ 4.5:1):
+ * lo verifica `activity-tokens.spec.ts`.
+ */
+
+/* Examen: sobrio, bordes marcados, sin sombras, esquinas casi rectas. */
+.tokens[data-estilo='examen'] {
+  --la-color-superficie: #ffffff;
+  --la-color-texto: #111827;
+  --la-color-texto-suave: #4b5563;
+  --la-color-borde: #6b7280;
+  --la-color-seleccionado: var(--lw-color-primary, #1e3a8a);
+  --la-color-seleccionado-texto: #1e3a8a;
+  --la-radio-sm: 0.125rem;
+  --la-radio-md: 0.25rem;
+  --la-radio-lg: 0.25rem;
+  --la-radio-xl: 0.375rem;
+  --la-elevacion-1: none;
+  --la-elevacion-2: 0 2px 6px rgb(15 23 42 / 0.25);
+}
+
+/* Arcade: fondo oscuro, colores vivos, esquinas muy redondas y brillo. */
+.tokens[data-estilo='arcade'] {
+  --la-color-superficie: #0f172a;
+  --la-color-texto: #f8fafc;
+  --la-color-texto-suave: #cbd5e1;
+  --la-color-borde: #334155;
+  --la-color-correcto: #22c55e;
+  --la-color-correcto-texto: #bbf7d0;
+  --la-color-incorrecto: #f43f5e;
+  --la-color-incorrecto-texto: #fecdd3;
+  --la-color-pista: #f59e0b;
+  --la-color-pista-texto: #fde68a;
+  --la-color-seleccionado: #a855f7;
+  --la-color-seleccionado-texto: #e9d5ff;
+  --la-color-bloqueado: #64748b;
+  --la-color-bloqueado-texto: #cbd5e1;
+  --la-radio-sm: 0.5rem;
+  --la-radio-md: 0.75rem;
+  --la-radio-lg: 1rem;
+  --la-radio-xl: 1.5rem;
+  --la-elevacion-1: 0 0 0 1px rgb(168 85 247 / 0.35), 0 4px 14px rgb(168 85 247 / 0.25);
+  --la-elevacion-2: 0 0 0 1px rgb(168 85 247 / 0.5), 0 10px 30px rgb(168 85 247 / 0.4);
+}
+
+/* Minimal: plano, casi sin bordes ni sombras. */
+.tokens[data-estilo='minimal'] {
+  --la-color-superficie: #ffffff;
+  --la-color-texto: #1f2937;
+  --la-color-texto-suave: #6b7280;
+  --la-color-borde: #f3f4f6;
+  --la-radio-sm: 0.25rem;
+  --la-radio-md: 0.375rem;
+  --la-radio-lg: 0.5rem;
+  --la-radio-xl: 0.5rem;
+  --la-elevacion-1: none;
+  --la-elevacion-2: 0 1px 3px rgb(15 23 42 / 0.12);
+}
+
+/* Pizarra: verde de pizarrón con tiza. */
+.tokens[data-estilo='pizarra'] {
+  --la-color-superficie: #1f3d2f;
+  --la-color-texto: #f1f5f9;
+  --la-color-texto-suave: #cbd5e1;
+  --la-color-borde: #5b8a72;
+  --la-color-correcto: #86efac;
+  --la-color-correcto-texto: #dcfce7;
+  --la-color-incorrecto: #fca5a5;
+  --la-color-incorrecto-texto: #fee2e2;
+  --la-color-pista: #fcd34d;
+  --la-color-pista-texto: #fef3c7;
+  --la-color-seleccionado: #7dd3fc;
+  --la-color-seleccionado-texto: #e0f2fe;
+  --la-color-bloqueado: #94a3b8;
+  --la-color-bloqueado-texto: #e2e8f0;
+  --la-radio-sm: 0.25rem;
+  --la-radio-md: 0.375rem;
+  --la-radio-lg: 0.5rem;
+  --la-radio-xl: 0.75rem;
+  --la-elevacion-1: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+  --la-elevacion-2: 0 8px 24px rgb(0 0 0 / 0.45);
+}

@@ -1,13 +1,22 @@
+/**
+ * Viewers del Quiz sobre el `ActivityShell` (U9d.6a): una pregunta y multipregunta autónoma (A1).
+ * El shell aporta tokens/estilo, sonido, el reloj (si el docente fija un límite) y el anuncio de fin;
+ * lo que sale hacia `@lumina/scoring` NO cambió: `id` o `[ids]` para una pregunta y UNA vez
+ * `{ answers }` al finalizar la multipregunta, por `onResponse` (canal unificado, DU2).
+ * SYNCED (`QuizSyncedViewer`) no pasa por el shell: lo maneja el servidor por sockets.
+ */
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Socket } from 'socket.io-client';
 
 import type { QuizMultiple } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { cn } from '@lumina/ui/lib/utils';
-import { useSound } from '@lumina/editor-shared/use-sound';
 
+import { useActivityFeedback } from '../../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../../_shared/activity-shell.js';
 import { QuizQuestionAccentBar, QuizQuestionWithOptions, isTwoColumnLayout, resolveQuizLayoutVariant } from './quiz-option-layouts.js';
 import { useQuizNavigation } from './use-quiz-navigation.js';
 import { QuizSyncedViewer } from './quiz-synced-viewer.js';
@@ -23,6 +32,7 @@ import {
   quizFeedbackMessage,
   type QuizAnswersMap,
 } from './quiz-utils.js';
+import styles from './quiz.module.css';
 
 export interface QuizMultipleViewerProps {
   activity: QuizMultiple;
@@ -36,7 +46,7 @@ export interface QuizMultipleViewerProps {
   studentName?: string;
 }
 
-function QuizShell({
+function QuizTarjeta({
   children,
   variant,
   accentIndex,
@@ -47,96 +57,100 @@ function QuizShell({
   accentIndex?: number;
   showAccent?: boolean;
 }) {
-  const isDark = variant === 'dark';
   return (
-    <div
-      className={cn(
-        'overflow-hidden rounded-xl shadow-lumina-xs',
-        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
-      )}
-    >
-      {showAccent && typeof accentIndex === 'number' ? (
-        <QuizQuestionAccentBar index={accentIndex} />
-      ) : null}
-      <div className="space-y-4 p-6">{children}</div>
+    <div className={cn(styles.tarjeta, variant === 'dark' ? styles.oscuro : styles.claro)}>
+      {showAccent && typeof accentIndex === 'number' ? <QuizQuestionAccentBar index={accentIndex} /> : null}
+      <div className={styles.cuerpo}>{children}</div>
     </div>
   );
 }
 
+/** Mensaje de retroalimentación (y explicación) de una pregunta ya contestada. */
+function Veredicto({ pregunta, correcta }: { pregunta: ReturnType<typeof firstPregunta>; correcta: boolean }) {
+  const fb = pregunta.retroalimentacion;
+  return (
+    <div role="status" className={cn(styles.veredicto, correcta ? styles.veredictoBien : styles.veredictoMal)}>
+      {quizFeedbackMessage(pregunta, correcta)}
+      {fb?.mostrarExplicacion && fb.explicacion ? <p className={styles.explicacion}>{fb.explicacion}</p> : null}
+    </div>
+  );
+}
+
+interface CuerpoUnoProps {
+  activity: QuizMultiple;
+  editorSyncKey?: string;
+  variant: 'dark' | 'light';
+  ctx: ActivityShellContext;
+  responder: (r: unknown) => void;
+}
+
 /** Flujo legacy N=1 — respuesta inmediata al seleccionar o al pulsar Enviar. */
-function QuizSingleQuestionViewer({
-  activity,
-  editorSyncKey,
-  onResponse,
-  variant = 'light',
-}: QuizMultipleViewerProps) {
-  const normalized = useMemo(() => prepareQuizActivity(activity), [activity]);
-  const pregunta = firstPregunta(normalized);
+function CuerpoUnaPregunta({ activity, editorSyncKey, variant, ctx, responder }: CuerpoUnoProps) {
+  const pregunta = firstPregunta(activity);
   const sessionKey = editorSyncKey ?? 'quiz-single';
   const opciones = useMemo(
-    () => orderQuizOpciones(pregunta, normalized.shuffleOptions, sessionKey),
-    [pregunta, normalized.shuffleOptions, sessionKey],
+    () => orderQuizOpciones(pregunta, activity.shuffleOptions, sessionKey),
+    [pregunta, activity.shuffleOptions, sessionKey],
   );
-  const layoutVariant = resolveQuizLayoutVariant(normalized.layoutVariant);
+  const layoutVariant = resolveQuizLayoutVariant(activity.layoutVariant);
   const correctIds = useMemo(() => getCorrectIds(pregunta), [pregunta]);
   const isMulti = isMultiSelectPregunta(pregunta);
   const hasDefinedCorrect = correctIds.length > 0;
+  const jugando = ctx.sesion.fase === 'jugando';
+  const sinTiempo = ctx.sesion.motivoFin === 'sin_tiempo';
+  const { completar } = ctx;
+  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [phase, setPhase] = useState<'selecting' | 'feedback'>('selecting');
-  const { play } = useSound();
+  const emitida = useRef(false);
 
+  // Tiempo agotado sin haber contestado: sale una respuesta vacía, una vez.
   useEffect(() => {
-    setSelectedIds([]);
-    setPhase('selecting');
-  }, [editorSyncKey]);
+    if (!sinTiempo || emitida.current) return;
+    emitida.current = true;
+    responder([]);
+  }, [sinTiempo, responder]);
 
   const questionCorrect =
-    phase === 'feedback' && hasDefinedCorrect
-      ? isPreguntaSelectionCorrect(pregunta, selectedIds)
-      : null;
+    phase === 'feedback' && hasDefinedCorrect ? isPreguntaSelectionCorrect(pregunta, selectedIds) : null;
 
-  const submitMulti = useCallback(() => {
-    if (selectedIds.length === 0 || phase === 'feedback') return;
+  const sonar = useCallback(
+    (ids: string[]) => {
+      if (hasDefinedCorrect) feedback.emitir(isPreguntaSelectionCorrect(pregunta, ids) ? 'acierto' : 'error', { movimiento: false });
+      else feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
+    },
+    [hasDefinedCorrect, feedback, pregunta],
+  );
+
+  const submitMulti = () => {
+    if (selectedIds.length === 0 || phase === 'feedback' || !jugando) return;
+    emitida.current = true;
     setPhase('feedback');
-    if (hasDefinedCorrect) {
-      play(isPreguntaSelectionCorrect(pregunta, selectedIds) ? 'correct' : 'wrong');
-    } else {
-      play('submit');
-    }
-    onResponse?.([...selectedIds]);
-  }, [selectedIds, phase, hasDefinedCorrect, play, pregunta, onResponse]);
+    sonar(selectedIds);
+    responder([...selectedIds]);
+    completar();
+  };
 
-  const selectSingle = useCallback(
-    (id: string) => {
-      if (phase === 'feedback') return;
-      const ids = [id];
-      setSelectedIds(ids);
-      setPhase('feedback');
-      if (hasDefinedCorrect) {
-        play(isPreguntaSelectionCorrect(pregunta, ids) ? 'correct' : 'wrong');
-      } else {
-        play('submit');
-      }
-      onResponse?.(id);
-    },
-    [phase, hasDefinedCorrect, play, pregunta, onResponse],
-  );
+  const selectSingle = (id: string) => {
+    if (phase === 'feedback' || !jugando) return;
+    emitida.current = true;
+    setSelectedIds([id]);
+    setPhase('feedback');
+    sonar([id]);
+    responder(id);
+    completar();
+  };
 
-  const toggle = useCallback(
-    (id: string) => {
-      if (phase === 'feedback') return;
-      setSelectedIds((prev) =>
-        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-      );
-    },
-    [phase],
-  );
+  const toggle = (id: string) => {
+    if (phase === 'feedback' || !jugando) return;
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   const showAccent = layoutVariant === 'classic-list' && !isTwoColumnLayout(layoutVariant);
 
   const multiHint = isMulti ? (
-    <p className={cn('text-xs', variant === 'dark' ? 'text-white/70' : 'text-[#6b7280]')}>
+    <p className={styles.pista}>
       {pregunta.multipleRespuesta
         ? 'Selecciona las opciones correctas y envía.'
         : 'Varias respuestas correctas: marca todas las que apliquen y envía.'}
@@ -145,32 +159,15 @@ function QuizSingleQuestionViewer({
 
   const multiFooter =
     isMulti && phase === 'selecting' ? (
-      <Button
-        type="button"
-        size="sm"
-        onClick={submitMulti}
-        disabled={selectedIds.length === 0}
-        className="w-full sm:w-auto"
-      >
+      <Button type="button" size="sm" onClick={submitMulti} disabled={selectedIds.length === 0 || !jugando} className="w-full sm:w-auto">
         Enviar respuesta
       </Button>
     ) : phase === 'feedback' && hasDefinedCorrect ? (
-      <div
-        className={cn(
-          'rounded-md px-3 py-2 text-sm',
-          questionCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800',
-        )}
-      >
-        {quizFeedbackMessage(pregunta, questionCorrect === true)}
-        {pregunta.retroalimentacion?.mostrarExplicacion &&
-        pregunta.retroalimentacion.explicacion ? (
-          <p className="mt-1 text-xs opacity-80">{pregunta.retroalimentacion.explicacion}</p>
-        ) : null}
-      </div>
+      <Veredicto pregunta={pregunta} correcta={questionCorrect === true} />
     ) : null;
 
   return (
-    <QuizShell variant={variant} accentIndex={0} showAccent={showAccent}>
+    <QuizTarjeta variant={variant} accentIndex={0} showAccent={showAccent}>
       <QuizQuestionWithOptions
         layoutVariant={layoutVariant}
         preguntaTexto={pregunta.texto}
@@ -185,52 +182,45 @@ function QuizSingleQuestionViewer({
         hasDefinedCorrect={hasDefinedCorrect}
         questionCorrect={questionCorrect}
         isMultiSelect={isMulti}
-        disabled={phase === 'feedback'}
+        disabled={phase === 'feedback' || !jugando}
         onToggle={toggle}
         onSelectSingle={selectSingle}
       />
-    </QuizShell>
+      {sinTiempo && phase !== 'feedback' && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </QuizTarjeta>
   );
 }
 
 /** Flujo A1 multipregunta — avance unidireccional; envío final con `{ answers }`. */
-function QuizMultiQuestionViewer({
-  activity,
-  editorSyncKey,
-  onResponse,
-  variant = 'light',
-}: QuizMultipleViewerProps) {
-  const normalized = useMemo(() => prepareQuizActivity(activity), [activity]);
+function CuerpoMultipregunta({ activity, editorSyncKey, variant, ctx, responder }: CuerpoUnoProps) {
   const sessionKey = editorSyncKey ?? 'quiz-multi';
-  const preguntas = useMemo(
-    () => orderQuizPreguntas(normalized, sessionKey),
-    [normalized, sessionKey],
-  );
+  const preguntas = useMemo(() => orderQuizPreguntas(activity, sessionKey), [activity, sessionKey]);
   const nav = useQuizNavigation(preguntas.length, sessionKey);
-  const layoutVariant = resolveQuizLayoutVariant(normalized.layoutVariant);
-  const { play } = useSound();
+  const layoutVariant = resolveQuizLayoutVariant(activity.layoutVariant);
+  const jugando = ctx.sesion.fase === 'jugando';
+  const sinTiempo = ctx.sesion.motivoFin === 'sin_tiempo';
+  const { completar } = ctx;
+  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido });
 
   const [answersMap, setAnswersMap] = useState<QuizAnswersMap>({});
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [phase, setPhase] = useState<'selecting' | 'feedback'>('selecting');
+  const emitida = useRef(false);
 
   const currentPregunta = preguntas[nav.currentIndex];
   const opciones = useMemo(
     () =>
       currentPregunta
-        ? orderQuizOpciones(
-            currentPregunta,
-            normalized.shuffleOptions,
-            `${sessionKey}:${nav.currentIndex}`,
-          )
+        ? orderQuizOpciones(currentPregunta, activity.shuffleOptions, `${sessionKey}:${nav.currentIndex}`)
         : [],
-    [currentPregunta, normalized.shuffleOptions, sessionKey, nav.currentIndex],
+    [currentPregunta, activity.shuffleOptions, sessionKey, nav.currentIndex],
   );
 
-  const correctIds = useMemo(
-    () => (currentPregunta ? getCorrectIds(currentPregunta) : []),
-    [currentPregunta],
-  );
+  const correctIds = useMemo(() => (currentPregunta ? getCorrectIds(currentPregunta) : []), [currentPregunta]);
   const isMulti = currentPregunta ? isMultiSelectPregunta(currentPregunta) : false;
   const hasDefinedCorrect = correctIds.length > 0;
 
@@ -241,75 +231,69 @@ function QuizMultiQuestionViewer({
 
   useEffect(() => {
     setAnswersMap({});
+    emitida.current = false;
   }, [sessionKey]);
 
+  // Tiempo agotado: sale lo contestado hasta ahora, una vez.
+  const answersRef = useRef(answersMap);
+  useEffect(() => {
+    answersRef.current = answersMap;
+  });
+  useEffect(() => {
+    if (!sinTiempo || emitida.current) return;
+    emitida.current = true;
+    responder(buildQuizAnswersPayload(answersRef.current));
+  }, [sinTiempo, responder]);
+
   const questionCorrect =
-    phase === 'feedback' && hasDefinedCorrect
+    phase === 'feedback' && hasDefinedCorrect && currentPregunta
       ? isPreguntaSelectionCorrect(currentPregunta, selectedIds)
       : null;
 
-  const goToFeedback = useCallback(
-    (ids: string[]) => {
-      if (!currentPregunta) return;
-      setSelectedIds(ids);
-      setAnswersMap((prev) => ({ ...prev, [currentPregunta.id]: ids }));
-      setPhase('feedback');
-      if (hasDefinedCorrect) {
-        play(isPreguntaSelectionCorrect(currentPregunta, ids) ? 'correct' : 'wrong');
-      } else {
-        play('submit');
-      }
-    },
-    [currentPregunta, hasDefinedCorrect, play],
-  );
+  const goToFeedback = (ids: string[]) => {
+    if (!currentPregunta) return;
+    setSelectedIds(ids);
+    setAnswersMap((prev) => ({ ...prev, [currentPregunta.id]: ids }));
+    setPhase('feedback');
+    if (hasDefinedCorrect) feedback.emitir(isPreguntaSelectionCorrect(currentPregunta, ids) ? 'acierto' : 'error', { movimiento: false });
+    else feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
+  };
 
-  const confirmMulti = useCallback(() => {
-    if (selectedIds.length === 0 || phase === 'feedback') return;
+  const confirmMulti = () => {
+    if (selectedIds.length === 0 || phase === 'feedback' || !jugando) return;
     goToFeedback([...selectedIds]);
-  }, [selectedIds, phase, goToFeedback]);
+  };
 
-  const selectSingle = useCallback(
-    (id: string) => {
-      if (phase === 'feedback') return;
-      goToFeedback([id]);
-    },
-    [phase, goToFeedback],
-  );
+  const selectSingle = (id: string) => {
+    if (phase === 'feedback' || !jugando) return;
+    goToFeedback([id]);
+  };
 
-  const toggle = useCallback(
-    (id: string) => {
-      if (phase === 'feedback') return;
-      setSelectedIds((prev) =>
-        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-      );
-    },
-    [phase],
-  );
+  const toggle = (id: string) => {
+    if (phase === 'feedback' || !jugando) return;
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
-  const finishQuiz = useCallback(() => {
-    onResponse?.(buildQuizAnswersPayload(answersMap));
+  const finishQuiz = () => {
+    emitida.current = true;
+    responder(buildQuizAnswersPayload(answersMap));
     nav.complete();
-    play('submit');
-  }, [answersMap, nav, onResponse, play]);
+    feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
+    completar();
+  };
 
-  const handleNext = useCallback(() => {
-    if (nav.isLast) {
-      finishQuiz();
-    } else {
-      nav.goNext();
-    }
-  }, [nav, finishQuiz]);
+  const handleNext = () => {
+    if (!jugando) return;
+    if (nav.isLast) finishQuiz();
+    else nav.goNext();
+  };
 
   if (nav.completed) {
     return (
-      <QuizShell variant={variant}>
-        <p className={cn('text-center text-sm font-medium', variant === 'dark' ? 'text-white' : 'text-[#111827]')}>
-          Has completado el quiz
-        </p>
-        <p className={cn('text-center text-xs', variant === 'dark' ? 'text-white/70' : 'text-[#6b7280]')}>
-          {preguntas.length} preguntas respondidas
-        </p>
-      </QuizShell>
+      <QuizTarjeta variant={variant}>
+        <p className={styles.centro}>Has completado el quiz</p>
+        <p className={styles.centroSuave}>{preguntas.length} preguntas respondidas</p>
+      </QuizTarjeta>
     );
   }
 
@@ -317,44 +301,19 @@ function QuizMultiQuestionViewer({
 
   const showAccent = layoutVariant === 'classic-list' && !isTwoColumnLayout(layoutVariant);
 
-  const multiHint = isMulti ? (
-    <p className={cn('text-xs', variant === 'dark' ? 'text-white/70' : 'text-[#6b7280]')}>
-      Selecciona todas las opciones correctas y confirma.
-    </p>
-  ) : null;
+  const multiHint = isMulti ? <p className={styles.pista}>Selecciona todas las opciones correctas y confirma.</p> : null;
 
   const multiFooter = (
     <>
       {isMulti && phase === 'selecting' ? (
-        <Button
-          type="button"
-          size="sm"
-          onClick={confirmMulti}
-          disabled={selectedIds.length === 0}
-          className="w-full sm:w-auto"
-        >
+        <Button type="button" size="sm" onClick={confirmMulti} disabled={selectedIds.length === 0 || !jugando} className="w-full sm:w-auto">
           Confirmar respuesta
         </Button>
       ) : null}
       {phase === 'feedback' ? (
         <>
-          {hasDefinedCorrect ? (
-            <div
-              className={cn(
-                'rounded-md px-3 py-2 text-sm',
-                questionCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800',
-              )}
-            >
-              {quizFeedbackMessage(currentPregunta, questionCorrect === true)}
-              {currentPregunta.retroalimentacion?.mostrarExplicacion &&
-              currentPregunta.retroalimentacion.explicacion ? (
-                <p className="mt-1 text-xs opacity-80">
-                  {currentPregunta.retroalimentacion.explicacion}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          <Button type="button" size="sm" onClick={handleNext} className="w-full sm:w-auto">
+          {hasDefinedCorrect ? <Veredicto pregunta={currentPregunta} correcta={questionCorrect === true} /> : null}
+          <Button type="button" size="sm" onClick={handleNext} disabled={!jugando} className="w-full sm:w-auto">
             {nav.isLast ? 'Finalizar quiz' : 'Siguiente pregunta'}
           </Button>
         </>
@@ -363,27 +322,13 @@ function QuizMultiQuestionViewer({
   );
 
   return (
-    <QuizShell variant={variant} accentIndex={nav.currentIndex} showAccent={showAccent}>
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <span
-          className={cn(
-            'text-xs font-medium tabular-nums',
-            variant === 'dark' ? 'text-white/70' : 'text-[#6b7280]',
-          )}
-        >
+    <QuizTarjeta variant={variant} accentIndex={nav.currentIndex} showAccent={showAccent}>
+      <div className={styles.cabecera}>
+        <span className={styles.progresoTexto}>
           Pregunta {nav.progressCurrent} de {nav.total}
         </span>
-        <div
-          className={cn(
-            'h-1.5 max-w-[8rem] flex-1 overflow-hidden rounded-full',
-            variant === 'dark' ? 'bg-white/20' : 'bg-[#e5e7eb]',
-          )}
-          aria-hidden
-        >
-          <div
-            className="h-full rounded-full bg-[#2563EB] transition-all duration-300"
-            style={{ width: `${(nav.progressCurrent / nav.total) * 100}%` }}
-          />
+        <div className={styles.progresoPista} aria-hidden>
+          <div className={styles.progresoRelleno} style={{ width: `${(nav.progressCurrent / nav.total) * 100}%` }} />
         </div>
       </div>
 
@@ -401,11 +346,48 @@ function QuizMultiQuestionViewer({
         hasDefinedCorrect={hasDefinedCorrect}
         questionCorrect={questionCorrect}
         isMultiSelect={isMulti}
-        disabled={phase === 'feedback'}
+        disabled={phase === 'feedback' || !jugando}
         onToggle={toggle}
         onSelectSingle={selectSingle}
       />
-    </QuizShell>
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </QuizTarjeta>
+  );
+}
+
+/** Envuelve un flujo autónomo en el shell: sin resultado en diálogo (el feedback es en el lugar). */
+function QuizAutonomo({ props, normalized }: { props: QuizMultipleViewerProps; normalized: QuizMultiple }) {
+  const ajustes = useMemo(() => normalizarAjustes(normalized), [normalized]);
+  // Se contesta una sola vez (como siempre): no se ofrece «Reintentar».
+  const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes]);
+  const { onResponse, editorSyncKey, variant = 'light' } = props;
+  const salida = useRef(onResponse);
+  useEffect(() => {
+    salida.current = onResponse;
+  }, [onResponse]);
+  const responder = useCallback((r: unknown) => salida.current?.(r), []);
+  const total = normalized.preguntas.length;
+
+  return (
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'quiz'}
+      ajustes={ajustesShell}
+      resultado="ninguno"
+      className={styles.shell}
+    >
+      {(ctx) =>
+        total <= 1 ? (
+          <CuerpoUnaPregunta activity={normalized} editorSyncKey={editorSyncKey} variant={variant} ctx={ctx} responder={responder} />
+        ) : (
+          <CuerpoMultipregunta activity={normalized} editorSyncKey={editorSyncKey} variant={variant} ctx={ctx} responder={responder} />
+        )
+      }
+    </ActivityShell>
   );
 }
 
@@ -427,11 +409,5 @@ export function QuizMultipleViewer(props: QuizMultipleViewerProps) {
     );
   }
 
-  const total = normalized.preguntas.length;
-
-  if (total <= 1) {
-    return <QuizSingleQuestionViewer {...props} activity={normalized} />;
-  }
-
-  return <QuizMultiQuestionViewer {...props} activity={normalized} />;
+  return <QuizAutonomo props={props} normalized={normalized} />;
 }

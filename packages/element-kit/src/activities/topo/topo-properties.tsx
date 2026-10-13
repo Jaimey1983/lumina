@@ -1,5 +1,6 @@
 'use client'
 
+import { laVar } from '../_shared/activity-tokens.js'
 import React, { useCallback } from 'react'
 import { TopoActivity, TopoPregunta } from '@lumina/types/slide'
 import { generarIdTopo, TOPO_MAX_PREGUNTAS, TOPO_MIN_PREGUNTAS } from './topo-config.js'
@@ -116,7 +117,8 @@ export function TopoProperties({ actividad, onChange }: TopoPropertiesProps) {
           <button
             onClick={addPregunta}
             disabled={preguntas.length >= TOPO_MAX_PREGUNTAS}
-            className="text-xs px-2 py-1 rounded bg-[#2563EB] text-white disabled:opacity-40"
+            className="text-xs px-2 py-1 rounded text-white disabled:opacity-40"
+            style={{ backgroundColor: laVar('color-seleccionado') }}
           >
             + Añadir
           </button>

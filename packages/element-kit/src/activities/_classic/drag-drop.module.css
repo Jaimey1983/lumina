@@ -1,0 +1,243 @@
+/*
+ * U9b.6 — estilos del viewer de Arrastrar y soltar sobre los tokens `--la-*` del shell.
+ * Dos variantes: `claro` (fondo claro) y `oscuro` (sobre fondo oscuro del slide).
+ */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: var(--la-radio-xl);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.claro {
+  color: var(--la-color-texto);
+  background: color-mix(in srgb, var(--la-color-superficie) 90%, transparent);
+  border: 1px solid var(--la-color-borde);
+}
+
+.oscuro {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.2);
+}
+
+.instruccion {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.herramientas {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.disponibles,
+.zona {
+  padding: 0.75rem;
+  border: 2px dashed var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.disponibles {
+  min-height: 3rem;
+}
+
+.zonaOscura {
+  border-color: rgb(255 255 255 / 0.3);
+}
+
+.zonaActiva {
+  background: var(--la-color-seleccionado-suave);
+  border-color: color-mix(in srgb, var(--la-color-seleccionado) 50%, transparent);
+}
+
+.zona:focus-visible,
+.disponibles:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.zonas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.rotulo {
+  margin: 0 0 0.5rem;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro .rotulo {
+  color: rgb(255 255 255 / 0.7);
+}
+
+.etiquetaZona {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.fichas,
+.fichasZona {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.fichasZona {
+  min-height: 1.5rem;
+}
+
+.ficha {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+}
+
+.ficha:active {
+  cursor: grabbing;
+}
+
+.ficha:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.fichaClara {
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+}
+
+.fichaClara:hover:not(.fichaBloqueada) {
+  background: var(--la-color-seleccionado-suave);
+}
+
+.fichaOscura {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.15);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+.fichaOscura:hover:not(.fichaBloqueada) {
+  background: rgb(255 255 255 / 0.25);
+}
+
+.fichaBloqueada {
+  cursor: default;
+}
+
+.fichaArrastrada {
+  opacity: 0.4;
+}
+
+.fichaElegida {
+  border-color: var(--la-color-seleccionado);
+  box-shadow: 0 0 0 2px var(--la-color-seleccionado);
+}
+
+.asa {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro .asa {
+  color: rgb(255 255 255 / 0.7);
+}
+
+.fantasma {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border: 1px solid var(--la-color-seleccionado);
+  border-radius: var(--la-radio-md);
+  box-shadow: var(--la-elevacion-2);
+}
+
+.vacio {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--la-color-texto-suave);
+  opacity: 0.7;
+}
+
+.oscuro .vacio {
+  color: rgb(255 255 255 / 0.5);
+}
+
+.aviso {
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--la-color-pista-texto);
+  background: var(--la-color-pista-suave);
+  border-radius: var(--la-radio-md);
+}
+
+.enviar {
+  align-self: flex-start;
+  padding: 0.375rem 0.75rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--la-color-superficie);
+  cursor: pointer;
+  background: var(--la-color-seleccionado);
+  border: 0;
+  border-radius: var(--la-radio-md);
+}
+
+.enviar:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.enviar:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.enviada {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+  border-radius: var(--la-radio-md);
+}
+
+.tiempo {
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--la-color-pista-texto);
+  background: var(--la-color-pista-suave);
+  border-radius: var(--la-radio-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disponibles,
+  .zona {
+    transition: none;
+  }
+}

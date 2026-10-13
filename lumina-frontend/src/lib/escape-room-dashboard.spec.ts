@@ -9,7 +9,7 @@ import {
   parseEscapeRoomDashboard,
   type EscapeRoomDashboardPublic,
   type EscapeRoomTeamPublic,
-} from '@/lib/escape-room-live.types';
+} from '@lumina/element-kit/activities/escape-room/escape-room-live.types';
 
 function team(over: Partial<EscapeRoomTeamPublic> = {}): EscapeRoomTeamPublic {
   return {

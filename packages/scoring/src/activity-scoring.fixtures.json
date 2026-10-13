@@ -30,7 +30,12 @@
     "escape_room",
     "balancear_ecuacion",
     "ubicar_elemento",
-    "formular_compuesto"
+    "formular_compuesto",
+    "relacionar_lineas",
+    "problema_pasos",
+    "etiquetar_imagen",
+    "linea_tiempo",
+    "cloze_banco"
   ],
   "notaCases": [
     {
@@ -962,6 +967,1405 @@
         }
       },
       "correctEsperado": false
+    },
+    {
+      "case": "u14_relacionar_perfecto",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "x"
+        },
+        {
+          "leftId": "b",
+          "rightId": "y"
+        }
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 2,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u14_relacionar_una_de_dos",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "x"
+        },
+        {
+          "leftId": "b",
+          "rightId": "z"
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 2,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u14_relacionar_distractor_elegido",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "z"
+        },
+        {
+          "leftId": "b",
+          "rightId": "y"
+        }
+      ],
+      "correctEsperado": false,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u14_relacionar_dos_lineas_desde_una_izquierda",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "x"
+        },
+        {
+          "leftId": "b",
+          "rightId": "y"
+        },
+        {
+          "leftId": "a",
+          "rightId": "z"
+        }
+      ],
+      "correctEsperado": false,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u14_relacionar_sin_lineas",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "Colombia"
+          },
+          {
+            "id": "b",
+            "texto": "Perú"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "Bogotá"
+          },
+          {
+            "id": "y",
+            "texto": "Lima"
+          },
+          {
+            "id": "z",
+            "texto": "Quito"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          },
+          {
+            "izquierdaId": "b",
+            "derechaId": "y"
+          }
+        ]
+      },
+      "respuesta": [],
+      "correctEsperado": false,
+      "detailsEsperados": 2,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u14_relacionar_definicion_sin_relaciones",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "A"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "X"
+          }
+        ],
+        "relaciones": []
+      },
+      "respuesta": [],
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
+    },
+    {
+      "case": "u15_problema_perfecto_algebra_equivalente",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2(x+1)",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3.17",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 3,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u15_problema_perfecto_con_pista_y_costo",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ],
+        "ajustes": {
+          "pistas": {
+            "costoPct": 20
+          }
+        }
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 1
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2x+2",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3,14",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "scoreEsperado": 4.7
+    },
+    {
+      "case": "u15_problema_pistas_sin_costo_no_restan",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 3
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2x+2",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3,14",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u15_problema_pista_con_costo_total",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          }
+        ],
+        "ajustes": {
+          "pistas": {
+            "costoPct": 100
+          }
+        }
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 1
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2x+2",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u15_problema_dos_de_tres",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "x+1",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3,14",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u15_problema_fuera_de_tolerancia",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p2",
+          "respuesta": "2x+2",
+          "pistasUsadas": 0
+        },
+        {
+          "pasoId": "p3",
+          "respuesta": "3,30",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": false,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u15_problema_sin_respuestas",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "p2",
+            "instruccion": "Simplifica",
+            "modo": "algebraico",
+            "respuesta": "2x+2",
+            "pistas": []
+          },
+          {
+            "id": "p3",
+            "instruccion": "Divide",
+            "modo": "numerico",
+            "respuesta": "3,14",
+            "tolerancia": 0.05,
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u15_problema_sin_pasos",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "x",
+        "pasos": []
+      },
+      "respuesta": [],
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
+    },
+    {
+      "case": "u15_problema_solo_pasos_legibles_cuentan",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "Un problema",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "Calcula el área",
+            "modo": "numerico",
+            "respuesta": "12",
+            "pistas": [
+              "Base por altura"
+            ]
+          },
+          {
+            "id": "x",
+            "instruccion": "?",
+            "modo": "numerico",
+            "respuesta": "doce",
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "12",
+          "pistasUsadas": 0
+        }
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 1,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u16_etiquetar_perfecto",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e1"
+        },
+        {
+          "zonaId": "z2",
+          "etiquetaId": "e2"
+        },
+        {
+          "zonaId": "z3",
+          "etiquetaId": "e3"
+        }
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 3,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u16_etiquetar_dos_de_tres",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e1"
+        },
+        {
+          "zonaId": "z2",
+          "etiquetaId": "e2"
+        },
+        {
+          "zonaId": "z3",
+          "etiquetaId": "e4"
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u16_etiquetar_distractor_en_todas",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e4"
+        },
+        {
+          "zonaId": "z2",
+          "etiquetaId": "e4"
+        },
+        {
+          "zonaId": "z3",
+          "etiquetaId": "e4"
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u16_etiquetar_etiquetas_intercambiadas",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e2"
+        },
+        {
+          "zonaId": "z2",
+          "etiquetaId": "e1"
+        },
+        {
+          "zonaId": "z3",
+          "etiquetaId": "e3"
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1.7
+    },
+    {
+      "case": "u16_etiquetar_vacio",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u16_etiquetar_sin_zonas",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "x",
+        "textoAlternativo": "",
+        "zonas": [],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "A"
+          }
+        ]
+      },
+      "respuesta": [],
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
+    },
+    {
+      "case": "u17_linea_perfecta",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "Independencia",
+            "fechaTexto": "1810",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "Constitución",
+            "fechaTexto": "1886",
+            "orden": 2
+          },
+          {
+            "id": "c",
+            "texto": "Guerra de los Mil Días",
+            "fechaTexto": "1899",
+            "orden": 3
+          },
+          {
+            "id": "d",
+            "texto": "Constitución actual",
+            "fechaTexto": "1991",
+            "orden": 4
+          }
+        ],
+        "mostrarFechasAlFinal": true
+      },
+      "respuesta": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 4,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u17_linea_par_intercambiado",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "Independencia",
+            "fechaTexto": "1810",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "Constitución",
+            "fechaTexto": "1886",
+            "orden": 2
+          },
+          {
+            "id": "c",
+            "texto": "Guerra de los Mil Días",
+            "fechaTexto": "1899",
+            "orden": 3
+          },
+          {
+            "id": "d",
+            "texto": "Constitución actual",
+            "fechaTexto": "1991",
+            "orden": 4
+          }
+        ],
+        "mostrarFechasAlFinal": true
+      },
+      "respuesta": [
+        "a",
+        "c",
+        "b",
+        "d"
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 4,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u17_linea_invertida",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "Independencia",
+            "fechaTexto": "1810",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "Constitución",
+            "fechaTexto": "1886",
+            "orden": 2
+          },
+          {
+            "id": "c",
+            "texto": "Guerra de los Mil Días",
+            "fechaTexto": "1899",
+            "orden": 3
+          },
+          {
+            "id": "d",
+            "texto": "Constitución actual",
+            "fechaTexto": "1991",
+            "orden": 4
+          }
+        ],
+        "mostrarFechasAlFinal": true
+      },
+      "respuesta": [
+        "d",
+        "c",
+        "b",
+        "a"
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 4,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u17_linea_vacia",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "Independencia",
+            "fechaTexto": "1810",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "Constitución",
+            "fechaTexto": "1886",
+            "orden": 2
+          },
+          {
+            "id": "c",
+            "texto": "Guerra de los Mil Días",
+            "fechaTexto": "1899",
+            "orden": 3
+          },
+          {
+            "id": "d",
+            "texto": "Constitución actual",
+            "fechaTexto": "1991",
+            "orden": 4
+          }
+        ],
+        "mostrarFechasAlFinal": true
+      },
+      "respuesta": [],
+      "correctEsperado": false,
+      "detailsEsperados": 4,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u17_linea_orden_dado_por_clave_no_por_posicion",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "x",
+            "texto": "Segundo",
+            "fechaTexto": "2",
+            "orden": 2
+          },
+          {
+            "id": "y",
+            "texto": "Primero",
+            "fechaTexto": "1",
+            "orden": 1
+          }
+        ]
+      },
+      "respuesta": [
+        "y",
+        "x"
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 2,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u17_linea_sin_eventos",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": []
+      },
+      "respuesta": [],
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
+    },
+    {
+      "case": "u18_cloze_perfecto",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": "ciudad",
+        "b": "Colombia",
+        "c": "Lima"
+      },
+      "correctEsperado": true,
+      "detailsEsperados": 3,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u18_cloze_dos_de_tres",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": "ciudad",
+        "b": "Colombia",
+        "c": "Quito"
+      },
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u18_cloze_distractor_en_todos",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": "Quito",
+        "b": "Quito",
+        "c": "Quito"
+      },
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u18_cloze_vacio",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {},
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u18_cloze_exacto_distingue_mayusculas",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": "Ciudad",
+        "b": "Colombia",
+        "c": "Lima"
+      },
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u18_cloze_espacios_alrededor_se_ignoran",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": " ciudad ",
+        "b": "Colombia",
+        "c": "Lima"
+      },
+      "correctEsperado": true,
+      "detailsEsperados": 3,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u18_cloze_sin_blancos",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "x",
+        "blancos": [],
+        "distractores": []
+      },
+      "respuesta": {},
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
     }
   ],
   "expectedKinds": {
@@ -970,6 +2374,8 @@
     "completar_blancos": "partial",
     "arrastrar_soltar": "partial",
     "emparejar": "partial",
+    "relacionar_lineas": "partial",
+    "problema_pasos": "partial",
     "ordenar_pasos": "partial",
     "video_interactivo": "partial",
     "short_answer": "manual",
@@ -994,7 +2400,10 @@
     "escape_room": "exclude",
     "balancear_ecuacion": "binary",
     "ubicar_elemento": "partial",
-    "formular_compuesto": "partial"
+    "formular_compuesto": "partial",
+    "etiquetar_imagen": "partial",
+    "linea_tiempo": "partial",
+    "cloze_banco": "partial"
   },
   "contractCases": [
     {
@@ -1490,6 +2899,128 @@
         "answers": {
           "q1": "H2O"
         }
+      }
+    },
+    {
+      "case": "contrato_relacionar_lineas_perfecto",
+      "activityType": "relacionar_lineas",
+      "definicion": {
+        "izquierda": [
+          {
+            "id": "a",
+            "texto": "A"
+          }
+        ],
+        "derecha": [
+          {
+            "id": "x",
+            "texto": "X"
+          }
+        ],
+        "relaciones": [
+          {
+            "izquierdaId": "a",
+            "derechaId": "x"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "leftId": "a",
+          "rightId": "x"
+        }
+      ]
+    },
+    {
+      "case": "contrato_problema_pasos_perfecto",
+      "activityType": "problema_pasos",
+      "definicion": {
+        "enunciado": "E",
+        "pasos": [
+          {
+            "id": "p1",
+            "instruccion": "I",
+            "modo": "numerico",
+            "respuesta": "2",
+            "pistas": []
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "pasoId": "p1",
+          "respuesta": "2",
+          "pistasUsadas": 0
+        }
+      ]
+    },
+    {
+      "case": "contrato_etiquetar_imagen_perfecto",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "x",
+        "textoAlternativo": "a",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e1"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "A"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e1"
+        }
+      ]
+    },
+    {
+      "case": "contrato_linea_tiempo_perfecto",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "A",
+            "fechaTexto": "1",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "B",
+            "fechaTexto": "2",
+            "orden": 2
+          }
+        ]
+      },
+      "respuesta": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "case": "contrato_cloze_banco_perfecto",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "Es {{blank:a}}.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "x"
+          }
+        ],
+        "distractores": []
+      },
+      "respuesta": {
+        "a": "x"
       }
     }
   ]

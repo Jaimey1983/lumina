@@ -1,0 +1,183 @@
+/*
+ * U4 — estilos del viewer de Verdadero/Falso sobre los tokens `--la-*` del shell.
+ * Dos variantes: `claro` (fondo claro) y `oscuro` (sobre fondo oscuro del slide).
+ */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border-radius: var(--la-radio-xl);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.claro {
+  color: var(--la-color-texto);
+  background: color-mix(in srgb, var(--la-color-superficie) 90%, transparent);
+  border: 1px solid var(--la-color-borde);
+}
+
+.oscuro {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.2);
+}
+
+.enunciado {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.opciones {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.envoltura {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.opcion {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0.5rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.opcion:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.opcion:disabled {
+  cursor: default;
+}
+
+.letra {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Reposo */
+.claro .opcionLibre {
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+}
+
+.claro .opcionLibre:hover:not(:disabled) {
+  background: var(--la-color-seleccionado-suave);
+}
+
+.oscuro .opcionLibre {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.15);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+.oscuro .opcionLibre:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.25);
+}
+
+/* Elegida (aún sin calificar, o sin respuesta correcta definida) */
+.opcionElegida {
+  color: var(--la-color-seleccionado-texto);
+  background: var(--la-color-seleccionado-suave);
+  border-color: var(--la-color-seleccionado);
+}
+
+.oscuro .opcionElegida {
+  color: var(--la-color-superficie);
+  background: color-mix(in srgb, var(--la-color-seleccionado) 80%, transparent);
+}
+
+/* Calificada */
+.opcionAcierto {
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+  border-color: var(--la-color-correcto);
+}
+
+.opcionError {
+  color: var(--la-color-incorrecto-texto);
+  background: var(--la-color-incorrecto-suave);
+  border-color: var(--la-color-incorrecto);
+}
+
+.oscuro .opcionAcierto,
+.oscuro .opcionError {
+  color: var(--la-color-superficie);
+}
+
+.opcionApagada {
+  opacity: 0.5;
+}
+
+.opcionSinClave {
+  opacity: 0.4;
+}
+
+.icono {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.iconoAcierto {
+  color: var(--la-color-correcto);
+}
+
+.iconoError {
+  color: var(--la-color-incorrecto);
+}
+
+/* Mensaje de retroalimentación */
+.mensaje {
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+  font-size: 0.875rem;
+  border-radius: var(--la-radio-md);
+}
+
+.mensajeAcierto {
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+}
+
+.mensajeError {
+  color: var(--la-color-incorrecto-texto);
+  background: var(--la-color-incorrecto-suave);
+}
+
+.mensajeTiempo {
+  color: var(--la-color-pista-texto);
+  background: var(--la-color-pista-suave);
+}
+
+.explicacion {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opcion {
+    transition: none;
+  }
+}

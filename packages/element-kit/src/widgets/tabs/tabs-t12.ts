@@ -1,6 +1,6 @@
 import type { Animacion } from '@lumina/types/animation';
 import type { TabsFicha, TabsTransicion, TabsVariante, TabsWidget } from '@lumina/types/widget';
-import type { EntradaVariante } from '../_motion/motion-presets.js';
+import type { EntradaVariante } from '../../_efectos/motion/motion-presets.js';
 
 /**
  * Opciones de T12 (variantes, transición, icono e insignia por ficha): viven en `TabsWidget` de

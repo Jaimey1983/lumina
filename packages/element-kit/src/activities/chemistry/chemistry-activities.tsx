@@ -6,13 +6,16 @@ import type {
   FormularCompuestoActivity,
   UbicarElementoActivity,
 } from '@lumina/types/slide';
-import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
-import { useSound } from '@lumina/editor-shared/use-sound';
+
+import { useActivityFeedback } from '../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import styles from './quimica.module.css';
 import { Minus, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -76,6 +79,82 @@ export function BalancearEcuacionEditor(props: {
   );
 }
 
+function BalancearCuerpo({
+  activity,
+  isDark,
+  ctx,
+  species,
+  coeffs,
+  sent,
+  onBump,
+  onSubmit,
+}: {
+  activity: BalancearEcuacionActivity;
+  isDark: boolean;
+  ctx: ActivityShellContext;
+  species: string[];
+  coeffs: number[];
+  sent: boolean;
+  onBump: (i: number, delta: number) => void;
+  onSubmit: () => void;
+}) {
+  const bloqueado = sent || ctx.sesion.fase !== 'jugando';
+  const sinTiempo = !sent && ctx.sesion.motivoFin === 'sin_tiempo';
+  return (
+    <div className={cn(styles.tarjeta, isDark ? styles.oscuro : styles.claro)}>
+      {activity.instruccion && <p className={styles.instruccion}>{activity.instruccion}</p>}
+      <div className={styles.ecuacion}>
+        {species.map((sp, i) => (
+          <span key={sp + i} className={styles.especie}>
+            <button
+              type="button"
+              className={styles.paso}
+              aria-label={`Quitar uno a ${sp}`}
+              disabled={bloqueado}
+              onClick={() => onBump(i, -1)}
+            >
+              <Minus className="h-3 w-3" aria-hidden />
+            </button>
+            <span className={styles.coeficiente} data-coeficiente>
+              {coeffs[i] ?? 1}
+            </span>
+            <button
+              type="button"
+              className={styles.paso}
+              aria-label={`Sumar uno a ${sp}`}
+              disabled={bloqueado}
+              onClick={() => onBump(i, 1)}
+            >
+              <Plus className="h-3 w-3" aria-hidden />
+            </button>
+            <span>{sp}</span>
+            {i < species.length - 1 && <span className={styles.mas}>+</span>}
+          </span>
+        ))}
+      </div>
+      {sent ? (
+        <p role="status" className={styles.enviada}>
+          Respuesta enviada.
+        </p>
+      ) : (
+        <button
+          type="button"
+          className={styles.enviar}
+          onClick={onSubmit}
+          disabled={bloqueado || coeffs.some((c) => c <= 0)}
+        >
+          Enviar coeficientes
+        </button>
+      )}
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function BalancearEcuacionViewer({
   activity,
   editorSyncKey,
@@ -100,8 +179,8 @@ export function BalancearEcuacionViewer({
   }, [parsed]);
   const [coeffs, setCoeffs] = useState<number[]>(() => species.map(() => 1));
   const [sent, setSent] = useState(false);
-  const { play } = useSound();
-  const isDark = variant === 'dark';
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
   useEffect(() => {
     setCoeffs(species.map(() => 1));
@@ -116,50 +195,39 @@ export function BalancearEcuacionViewer({
     });
   };
 
-  const submit = () => {
-    if (sent || coeffs.some((c) => c <= 0)) return;
+  const submit = (ctx: ActivityShellContext) => {
+    if (sent || ctx.sesion.fase !== 'jugando' || coeffs.some((c) => c <= 0)) return;
     setSent(true);
-    play('submit');
+    // La nota la da `@lumina/scoring`: acá solo el sonido de envío.
+    feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
     onResponse?.({ coefficients: coeffs });
+    ctx.completar();
   };
 
   if (!parsed) {
-    return (
-      <p className="text-sm text-red-600">La ecuación del docente no es válida.</p>
-    );
+    return <p className={styles.error}>La ecuación del docente no es válida.</p>;
   }
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-4 rounded-xl p-4',
-        isDark ? 'text-white' : 'border border-[#e5e7eb] bg-white',
-      )}
+    <ActivityShell
+      // Cambiar de slide o de ecuación reinicia también la sesión del shell.
+      key={`${editorSyncKey ?? 'be'}|${activity.ecuacion}`}
+      ajustes={ajustes}
+      resultado="ninguno"
     >
-      {activity.instruccion && <p className="text-sm font-medium">{activity.instruccion}</p>}
-      <div className="flex flex-wrap items-center gap-2 font-mono text-base">
-        {species.map((sp, i) => (
-          <span key={sp + i} className="inline-flex items-center gap-1 rounded-md border px-2 py-1">
-            <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => bump(i, -1)}>
-              <Minus className="h-3 w-3" />
-            </Button>
-            <span className="min-w-[1.5rem] text-center font-semibold">{coeffs[i] ?? 1}</span>
-            <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => bump(i, 1)}>
-              <Plus className="h-3 w-3" />
-            </Button>
-            <span>{sp}</span>
-            {i < species.length - 1 && <span className="text-[#9ca3af]">+</span>}
-          </span>
-        ))}
-      </div>
-      {sent ? (
-        <p className="text-sm text-green-700">Respuesta enviada.</p>
-      ) : (
-        <Button type="button" onClick={submit} disabled={coeffs.some((c) => c <= 0)}>
-          Enviar coeficientes
-        </Button>
+      {(ctx) => (
+        <BalancearCuerpo
+          activity={activity}
+          isDark={variant === 'dark'}
+          ctx={ctx}
+          species={species}
+          coeffs={coeffs}
+          sent={sent}
+          onBump={bump}
+          onSubmit={() => submit(ctx)}
+        />
       )}
-    </div>
+    </ActivityShell>
   );
 }
 
@@ -238,6 +306,71 @@ export function UbicarElementoEditor(props: {
   );
 }
 
+type Ubicaciones = Record<string, { periodo: number; grupo: number }>;
+
+function UbicarCuerpo({
+  activity,
+  ctx,
+  answers,
+  sent,
+  onAnswer,
+  onSubmit,
+}: {
+  activity: UbicarElementoActivity;
+  ctx: ActivityShellContext;
+  answers: Ubicaciones;
+  sent: boolean;
+  onAnswer: (id: string, campo: 'periodo' | 'grupo', valor: number) => void;
+  onSubmit: () => void;
+}) {
+  const bloqueado = sent || ctx.sesion.fase !== 'jugando';
+  const sinTiempo = !sent && ctx.sesion.motivoFin === 'sin_tiempo';
+  return (
+    <div className={cn(styles.tarjeta, styles.claro)}>
+      {activity.instruccion && <p className={styles.instruccion}>{activity.instruccion}</p>}
+      {activity.elementos.map((el) => (
+        <div key={el.id} className={styles.ubicacion}>
+          <span className={styles.simbolo}>{el.symbol}</span>
+          <Input
+            type="number"
+            min={1}
+            max={7}
+            placeholder="Periodo"
+            aria-label={`Periodo de ${el.symbol}`}
+            disabled={bloqueado}
+            value={answers[el.id]?.periodo ?? ''}
+            onChange={(e) => onAnswer(el.id, 'periodo', Number(e.target.value))}
+          />
+          <Input
+            type="number"
+            min={1}
+            max={18}
+            placeholder="Grupo"
+            aria-label={`Grupo de ${el.symbol}`}
+            disabled={bloqueado}
+            value={answers[el.id]?.grupo ?? ''}
+            onChange={(e) => onAnswer(el.id, 'grupo', Number(e.target.value))}
+          />
+        </div>
+      ))}
+      {sent ? (
+        <p role="status" className={styles.enviada}>
+          Respuesta enviada.
+        </p>
+      ) : (
+        <button type="button" className={styles.enviar} disabled={bloqueado} onClick={onSubmit}>
+          Enviar ubicaciones
+        </button>
+      )}
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function UbicarElementoViewer({
   activity,
   editorSyncKey,
@@ -247,69 +380,53 @@ export function UbicarElementoViewer({
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
 }) {
-  const [answers, setAnswers] = useState<Record<string, { periodo: number; grupo: number }>>({});
+  const [answers, setAnswers] = useState<Ubicaciones>({});
   const [sent, setSent] = useState(false);
-  const { play } = useSound();
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
   useEffect(() => {
     setAnswers({});
     setSent(false);
   }, [editorSyncKey]);
 
-  const submit = () => {
-    if (sent) return;
+  const submit = (ctx: ActivityShellContext) => {
+    if (sent || ctx.sesion.fase !== 'jugando') return;
     setSent(true);
-    play('submit');
+    // La nota la da `@lumina/scoring`: acá solo el sonido de envío.
+    feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
     const placements = activity.elementos.map((el) => ({
       id: el.id,
       periodo: answers[el.id]?.periodo ?? 0,
       grupo: answers[el.id]?.grupo ?? 0,
     }));
     onResponse?.({ placements });
+    ctx.completar();
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[#e5e7eb] bg-white p-4">
-      {activity.instruccion && <p className="text-sm font-medium">{activity.instruccion}</p>}
-      {activity.elementos.map((el) => (
-        <div key={el.id} className="grid grid-cols-3 items-center gap-2 text-sm">
-          <span className="font-semibold">{el.symbol}</span>
-          <Input
-            type="number"
-            min={1}
-            max={7}
-            placeholder="Periodo"
-            disabled={sent}
-            value={answers[el.id]?.periodo ?? ''}
-            onChange={(e) =>
-              setAnswers((a) => ({
-                ...a,
-                [el.id]: { periodo: Number(e.target.value), grupo: a[el.id]?.grupo ?? 0 },
-              }))
-            }
-          />
-          <Input
-            type="number"
-            min={1}
-            max={18}
-            placeholder="Grupo"
-            disabled={sent}
-            value={answers[el.id]?.grupo ?? ''}
-            onChange={(e) =>
-              setAnswers((a) => ({
-                ...a,
-                [el.id]: { periodo: a[el.id]?.periodo ?? 0, grupo: Number(e.target.value) },
-              }))
-            }
-          />
-        </div>
-      ))}
-      {sent ? (
-        <p className="text-sm text-green-700">Respuesta enviada.</p>
-      ) : (
-        <Button type="button" onClick={submit}>Enviar ubicaciones</Button>
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'ue'}
+      ajustes={ajustes}
+      resultado="ninguno"
+    >
+      {(ctx) => (
+        <UbicarCuerpo
+          activity={activity}
+          ctx={ctx}
+          answers={answers}
+          sent={sent}
+          onAnswer={(id, campo, valor) =>
+            setAnswers((a) => ({
+              ...a,
+              [id]: { periodo: a[id]?.periodo ?? 0, grupo: a[id]?.grupo ?? 0, [campo]: valor },
+            }))
+          }
+          onSubmit={() => submit(ctx)}
+        />
       )}
-    </div>
+    </ActivityShell>
   );
 }
 
@@ -374,6 +491,56 @@ export function FormularCompuestoEditor(props: {
   );
 }
 
+function FormularCuerpo({
+  activity,
+  ctx,
+  answers,
+  sent,
+  onAnswer,
+  onSubmit,
+}: {
+  activity: FormularCompuestoActivity;
+  ctx: ActivityShellContext;
+  answers: Record<string, string>;
+  sent: boolean;
+  onAnswer: (id: string, valor: string) => void;
+  onSubmit: () => void;
+}) {
+  const bloqueado = sent || ctx.sesion.fase !== 'jugando';
+  const sinTiempo = !sent && ctx.sesion.motivoFin === 'sin_tiempo';
+  return (
+    <div className={cn(styles.tarjeta, styles.claro)}>
+      {activity.instruccion && <p className={styles.instruccion}>{activity.instruccion}</p>}
+      {activity.preguntas.map((q) => (
+        <div key={q.id} className={styles.pregunta}>
+          <Label htmlFor={`fc-${q.id}`}>{q.enunciado}</Label>
+          <Input
+            id={`fc-${q.id}`}
+            disabled={bloqueado}
+            value={answers[q.id] ?? ''}
+            onChange={(e) => onAnswer(q.id, e.target.value)}
+            placeholder="Fórmula"
+          />
+        </div>
+      ))}
+      {sent ? (
+        <p role="status" className={styles.enviada}>
+          Respuesta enviada.
+        </p>
+      ) : (
+        <button type="button" className={styles.enviar} disabled={bloqueado} onClick={onSubmit}>
+          Enviar fórmulas
+        </button>
+      )}
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function FormularCompuestoViewer({
   activity,
   editorSyncKey,
@@ -385,39 +552,40 @@ export function FormularCompuestoViewer({
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [sent, setSent] = useState(false);
-  const { play } = useSound();
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
   useEffect(() => {
     setAnswers({});
     setSent(false);
   }, [editorSyncKey]);
 
-  const submit = () => {
-    if (sent) return;
+  const submit = (ctx: ActivityShellContext) => {
+    if (sent || ctx.sesion.fase !== 'jugando') return;
     setSent(true);
-    play('submit');
+    // La nota la da `@lumina/scoring`: acá solo el sonido de envío.
+    feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
     onResponse?.({ answers });
+    ctx.completar();
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[#e5e7eb] bg-white p-4">
-      {activity.instruccion && <p className="text-sm font-medium">{activity.instruccion}</p>}
-      {activity.preguntas.map((q) => (
-        <div key={q.id} className="flex flex-col gap-1">
-          <Label>{q.enunciado}</Label>
-          <Input
-            disabled={sent}
-            value={answers[q.id] ?? ''}
-            onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
-            placeholder="Fórmula"
-          />
-        </div>
-      ))}
-      {sent ? (
-        <p className="text-sm text-green-700">Respuesta enviada.</p>
-      ) : (
-        <Button type="button" onClick={submit}>Enviar fórmulas</Button>
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'fc'}
+      ajustes={ajustes}
+      resultado="ninguno"
+    >
+      {(ctx) => (
+        <FormularCuerpo
+          activity={activity}
+          ctx={ctx}
+          answers={answers}
+          sent={sent}
+          onAnswer={(id, valor) => setAnswers((a) => ({ ...a, [id]: valor }))}
+          onSubmit={() => submit(ctx)}
+        />
       )}
-    </div>
+    </ActivityShell>
   );
 }

@@ -23,7 +23,7 @@ export function CrucigramaViewer({
   config,
 }: ElementViewerProps<CrucigramaEstado, CrucigramaConfig>) {
   return (
-    <LegacyCrucigramaViewer actividad={estado} onComplete={config.onComplete} />
+    <LegacyCrucigramaViewer actividad={estado} onResponse={config.onResponse} />
   );
 }
 

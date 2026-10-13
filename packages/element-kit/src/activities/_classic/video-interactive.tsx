@@ -9,8 +9,11 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { normalizeVideoSource } from './video-url-utils.js';
 import { cn } from '@lumina/ui/lib/utils';
-import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
+import { useActivityFeedback } from '../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import styles from './video-interactive.module.css';
 import { useVideoInteractiveRuntime } from './use-video-interactive-runtime.js';
 
 /** Alias descriptivo para props del editor (misma forma que `VideoInteractive`). */
@@ -50,13 +53,13 @@ function EditorView({ actividad }: { actividad: VideoInteractive }) {
   );
   const embedUrl = source.embedUrl;
   return (
-    <div className="space-y-4 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
+    <div className="space-y-4 rounded-lg border border-border bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
         <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-700">
           Video interactivo
         </span>
         {actividad.plataforma && (
-          <span className="text-[10px] capitalize text-[#9ca3af]">
+          <span className="text-[10px] capitalize text-muted-foreground">
             {actividad.plataforma}
           </span>
         )}
@@ -74,26 +77,26 @@ function EditorView({ actividad }: { actividad: VideoInteractive }) {
           />
         </div>
       ) : (
-        <div className="flex items-center gap-2 rounded-md bg-[#f9fafb] px-3 py-2">
-          <span className="truncate text-xs text-[#9ca3af]">{actividad.urlVideo}</span>
+        <div className="flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2">
+          <span className="truncate text-xs text-muted-foreground">{actividad.urlVideo}</span>
         </div>
       )}
 
       {/* Questions list */}
       {actividad.preguntas.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Pausas programadas
           </p>
           {actividad.preguntas.map((q) => (
-            <div key={q.id} className="flex gap-3 rounded-md border border-[#e5e7eb] px-3 py-2">
-              <div className="flex shrink-0 items-center gap-1 text-[10px] tabular-nums text-[#9ca3af]">
+            <div key={q.id} className="flex gap-3 rounded-md border border-border px-3 py-2">
+              <div className="flex shrink-0 items-center gap-1 text-[10px] tabular-nums text-muted-foreground">
                 <Clock className="size-3" />
                 {formatTime(q.tiempoSegundos)}
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs font-medium">{q.pregunta}</p>
-                <p className="text-[10px] text-[#9ca3af]">
+                <p className="text-[10px] text-muted-foreground">
                   {q.opciones.length} opciones
                   {q.pausarVideo && ' · pausa automática'}
                 </p>
@@ -113,15 +116,17 @@ function QuestionOverlay({
   onDismiss,
   onAnswer,
   variant = 'light',
+  sonido,
 }: {
   question: VideoQuestion;
   onDismiss: () => void;
   onAnswer?: (answer: unknown) => void;
   variant?: 'dark' | 'light';
+  sonido: boolean;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean } | null>(null);
-  const { play } = useSound();
+  const señal = useActivityFeedback({ sonido });
 
   const isDark = variant === 'dark';
 
@@ -129,24 +134,21 @@ function QuestionOverlay({
     if (!selected) return;
     const correct = question.opciones.find((o) => o.id === selected)?.esCorrecta ?? false;
     setFeedback({ correct });
-    play('submit');
+    señal.emitir(correct ? 'acierto' : 'error', { movimiento: false });
     onAnswer?.(selected);
   }
 
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="question-overlay">
-      <div
-        className={cn(
-          'w-80 max-w-[90%] space-y-4 rounded-xl border p-5 shadow-2xl',
-          isDark ? 'border-white/20 bg-white/10' : 'border-[#e5e7eb] bg-white/90',
-        )}
-      >
-        <p className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-[#111827]')} data-testid="question-text">{question.pregunta}</p>
+    <div className={styles.fondoPregunta} data-testid="question-overlay">
+      <div className={cn(styles.pregunta, isDark ? styles.oscuro : styles.claro)} role="group" aria-label="Pregunta del video">
+        <p className={styles.enunciado} data-testid="question-text">{question.pregunta}</p>
 
-        <ul className="space-y-2">
+        <ul className={styles.opciones}>
           {question.opciones.map((op) => {
             const isSel = selected === op.id;
             const showRes = !!feedback;
+            // Tras contestar: la elegida se marca bien/mal y la correcta no elegida se revela (como siempre).
+            const revelaCorrecta = showRes && !isSel && op.esCorrecta;
             return (
               <li key={op.id}>
                 <button
@@ -155,45 +157,19 @@ function QuestionOverlay({
                   onClick={() => setSelected(op.id)}
                   data-testid="question-option"
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs transition-colors',
-                    !feedback &&
-                      !isSel &&
-                      (isDark
-                        ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
-                        : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
-                    !feedback &&
-                      isSel &&
-                      (isDark
-                        ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
-                        : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
-                    showRes &&
-                      isSel &&
-                      op.esCorrecta &&
-                      (isDark
-                        ? 'border-green-400 bg-green-500/30 text-green-300'
-                        : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a]'),
-                    showRes &&
-                      isSel &&
-                      !op.esCorrecta &&
-                      (isDark
-                        ? 'border-red-400 bg-red-500/30 text-red-300'
-                        : 'border-[#f87171] bg-[#fee2e2] text-[#f87171]'),
-                    showRes &&
-                      !isSel &&
-                      op.esCorrecta &&
-                      (isDark ? 'border-green-400 bg-green-500/20 text-green-300' : 'border-[#16a34a] bg-[#dcfce7]/80'),
-                    showRes &&
-                      !isSel &&
-                      !op.esCorrecta &&
-                      (isDark ? 'border-white/20 opacity-40' : 'border-[#e5e7eb] opacity-40'),
+                    styles.opcion,
+                    !feedback && isSel && styles.elegida,
+                    showRes && isSel && (op.esCorrecta ? styles.correcta : styles.incorrecta),
+                    revelaCorrecta && styles.correcta,
+                    showRes && !isSel && !revelaCorrecta && styles.apagada,
                   )}
                 >
-                  {showRes && isSel && op.esCorrecta  && <CheckCircle className="size-3.5 shrink-0 text-green-600" />}
-                  {showRes && isSel && !op.esCorrecta && <XCircle className="size-3.5 shrink-0 text-red-500" />}
-                  {(!showRes || (!isSel && !op.esCorrecta)) && (
-                    <Circle className={cn('size-3.5 shrink-0', isSel ? 'text-[#2563EB]' : 'opacity-30')} />
+                  {showRes && isSel && op.esCorrecta && <CheckCircle className={cn(styles.icono, styles.iconoCorrecto)} aria-hidden />}
+                  {showRes && isSel && !op.esCorrecta && <XCircle className={cn(styles.icono, styles.iconoIncorrecto)} aria-hidden />}
+                  {revelaCorrecta && <CheckCircle className={cn(styles.icono, styles.iconoCorrecto)} aria-hidden />}
+                  {(!showRes || (!isSel && !revelaCorrecta)) && (
+                    <Circle className={cn(styles.icono, isSel ? styles.iconoElegido : styles.iconoNeutro)} aria-hidden />
                   )}
-                  {showRes && !isSel && op.esCorrecta && <CheckCircle className="size-3.5 shrink-0 text-green-400 opacity-60" />}
                   {op.texto}
                 </button>
               </li>
@@ -206,15 +182,8 @@ function QuestionOverlay({
             Responder
           </Button>
         ) : (
-          <div className="space-y-2">
-            <p
-              className={cn(
-                'rounded-md px-3 py-1.5 text-xs',
-                feedback.correct
-                  ? 'bg-green-50 text-green-800'
-                  : 'bg-red-50 text-red-800',
-              )}
-            >
+          <div className={styles.acciones}>
+            <p role="status" className={cn(styles.veredicto, feedback.correct ? styles.veredictoBien : styles.veredictoMal)}>
               {feedback.correct ? '¡Correcto!' : 'Incorrecto.'}
             </p>
             <Button size="sm" variant="outline" onClick={onDismiss} className="w-full" data-testid="question-close-button">
@@ -227,19 +196,17 @@ function QuestionOverlay({
   );
 }
 
-// ─── Viewer ───────────────────────────────────────────────────────────────────
+// ─── Viewer (sobre el ActivityShell, U9d.5) ───────────────────────────────────────
 
-function ViewerView({
-  actividad,
-  editorSyncKey,
-  onResponse,
-  variant = 'light',
-}: {
+interface CuerpoVideoProps {
   actividad: VideoInteractive;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
-  variant?: 'dark' | 'light';
-}) {
+  variant: 'dark' | 'light';
+  ctx: ActivityShellContext;
+}
+
+function CuerpoVideo({ actividad, editorSyncKey, onResponse, variant, ctx }: CuerpoVideoProps) {
   const {
     source,
     embedUrl,
@@ -255,11 +222,22 @@ function ViewerView({
     activeQ,
     dismissQ,
     handleOverlayAnswer,
+    answeredCount,
   } = useVideoInteractiveRuntime({
     actividad,
     editorSyncKey,
     onResponse,
   });
+
+  const { setProgreso, completar } = ctx;
+  const total = actividad.preguntas.length;
+  useEffect(() => {
+    setProgreso(answeredCount, total);
+  }, [answeredCount, total, setProgreso]);
+  // Contestadas todas las preguntas, la actividad queda completa (el video sigue a disposición).
+  useEffect(() => {
+    if (total > 0 && answeredCount >= total) completar();
+  }, [answeredCount, total, completar]);
 
   const youtubeThumbId = useMemo(
     () => extractYouTubeId(actividad.urlVideo ?? ''),
@@ -274,35 +252,17 @@ function ViewerView({
   const isDark = variant === 'dark';
 
   return (
-    <div
-      className={cn(
-        'flex h-full min-h-0 w-full flex-col rounded-xl p-3 shadow-lumina-xs',
-        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
-      )}
-      data-testid="video-interactive-viewer"
-    >
-      {/* El escenario llena el bloque; YouTube no debe imponer 640×390 al dar play. */}
-      <div
-        className={cn(
-          'relative min-h-0 w-full flex-1 overflow-hidden rounded-md bg-black',
-          '[&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:h-full [&>iframe]:w-full [&>iframe]:border-0',
-          '[&>video]:absolute [&>video]:inset-0 [&>video]:h-full [&>video]:w-full',
-        )}
-      >
+    <div className={cn(styles.tarjeta, isDark ? styles.oscuro : styles.claro)} data-testid="video-interactive-viewer">
+      <div className={styles.escenario}>
         {isDirect ? (
           <video
             ref={videoRef}
             src={source.normalizedUrl || actividad.urlVideo}
             controls
             data-testid="video-player-html5"
-            className="object-contain"
           />
         ) : isYouTube ? (
-          <div
-            ref={ytMountRef}
-            className="absolute inset-0 h-full w-full [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:h-full [&>iframe]:w-full [&>iframe]:border-0"
-            data-testid="video-player-yt"
-          />
+          <div ref={ytMountRef} className={styles.yt} data-testid="video-player-yt" />
         ) : isVimeo ? (
           <iframe
             ref={vimeoFrameRef}
@@ -322,37 +282,30 @@ function ViewerView({
         )}
 
         {!hasStarted && (
-          <div className="absolute inset-0 z-[5] flex items-center justify-center">
+          <div className={styles.portada}>
             {youtubeThumbId ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element -- miniatura CDN de YouTube */}
-                <img
-                  alt=""
-                  src={
-                    youtubeThumbTier === 'max'
-                      ? `https://img.youtube.com/vi/${youtubeThumbId}/maxresdefault.jpg`
-                      : `https://img.youtube.com/vi/${youtubeThumbId}/hqdefault.jpg`
-                  }
-                  onError={() => {
-                    if (youtubeThumbTier === 'max') setYoutubeThumbTier('hq');
-                  }}
-                  className="absolute inset-0 h-full w-full object-contain"
-                />
-              </>
+              // eslint-disable-next-line @next/next/no-img-element -- miniatura CDN de YouTube
+              <img
+                alt=""
+                src={
+                  youtubeThumbTier === 'max'
+                    ? `https://img.youtube.com/vi/${youtubeThumbId}/maxresdefault.jpg`
+                    : `https://img.youtube.com/vi/${youtubeThumbId}/hqdefault.jpg`
+                }
+                onError={() => {
+                  if (youtubeThumbTier === 'max') setYoutubeThumbTier('hq');
+                }}
+                className={styles.miniatura}
+              />
             ) : (
-              <div className="absolute inset-0 bg-black" aria-hidden />
+              <div className={styles.negro} aria-hidden />
             )}
-            <div className="absolute inset-0 bg-black/50" aria-hidden />
-            <button
-              type="button"
-              onClick={() => setHasStarted(true)}
-              data-testid="video-start-button"
-              className="relative z-10 flex flex-col items-center gap-3 rounded-lg p-4 transition-transform duration-200 ease-out hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            >
-              <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-white/30">
-                <Play className="size-10 text-white" fill="currentColor" aria-hidden />
+            <div className={styles.velo} aria-hidden />
+            <button type="button" onClick={() => setHasStarted(true)} data-testid="video-start-button" className={styles.empezar}>
+              <span className={styles.empezarIcono}>
+                <Play style={{ width: '2.5rem', height: '2.5rem' }} fill="currentColor" aria-hidden />
               </span>
-              <span className="text-sm font-medium text-white">Toca para comenzar</span>
+              <span className={styles.empezarTexto}>Toca para comenzar</span>
             </button>
           </div>
         )}
@@ -363,31 +316,63 @@ function ViewerView({
             onDismiss={dismissQ}
             onAnswer={handleOverlayAnswer}
             variant={variant}
+            sonido={ctx.ajustes.sonido}
           />
         )}
       </div>
 
       {/* Unknown embeds: show static questions list */}
       {!isDirect && !isYouTube && !isVimeo && actividad.preguntas.length > 0 && (
-        <div className="mt-3 shrink-0 space-y-1.5">
-          <p className={cn('text-xs font-medium', isDark ? 'text-white/70' : 'text-[#6b7280]')}>Preguntas del video</p>
+        <div className={styles.listaEstatica}>
+          <p className={styles.listaTitulo}>Preguntas del video</p>
           {actividad.preguntas.map((q) => (
-            <div
-              key={q.id}
-              className={cn(
-                'flex gap-3 rounded-md border px-3 py-2 text-xs',
-                isDark ? 'border-white/20 bg-white/10 text-white' : 'border-[#e5e7eb] bg-white text-[#111827]',
-              )}
-            >
-              <span className={cn('shrink-0 tabular-nums', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
-                {formatTime(q.tiempoSegundos)}
-              </span>
+            <div key={q.id} className={styles.itemEstatico}>
+              <span className={styles.itemTiempo}>{formatTime(q.tiempoSegundos)}</span>
               <span>{q.pregunta}</span>
             </div>
           ))}
         </div>
       )}
+
+      <div role="status" aria-live="polite" className={styles.soloLector}>
+        {activeQ ? `Pregunta del video: ${activeQ.pregunta}` : ''}
+      </div>
     </div>
+  );
+}
+
+function ViewerView({
+  actividad,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
+}: {
+  actividad: VideoInteractive;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+}) {
+  const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad]);
+  return (
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'vi'}
+      ajustes={ajustes}
+      total={actividad.preguntas.length}
+      // Sin pantalla de resultados: el video sigue a disposición; cada respuesta sale al contestarla.
+      resultado="ninguno"
+      className={styles.shell}
+    >
+      {(ctx) => (
+        <CuerpoVideo
+          actividad={actividad}
+          editorSyncKey={editorSyncKey}
+          onResponse={onResponse}
+          variant={variant}
+          ctx={ctx}
+        />
+      )}
+    </ActivityShell>
   );
 }
 
@@ -524,12 +509,12 @@ export function VideoInteractiveActivityEditor({
   }
 
   return (
-    <div className="flex max-h-[min(60vh,500px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs">
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+    <div className="flex max-h-[min(60vh,500px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-white shadow-lumina-xs">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-2 py-1.5">
         <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-800">
           Video Interactivo
         </span>
-        <span className="truncate text-[10px] text-[#9ca3af]">
+        <span className="truncate text-[10px] text-muted-foreground">
           Editor de pausas y preguntas
         </span>
       </div>
@@ -550,11 +535,11 @@ export function VideoInteractiveActivityEditor({
 
         <div className="space-y-3">
           {local.preguntas.map((q) => (
-            <div key={q.id} className="relative rounded-md border border-[#e5e7eb] bg-[#f9fafb] p-3 shadow-lumina-xs">
+            <div key={q.id} className="relative rounded-md border border-border bg-muted/40 p-3 shadow-lumina-xs">
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-2 size-6 text-[#9ca3af] hover:text-destructive"
+                className="absolute right-2 top-2 size-6 text-muted-foreground hover:text-destructive"
                 onClick={() => removeQuestion(q.id)}
               >
                 <Trash2 className="size-3.5" />
@@ -583,7 +568,7 @@ export function VideoInteractiveActivityEditor({
                 </div>
               </div>
 
-              <div className="space-y-2 border-l-2 border-[#e5e7eb]/50 pl-2">
+              <div className="space-y-2 border-l-2 border-border/50 pl-2">
                 {q.opciones.map((opt) => (
                   <div key={opt.id} className="flex items-center gap-2">
                     <input
@@ -603,7 +588,7 @@ export function VideoInteractiveActivityEditor({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-6 shrink-0 text-[#9ca3af] hover:text-destructive"
+                      className="size-6 shrink-0 text-muted-foreground hover:text-destructive"
                       onClick={() => removeOption(q.id, opt.id)}
                       disabled={q.opciones.length <= 2}
                     >
@@ -615,7 +600,7 @@ export function VideoInteractiveActivityEditor({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-[10px] text-[#9ca3af]"
+                    className="h-6 px-2 text-[10px] text-muted-foreground"
                     onClick={() => addOption(q.id)}
                   >
                     <Plus className="mr-1 size-3" /> Agregar opción

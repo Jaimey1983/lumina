@@ -1,6 +1,6 @@
 import type { CSSProperties, MouseEvent } from 'react';
 import { VISUALLY_HIDDEN } from '../visually-hidden.js';
-import { useConteo } from '../_motion/use-conteo.js';
+import { useConteo } from '../../_efectos/motion/use-conteo.js';
 import { cn } from '@lumina/ui/lib/utils';
 import { stopWidgetInnerPointer } from '@lumina/editor-shared/widget-editor-utils';
 import type { ProgresoWidget } from '@lumina/types/widget';

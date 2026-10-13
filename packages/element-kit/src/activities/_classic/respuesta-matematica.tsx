@@ -1,7 +1,7 @@
 'use client';
 
 import { Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { parseRespuestaNumerica, validarExpresionAlgebraica } from '@lumina/scoring';
 import type { MathAnswerActivity } from '@lumina/types/slide';
@@ -11,8 +11,12 @@ import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
 import { MathText } from '@lumina/editor-shared/rich-text/math-text';
-import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
+
+import { useActivityFeedback } from '../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import styles from './respuesta-texto.module.css';
 
 const DEFAULTS: MathAnswerActivity = {
   tipo: 'respuesta_matematica',
@@ -84,21 +88,21 @@ export function RespuestaMatematicaEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(46vh,320px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
-        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
+          : 'flex max-h-[min(46vh,320px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-2 py-1.5">
         <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-800">
           Respuesta matemática
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">Se califica sola</span>
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">Se califica sola</span>
         {onRemove && (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
+            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -134,7 +138,7 @@ export function RespuestaMatematicaEditor({
           </Label>
           <select
             id="rm-modo"
-            className="h-8 w-full rounded-md border border-[#e5e7eb] bg-white px-2 text-xs"
+            className="h-8 w-full rounded-md border border-border bg-white px-2 text-xs"
             value={algebraico ? 'algebraico' : 'numerico'}
             onChange={(e) =>
               updateImmediate({ modo: e.target.value === 'algebraico' ? 'algebraico' : 'numerico' })
@@ -164,12 +168,12 @@ export function RespuestaMatematicaEditor({
               {errorModelo}
             </p>
           ) : algebraico ? (
-            <p className="text-[11px] text-[#6b7280]">
+            <p className="text-[11px] text-muted-foreground">
               Se acepta cualquier expresión equivalente (2x+2 = 2(x+1)). Variables de una letra;
               funciones: sqrt, abs, sin, cos, tan, ln, log, exp.
             </p>
           ) : (
-            <p className="text-[11px] text-[#6b7280]">{describirTolerancia(local)}</p>
+            <p className="text-[11px] text-muted-foreground">{describirTolerancia(local)}</p>
           )}
         </div>
 
@@ -215,7 +219,7 @@ export function RespuestaMatematicaEditor({
             </Label>
             <select
               id="rm-tol-tipo"
-              className="h-8 w-full rounded-md border border-[#e5e7eb] bg-white px-2 text-xs"
+              className="h-8 w-full rounded-md border border-border bg-white px-2 text-xs"
               value={local.toleranciaTipo ?? 'absoluta'}
               onChange={(e) =>
                 updateImmediate({ toleranciaTipo: e.target.value as 'absoluta' | 'porcentual' })
@@ -262,6 +266,82 @@ export function RespuestaMatematicaEditor({
   );
 }
 
+// ─── Viewer (sobre el ActivityShell, U9a.2) ──────────────────────────────────────
+
+interface CuerpoProps {
+  activity: MathAnswerActivity;
+  isDark: boolean;
+  ctx: ActivityShellContext;
+  texto: string;
+  enviada: boolean;
+  error: string | null;
+  onTexto: (v: string) => void;
+  onEnviar: () => void;
+}
+
+function Cuerpo({ activity, isDark, ctx, texto, enviada, error, onTexto, onEnviar }: CuerpoProps) {
+  const algebraico = activity.modo === 'algebraico';
+  const sinTiempo = !enviada && ctx.sesion.motivoFin === 'sin_tiempo';
+  const bloqueado = ctx.sesion.fase !== 'jugando';
+
+  function alEnviar(e: React.FormEvent) {
+    e.preventDefault();
+    if (enviada || bloqueado || !texto.trim()) return;
+    onEnviar();
+  }
+
+  return (
+    <div className={cn(styles.tarjeta, isDark ? styles.oscuro : styles.claro)}>
+      <p className={styles.pregunta}>
+        <MathText text={activity.question} />
+      </p>
+      {activity.hint && <p className={styles.pista}>💡 {activity.hint}</p>}
+      {enviada ? (
+        <div role="status" className={styles.enviada}>
+          <span aria-hidden>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <form onSubmit={alEnviar} className={styles.formulario}>
+          <div className={styles.fila}>
+            <input
+              type="text"
+              inputMode={algebraico ? 'text' : 'decimal'}
+              autoComplete="off"
+              aria-label="Tu respuesta"
+              aria-invalid={error ? true : undefined}
+              className={styles.campo}
+              placeholder={algebraico ? 'Escribe una expresión' : 'Escribe un número'}
+              maxLength={algebraico ? 200 : 40}
+              value={texto}
+              disabled={bloqueado}
+              onChange={(e) => onTexto(e.target.value)}
+            />
+            {!algebraico && activity.unidad ? <span className={styles.unidad}>{activity.unidad}</span> : null}
+          </div>
+          <p className={styles.ayuda}>
+            {algebraico
+              ? 'Escribe una expresión, por ejemplo 2(x+1), x^2−1 o sqrt(x).'
+              : 'Usa coma para los decimales. Puedes escribir fracciones como 3/4.'}
+          </p>
+          {error ? (
+            <p role="alert" className={styles.aviso}>
+              Revisa tu expresión: {error}
+            </p>
+          ) : null}
+          <button type="submit" disabled={bloqueado || !texto.trim()} className={styles.enviar}>
+            Enviar
+          </button>
+        </form>
+      )}
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function RespuestaMatematicaViewer({
   activity,
   editorSyncKey,
@@ -273,101 +353,60 @@ export function RespuestaMatematicaViewer({
   onResponse?: (response: unknown) => void;
   variant?: 'dark' | 'light';
 }) {
-  const [text, setText] = useState('');
-  const [answered, setAnswered] = useState(false);
+  const [texto, setTexto] = useState('');
+  const [enviada, setEnviada] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { play } = useSound();
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
   const algebraico = activity.modo === 'algebraico';
 
+  // Un slide distinto (otra `editorSyncKey`) arranca sin respuesta.
   useEffect(() => {
-    setAnswered(false);
-    setText('');
+    setEnviada(false);
+    setTexto('');
     setError(null);
   }, [editorSyncKey]);
 
-  const isDark = variant === 'dark';
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (answered || !text.trim()) return;
+  function enviar(ctx: ActivityShellContext) {
+    if (enviada || ctx.sesion.fase !== 'jugando') return;
     if (algebraico) {
       // Una expresión ilegible no se envía: el alumno la corrige y vuelve a intentar.
-      const problema = validarExpresionAlgebraica(text);
+      const problema = validarExpresionAlgebraica(texto);
       if (problema) {
         setError(problema);
         return;
       }
     }
     setError(null);
-    setAnswered(true);
-    play('submit');
-    onResponse?.(text.trim());
+    setEnviada(true);
+    // La nota la da `@lumina/scoring` en otro momento: acá no hay acierto/error que animar.
+    feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
+    onResponse?.(texto.trim());
+    ctx.completar();
   }
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-4 rounded-xl p-6 shadow-lumina-xs',
-        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
-      )}
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'rm'}
+      ajustes={ajustes}
+      resultado="ninguno"
     >
-      <p className={cn('text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}>
-        <MathText text={activity.question} />
-      </p>
-      {activity.hint && (
-        <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>💡 {activity.hint}</p>
+      {(ctx) => (
+        <Cuerpo
+          activity={activity}
+          isDark={variant === 'dark'}
+          ctx={ctx}
+          texto={texto}
+          enviada={enviada}
+          error={error}
+          onTexto={(v) => {
+            setTexto(v);
+            setError(null);
+          }}
+          onEnviar={() => enviar(ctx)}
+        />
       )}
-      {answered ? (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
-          <span>✓</span> ¡Respuesta enviada!
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              inputMode={algebraico ? 'text' : 'decimal'}
-              autoComplete="off"
-              aria-label="Tu respuesta"
-              className={cn(
-                'w-full rounded-md border px-3 py-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-[#93c5fd]',
-                isDark
-                  ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus:border-white/60'
-                  : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB]',
-              )}
-              placeholder={algebraico ? 'Escribe una expresión' : 'Escribe un número'}
-              maxLength={algebraico ? 200 : 40}
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-                setError(null);
-              }}
-            />
-            {!algebraico && activity.unidad ? (
-              <span className={cn('text-sm', isDark ? 'text-white/80' : 'text-[#6b7280]')}>
-                {activity.unidad}
-              </span>
-            ) : null}
-          </div>
-          <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
-            {algebraico
-              ? 'Escribe una expresión, por ejemplo 2(x+1), x^2−1 o sqrt(x).'
-              : 'Usa coma para los decimales. Puedes escribir fracciones como 3/4.'}
-          </p>
-          {error ? (
-            <p role="alert" className="text-xs text-red-600">
-              Revisa tu expresión: {error}
-            </p>
-          ) : null}
-          <button
-            type="submit"
-            disabled={!text.trim()}
-            className="self-end rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1d4ed8] disabled:opacity-50"
-          >
-            Enviar
-          </button>
-        </form>
-      )}
-    </div>
+    </ActivityShell>
   );
 }

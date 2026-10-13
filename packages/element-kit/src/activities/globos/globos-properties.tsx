@@ -1,5 +1,6 @@
 'use client'
 
+import { laVar } from '../_shared/activity-tokens.js'
 import { FieldHelp } from '@lumina/ui/field-help'
 import React, { useCallback } from 'react'
 import { GlobosActivity, GlobosPregunta } from '@lumina/types/slide'
@@ -156,7 +157,8 @@ export function GlobosProperties({ actividad, onChange }: GlobosPropertiesProps)
             type="button"
             onClick={addPregunta}
             disabled={preguntas.length >= GLOBOS_MAX_PREGUNTAS}
-            className="rounded bg-[#2563EB] px-2 py-1 text-xs text-white disabled:opacity-40"
+            className="rounded px-2 py-1 text-xs text-white disabled:opacity-40"
+            style={{ backgroundColor: laVar('color-seleccionado') }}
           >
             + Añadir
           </button>
@@ -194,7 +196,8 @@ export function GlobosProperties({ actividad, onChange }: GlobosPropertiesProps)
                   type="button"
                   onClick={() => addOpcion(p.id)}
                   disabled={p.opciones.length >= GLOBOS_MAX_OPCIONES}
-                  className="text-[11px] text-[#2563EB] disabled:opacity-40"
+                  className="text-[11px] disabled:opacity-40"
+                  style={{ color: laVar('color-seleccionado') }}
                 >
                   + Globo
                 </button>

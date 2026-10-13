@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
 import type { WordCloud } from '@lumina/types/slide';
@@ -10,8 +10,12 @@ import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
-import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
+
+import { useActivityFeedback } from '../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import styles from './respuesta-texto.module.css';
 
 // Editor-only fields that ride along with the persisted activity data.
 export type WordCloudLocal = WordCloud & {
@@ -88,15 +92,15 @@ export function WordCloudActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(52vh,360px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
-        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
+          : 'flex max-h-[min(52vh,360px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-2 py-1.5">
         <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800">
           Nube de palabras
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -104,7 +108,7 @@ export function WordCloudActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
+            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -176,7 +180,7 @@ export function WordCloudActivityEditor({
         </div>
 
         <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-2 py-1.5">
             <Label htmlFor="wc-moderate" className="cursor-pointer text-[11px] font-medium leading-tight">
               Moderar respuestas
             </Label>
@@ -188,7 +192,7 @@ export function WordCloudActivityEditor({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-2 py-1.5">
             <Label htmlFor="wc-realtime" className="cursor-pointer text-[11px] font-medium leading-tight">
               Mostrar resultados en tiempo real
             </Label>
@@ -205,7 +209,89 @@ export function WordCloudActivityEditor({
   );
 }
 
-// ─── Viewer ───────────────────────────────────────────────────────────────────
+// ─── Viewer (sobre el ActivityShell, U9a.5) ──────────────────────────────────────
+//
+// OJO: la nube solo muestra las palabras del PROPIO alumno (estado local); no hay agregado
+// entre alumnos. Es el comportamiento de siempre y se conserva (ver la ficha).
+
+interface CuerpoProps {
+  activity: WordCloudLocal;
+  isDark: boolean;
+  ctx: ActivityShellContext;
+  palabra: string;
+  enviadas: string[];
+  onPalabra: (v: string) => void;
+  onEnviar: () => void;
+}
+
+function Cuerpo({ activity, isDark, ctx, palabra, enviadas, onPalabra, onEnviar }: CuerpoProps) {
+  const tope = activity.maxPalabrasPorUsuario;
+  const sinTiempo = ctx.sesion.motivoFin === 'sin_tiempo';
+  const bloqueado = ctx.sesion.fase !== 'jugando' || (tope ? enviadas.length >= tope : false);
+
+  const conteo = enviadas.reduce(
+    (acc, w) => {
+      acc[w] = (acc[w] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  function alEnviar(e: React.FormEvent) {
+    e.preventDefault();
+    if (bloqueado || !palabra.trim()) return;
+    onEnviar();
+  }
+
+  return (
+    <div className={cn(styles.tarjeta, styles.tarjetaAmplia, isDark ? styles.oscuro : styles.claro)}>
+      <p className={cn(styles.pregunta, styles.centrado)}>
+        {activity.instruccion || '¿En una palabra, cómo describes el tema de hoy?'}
+      </p>
+
+      <form onSubmit={alEnviar} className={styles.formularioNube}>
+        <input
+          type="text"
+          className={cn(styles.campo, styles.campoNube)}
+          aria-label="Tu palabra"
+          value={palabra}
+          disabled={ctx.sesion.fase !== 'jugando'}
+          onChange={(e) => onPalabra(e.target.value)}
+          placeholder="Escribe tu palabra..."
+          maxLength={activity.maxCaracteresPorPalabra ?? 20}
+        />
+        <button type="submit" className={styles.enviar} disabled={!palabra.trim() || bloqueado}>
+          Enviar
+        </button>
+      </form>
+
+      {tope ? (
+        <p className={cn(styles.contador, styles.centrado, styles.contadorNube)}>
+          {enviadas.length} de {tope} palabras enviadas
+        </p>
+      ) : null}
+
+      {activity.mostrarTiempoReal !== false && Object.entries(conteo).length > 0 && (
+        <div className={styles.nube} aria-label="Tus palabras">
+          {Object.entries(conteo).map(([w, n]) => (
+            <span
+              key={w}
+              className={styles.palabra}
+              style={{ fontSize: `${Math.min(3, 1 + (n - 1) * 0.2)}rem`, opacity: Math.min(1, 0.5 + n * 0.2) }}
+            >
+              {w}
+            </span>
+          ))}
+        </div>
+      )}
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function WordCloudViewer({
   activity,
@@ -218,90 +304,51 @@ export function WordCloudViewer({
   onResponse?: (response: unknown) => void;
   variant?: 'dark' | 'light';
 }) {
-  const [word, setWord] = useState('');
-  const [submittedWords, setSubmittedWords] = useState<string[]>([]);
-  const { play } = useSound();
+  const [palabra, setPalabra] = useState('');
+  const [enviadas, setEnviadas] = useState<string[]>([]);
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
+  // Un slide distinto (otra `editorSyncKey`) arranca sin palabras.
   useEffect(() => {
-    setSubmittedWords([]);
-    setWord('');
+    setEnviadas([]);
+    setPalabra('');
   }, [editorSyncKey]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!word.trim()) return;
-    const cleanWord = word.trim().toUpperCase();
-    setSubmittedWords((prev) => [...prev, cleanWord]);
-    play('submit');
-    onResponse?.(cleanWord);
-    setWord('');
-  };
-
-  const wordCounts = submittedWords.reduce((acc, curr) => {
-    acc[curr] = (acc[curr] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
 
   if (!activity) return null;
 
-  const isDark = variant === 'dark';
+  function enviar(ctx: ActivityShellContext) {
+    if (!palabra.trim() || ctx.sesion.fase !== 'jugando') return;
+    const tope = activity.maxPalabrasPorUsuario;
+    if (tope && enviadas.length >= tope) return;
+    const limpia = palabra.trim().toUpperCase();
+    setEnviadas((prev) => [...prev, limpia]);
+    // Es de participación: no hay acierto ni error que animar, solo el sonido de envío.
+    feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
+    onResponse?.(limpia);
+    setPalabra('');
+    // Con tope por alumno, la última palabra cierra la actividad (sin tope nunca termina).
+    if (tope && enviadas.length + 1 >= tope) ctx.completar();
+  }
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
-        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
-      )}
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'np'}
+      ajustes={ajustes}
+      resultado="ninguno"
     >
-      <p className={cn('text-center text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}>
-        {activity.instruccion || '¿En una palabra, cómo describes el tema de hoy?'}
-      </p>
-
-      <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-sm items-center gap-2">
-        <Input
-          value={word}
-          onChange={(e) => setWord(e.target.value)}
-          placeholder="Escribe tu palabra..."
-          maxLength={activity.maxCaracteresPorPalabra ?? 20}
-          className={cn(
-            'flex-1',
-            isDark
-              ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus-visible:border-white/60'
-              : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus-visible:border-[#2563EB]',
-          )}
+      {(ctx) => (
+        <Cuerpo
+          activity={activity}
+          isDark={variant === 'dark'}
+          ctx={ctx}
+          palabra={palabra}
+          enviadas={enviadas}
+          onPalabra={setPalabra}
+          onEnviar={() => enviar(ctx)}
         />
-        <Button
-          type="submit"
-          disabled={!word.trim() || (activity.maxPalabrasPorUsuario ? submittedWords.length >= activity.maxPalabrasPorUsuario : false)}
-        >
-          Enviar
-        </Button>
-      </form>
-
-      {activity.maxPalabrasPorUsuario && (
-        <p className={cn('mt-[-1rem] text-center text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
-          {submittedWords.length} de {activity.maxPalabrasPorUsuario} palabras enviadas
-        </p>
       )}
-
-      {activity.mostrarTiempoReal !== false && Object.entries(wordCounts).length > 0 && (
-        <div
-          className={cn(
-            'mt-4 flex flex-wrap items-center justify-center gap-4 border-t py-8',
-            isDark ? 'border-white/20' : 'border-[#e5e7eb]',
-          )}
-        >
-          {Object.entries(wordCounts).map(([w, count]) => (
-            <span
-              key={w}
-              className="font-bold text-[#2563EB] transition-all"
-              style={{ fontSize: `${Math.min(3, 1 + (count - 1) * 0.2)}rem`, opacity: Math.min(1, 0.5 + count * 0.2) }}
-            >
-              {w}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
+    </ActivityShell>
   );
 }

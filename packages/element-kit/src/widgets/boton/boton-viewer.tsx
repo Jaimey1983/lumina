@@ -1,7 +1,7 @@
 import type { EventoTipo } from '@lumina/types/interaction';
 import type { BotonWidget } from '@lumina/types/widget';
 import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
-import { WidgetMotion } from '../_motion/widget-motion.js';
+import { WidgetMotion } from '../../_efectos/motion/widget-motion.js';
 import { BotonParts } from './boton-parts.js';
 import type { BotonAccionT8 } from './boton-defaults.js';
 import { mergedBotonConfig } from './boton-config.js';

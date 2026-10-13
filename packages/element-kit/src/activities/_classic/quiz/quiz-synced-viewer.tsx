@@ -7,9 +7,11 @@ import { HelpCircle } from 'lucide-react';
 import type { QuizMultiple, QuizPregunta } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { cn } from '@lumina/ui/lib/utils';
-import { useSound } from '@lumina/editor-shared/use-sound';
 
 import { QuizQuestionAccentBar, QuizQuestionWithOptions, resolveQuizLayoutVariant } from './quiz-option-layouts.js';
+import { useActivityFeedback } from '../../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../../_shared/activity-settings.js';
+import tokens from '../../_shared/activity-tokens.module.css';
 import {
   getCorrectIds,
   isMultiSelectPregunta,
@@ -18,6 +20,7 @@ import {
   prepareQuizActivity,
   quizFeedbackMessage,
 } from './quiz-utils.js';
+import styles from './quiz.module.css';
 
 interface QuizSyncStatePayload {
   quizBlockId: string;
@@ -41,6 +44,11 @@ export interface QuizSyncedViewerProps {
   liveSocket: Socket | null;
   variant?: 'dark' | 'light';
   editorSyncKey?: string;
+}
+
+interface QuizSyncedContenidoProps extends QuizSyncedViewerProps {
+  /** `ajustes.sonido` (el wrapper lo resuelve). */
+  sonido: boolean;
 }
 
 type Phase = 'waiting' | 'question' | 'ranking' | 'finished';
@@ -75,7 +83,7 @@ function parseRanking(payload: unknown): RankingRow[] {
   return out.sort((a, b) => a.position - b.position);
 }
 
-export function QuizSyncedViewer({
+function QuizSyncedContenido({
   activity,
   quizBlockId,
   classId,
@@ -84,10 +92,11 @@ export function QuizSyncedViewer({
   liveSocket,
   variant = 'light',
   editorSyncKey,
-}: QuizSyncedViewerProps) {
+  sonido,
+}: QuizSyncedContenidoProps) {
   const normalized = useMemo(() => prepareQuizActivity(activity), [activity]);
   const layoutVariant = resolveQuizLayoutVariant(normalized.layoutVariant);
-  const { play } = useSound();
+  const feedback = useActivityFeedback({ sonido });
 
   const [phase, setPhase] = useState<Phase>('waiting');
   const [currentPregunta, setCurrentPregunta] = useState<QuizPregunta | null>(null);
@@ -134,9 +143,9 @@ export function QuizSyncedViewer({
       const pregunta = currentPregunta;
       const hasDef = pregunta ? getCorrectIds(pregunta).length > 0 : false;
       if (hasDef && pregunta) {
-        play(isPreguntaSelectionCorrect(pregunta, ids) ? 'correct' : 'wrong');
+        feedback.emitir(isPreguntaSelectionCorrect(pregunta, ids) ? 'acierto' : 'error', { movimiento: false });
       } else {
-        play('submit');
+        feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
       }
       liveSocket.emit('quiz:answer', {
         classId,
@@ -151,7 +160,7 @@ export function QuizSyncedViewer({
       liveSocket,
       answered,
       currentPregunta,
-      play,
+      feedback,
       classId,
       quizBlockId,
       studentId,
@@ -360,12 +369,7 @@ export function QuizSyncedViewer({
 
   if (!liveSocket) {
     return (
-      <div
-        className={cn(
-          'rounded-xl border p-6 text-center text-sm',
-          isDark ? 'border-white/20 bg-white/10 text-white/80' : 'border-[#e5e7eb] bg-white/90 text-[#6b7280]',
-        )}
-      >
+      <div className={cn(styles.tarjeta, styles.aviso, isDark ? styles.oscuro : styles.claro)}>
         Quiz sincronizado — conecta a la sesión en vivo.
       </div>
     );
@@ -374,34 +378,15 @@ export function QuizSyncedViewer({
   if (phase === 'ranking' || phase === 'finished') {
     const top = ranking.slice(0, 5);
     return (
-      <div
-        className={cn(
-          'overflow-hidden rounded-xl border shadow-lumina-xs',
-          isDark ? 'border-white/20 bg-white/10' : 'border-[#e5e7eb] bg-white/90',
-        )}
-      >
-        <div className="space-y-3 p-6">
-          <h3 className={cn('text-center text-lg font-bold', isDark ? 'text-white' : 'text-[#111827]')}>
-            Ranking del quiz
-          </h3>
-          <ul className="space-y-2">
+      <div className={cn(styles.tarjeta, isDark ? styles.oscuro : styles.claro)}>
+        <div className={styles.cuerpoRanking}>
+          <h3 className={styles.tituloRanking}>Ranking del quiz</h3>
+          <ul className={cn(styles.lista, styles.vertical)}>
             {top.map((row) => (
-              <li
-                key={row.studentId}
-                className={cn(
-                  'flex items-center justify-between rounded-lg border px-3 py-2 text-sm',
-                  row.studentId === studentId
-                    ? isDark
-                      ? 'border-[#2563EB]/60 bg-[#2563EB]/20 text-white'
-                      : 'border-[#2563EB] bg-[#eff6ff]'
-                    : isDark
-                      ? 'border-white/15 text-white/90'
-                      : 'border-[#e5e7eb]',
-                )}
-              >
-                <span className="font-bold tabular-nums">#{row.position}</span>
-                <span className="min-w-0 flex-1 truncate px-2">{row.studentName || row.studentId}</span>
-                <span className="tabular-nums font-semibold">{Math.round(row.points)}</span>
+              <li key={row.studentId} className={cn(styles.filaRanking, row.studentId === studentId && styles.filaMia)}>
+                <span className={styles.posicion}>#{row.position}</span>
+                <span className={styles.nombreRanking}>{row.studentName || row.studentId}</span>
+                <span className={styles.puntos}>{Math.round(row.points)}</span>
               </li>
             ))}
           </ul>
@@ -412,19 +397,10 @@ export function QuizSyncedViewer({
 
   if (phase === 'waiting' || !currentPregunta) {
     return (
-      <div
-        className={cn(
-          'flex flex-col items-center justify-center gap-4 rounded-xl border p-8 text-center shadow-lumina-xs',
-          isDark ? 'border-white/20 bg-white/10' : 'border-[#e5e7eb] bg-white/90',
-        )}
-      >
-        <HelpCircle className={cn('size-16', isDark ? 'text-white/60' : 'text-[#2563EB]/70')} />
-        <p className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-[#111827]')}>
-          Esperando al docente…
-        </p>
-        <p className={cn('max-w-xs text-sm', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
-          Cuando lance la pregunta, podrás responder aquí con tiempo limitado.
-        </p>
+      <div className={cn(styles.tarjeta, styles.espera, isDark ? styles.oscuro : styles.claro)}>
+        <HelpCircle className={styles.iconoEspera} aria-hidden />
+        <p className={styles.tituloEspera}>Esperando al docente…</p>
+        <p className={styles.textoEspera}>Cuando lance la pregunta, podrás responder aquí con tiempo limitado.</p>
       </div>
     );
   }
@@ -443,51 +419,40 @@ export function QuizSyncedViewer({
         Confirmar respuesta
       </Button>
     ) : feedbackPhase === 'feedback' && hasDefinedCorrect && currentPregunta ? (
-      <div
-        className={cn(
-          'rounded-md px-3 py-2 text-sm',
-          questionCorrect
-            ? isDark
-              ? 'bg-green-500/20 text-green-100'
-              : 'bg-green-50 text-green-800'
-            : isDark
-              ? 'bg-red-500/20 text-red-100'
-              : 'bg-red-50 text-red-800',
-        )}
-      >
+      <div role="status" className={cn(styles.veredicto, questionCorrect ? styles.veredictoBien : styles.veredictoMal)}>
         {quizFeedbackMessage(currentPregunta, questionCorrect === true)}
         {currentPregunta.retroalimentacion?.mostrarExplicacion &&
         currentPregunta.retroalimentacion.explicacion ? (
-          <p className="mt-1 text-xs opacity-80">{currentPregunta.retroalimentacion.explicacion}</p>
+          <p className={styles.explicacion}>{currentPregunta.retroalimentacion.explicacion}</p>
         ) : null}
       </div>
     ) : null;
 
   return (
-    <div
-      className={cn(
-        'overflow-hidden rounded-xl shadow-lumina-xs',
-        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
-      )}
-    >
+    <div className={cn(styles.tarjeta, isDark ? styles.oscuro : styles.claro)}>
       {showAccent ? <QuizQuestionAccentBar index={questionIndex} /> : null}
-      <div className="space-y-4 p-6">
-        <div className="h-2 w-full overflow-hidden rounded-full bg-[#e5e7eb]/80">
+      <div className={styles.cuerpo}>
+        {/* El lector de pantalla oye la pregunta cuando el docente la lanza. */}
+        <div role="status" aria-live="polite" className={styles.soloLector}>
+          {`Pregunta ${questionIndex + 1} de ${totalQuestions}: ${currentPregunta.texto}`}
+        </div>
+        <div
+          className={styles.barraTiempo}
+          role="progressbar"
+          aria-label="Tiempo de la pregunta"
+          aria-valuemin={0}
+          aria-valuemax={timeTotal}
+          aria-valuenow={secondsLeft}
+        >
           <div
-            className="h-full rounded-full transition-all duration-300"
-            style={{
-              width: `${progressRatio * 100}%`,
-              backgroundColor:
-                progressRatio > 0.5 ? '#22c55e' : progressRatio > 0.25 ? '#fbbf24' : '#ef4444',
-            }}
+            className={cn(
+              styles.barraTiempoRelleno,
+              progressRatio > 0.5 ? styles.tiempoAlto : progressRatio > 0.25 ? styles.tiempoMedio : styles.tiempoBajo,
+            )}
+            style={{ width: `${progressRatio * 100}%` }}
           />
         </div>
-        <p
-          className={cn(
-            'text-center text-xs tabular-nums',
-            isDark ? 'text-white/70' : 'text-[#6b7280]',
-          )}
-        >
+        <p className={cn(styles.centroSuave, styles.numeros)}>
           Pregunta {questionIndex + 1} de {totalQuestions}
           {paused ? ' · Pausado' : ` · ${secondsLeft}s`}
         </p>
@@ -519,6 +484,19 @@ export function QuizSyncedViewer({
           }}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Quiz sincronizado: el servidor manda las fases, el reloj y el ranking (`quiz:*`), así que NO pasa
+ * por el `ActivityShell`; solo recibe los tokens `--la-*` que usan los layouts compartidos.
+ */
+export function QuizSyncedViewer(props: QuizSyncedViewerProps) {
+  const ajustes = useMemo(() => normalizarAjustes(props.activity), [props.activity]);
+  return (
+    <div className={tokens.tokens} data-estilo={ajustes.estilo}>
+      <QuizSyncedContenido {...props} sonido={ajustes.sonido} />
     </div>
   );
 }

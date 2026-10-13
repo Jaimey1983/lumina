@@ -10,7 +10,7 @@ import {
   type EscapeRoomDashboardPublic,
   type EscapeRoomRoomStatus,
   type EscapeRoomTeamPublic,
-} from '@/lib/escape-room-live.types';
+} from '@lumina/element-kit/activities/escape-room/escape-room-live.types';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';

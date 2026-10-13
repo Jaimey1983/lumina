@@ -7,19 +7,27 @@ import {
 } from "../../activities/_classic/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
+import { crearPropiedadesConAjustes } from "../_shared/propiedades-con-ajustes.js";
+import { PRESETS_COMPLETAR_BLANCOS } from "./completar_blancos-estilos.js";
 import {
   COMPLETAR_BLANCOS_TIPO,
   type CompletarBlancosConfig,
   type CompletarBlancosEstado,
 } from "./completar_blancos-types.js";
 
-const { Editor, Viewer, Propiedades } = crearAdaptadoresClasicos<
+const { Editor, Viewer, Propiedades: PropiedadesBase } = crearAdaptadoresClasicos<
   CompletarBlancosEstado,
   CompletarBlancosConfig
 >({
   Editor: FillBlanksActivityEditor,
   viewer: { via: "component", Viewer: FillBlanksViewer },
   editorNeedsSyncKey: true,
+});
+
+/** U9a.3: el panel suma estilos y ajustes comunes al editor de siempre. */
+const Propiedades = crearPropiedadesConAjustes(PropiedadesBase, {
+  presets: PRESETS_COMPLETAR_BLANCOS,
+  storageKey: "actividad.completar_blancos.estilos",
 });
 
 export {
@@ -40,11 +48,13 @@ export const completarBlancosDefinition = {
   Editor,
   Viewer,
   Propiedades,
+  // U9a.3: el estilo (`ajustes.estilo`) es color; la tipografía no se toca y no hay movimiento.
   apariencia: {
-    color: false,
+    color: true,
     tipografia: false,
     animacion: false,
   },
+  presets: PRESETS_COMPLETAR_BLANCOS,
   puntuacion: (estado: CompletarBlancosEstado, respuesta?: unknown) =>
     evaluarCompletarBlancos(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["completar_blancos"],

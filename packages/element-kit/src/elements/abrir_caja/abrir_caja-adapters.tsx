@@ -23,7 +23,7 @@ export function AbrirCajaViewer({
   config,
 }: ElementViewerProps<AbrirCajaEstado, AbrirCajaConfig>) {
   return (
-    <LegacyAbrirCajaViewer actividad={estado} onComplete={config.onComplete} />
+    <LegacyAbrirCajaViewer actividad={estado} onResponse={config.onResponse} />
   );
 }
 

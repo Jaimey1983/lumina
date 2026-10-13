@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { FillBlanks, FillBlank } from '@lumina/types/slide';
@@ -9,9 +9,13 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
-import { useSound } from '@lumina/editor-shared/use-sound';
 import { evaluateActivityResponse } from '@lumina/scoring';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
+
+import { useActivityFeedback } from '../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import styles from './respuesta-texto.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -123,16 +127,16 @@ export function FillBlanksActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
-        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
+          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
       )}
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-2 py-1.5">
         <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800">
           Completar blancos
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
           Usa {'{{blank:id}}'} en el texto para marcar los huecos
         </span>
         {onRemove && (
@@ -140,7 +144,7 @@ export function FillBlanksActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
+            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -170,7 +174,7 @@ export function FillBlanksActivityEditor({
             className="min-h-[4rem] resize-none font-mono text-xs"
             placeholder="Ej: El agua hierve a {{blank:abc123}} °C."
           />
-          <p className="text-[10px] text-[#9ca3af]">
+          <p className="text-[10px] text-muted-foreground">
             Escribe {'{{blank:id}}'} donde quieres un hueco, o usa el botón.
           </p>
         </div>
@@ -198,7 +202,7 @@ export function FillBlanksActivityEditor({
                 const blank = local.blancos.find((b) => b.id === id);
                 return (
                   <div key={id} className="flex items-center gap-1.5">
-                    <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-[#9ca3af]">
+                    <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-muted-foreground">
                       {idx + 1}
                     </span>
                     <Input
@@ -212,7 +216,7 @@ export function FillBlanksActivityEditor({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-6 shrink-0 text-[#9ca3af]/50 hover:bg-destructive/10 hover:text-destructive"
+                      className="size-6 shrink-0 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => removeBlank(id)}
                       title="Eliminar hueco"
                     >
@@ -226,7 +230,7 @@ export function FillBlanksActivityEditor({
         )}
 
         {referencedIds.length === 0 && (
-          <p className="rounded-md border border-dashed border-[#e5e7eb] bg-[#f9fafb] px-3 py-4 text-center text-[11px] text-[#9ca3af]">
+          <p className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-4 text-center text-[11px] text-muted-foreground">
             Aún no hay huecos en el texto. Añade uno con el botón de arriba.
           </p>
         )}
@@ -235,7 +239,67 @@ export function FillBlanksActivityEditor({
   );
 }
 
-// ─── Viewer ───────────────────────────────────────────────────────────────────
+// ─── Viewer (sobre el ActivityShell, U9a.3) ──────────────────────────────────────
+
+const MARCADOR_HUECO = /\{\{blank:([^}]+)\}\}/g;
+
+interface CuerpoProps {
+  activity: FillBlanks;
+  isDark: boolean;
+  ctx: ActivityShellContext;
+  respuestas: Record<string, string>;
+  enviada: boolean;
+  onRespuesta: (id: string, valor: string) => void;
+  onEnviar: () => void;
+}
+
+function Cuerpo({ activity, isDark, ctx, respuestas, enviada, onRespuesta, onEnviar }: CuerpoProps) {
+  const sinTiempo = !enviada && ctx.sesion.motivoFin === 'sin_tiempo';
+  const bloqueado = enviada || ctx.sesion.fase !== 'jugando';
+
+  const texto = activity.texto || '';
+  const partes: React.ReactNode[] = [];
+  let ultimo = 0;
+  [...texto.matchAll(MARCADOR_HUECO)].forEach((m, n) => {
+    partes.push(texto.slice(ultimo, m.index));
+    const id = m[1];
+    partes.push(
+      <input
+        key={id}
+        type="text"
+        className={styles.hueco}
+        aria-label={`Hueco ${n + 1}`}
+        value={respuestas[id] || ''}
+        disabled={bloqueado}
+        onChange={(e) => onRespuesta(id, e.target.value)}
+      />,
+    );
+    ultimo = (m.index || 0) + m[0].length;
+  });
+  partes.push(texto.slice(ultimo));
+
+  return (
+    <div className={cn(styles.tarjeta, styles.tarjetaAmplia, isDark ? styles.oscuro : styles.claro)}>
+      <div className={styles.texto}>{partes}</div>
+      {enviada ? (
+        <div role="status" className={styles.enviada}>
+          <span aria-hidden>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <div className={styles.acciones}>
+          <button type="button" className={styles.enviar} disabled={bloqueado} onClick={onEnviar}>
+            Enviar
+          </button>
+        </div>
+      )}
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function FillBlanksViewer({
   activity,
@@ -248,85 +312,52 @@ export function FillBlanksViewer({
   onResponse?: (response: unknown) => void;
   variant?: 'dark' | 'light';
 }) {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [answered, setAnswered] = useState(false);
-  const { play } = useSound();
+  const [respuestas, setRespuestas] = useState<Record<string, string>>({});
+  const [enviada, setEnviada] = useState(false);
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
+  // Un slide distinto (otra `editorSyncKey`) arranca sin respuestas.
   useEffect(() => {
-    setAnswered(false);
-    setAnswers({});
+    setEnviada(false);
+    setRespuestas({});
   }, [editorSyncKey]);
 
-  const isDark = variant === 'dark';
-  const blankInputClass = cn(
-    'mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#93c5fd]',
-    isDark
-      ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus:border-white/60'
-      : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB]',
-  );
-
-  const regex = /\{\{blank:([^}]+)\}\}/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  const text = activity.texto || '';
-  const matches = [...text.matchAll(regex)];
-
-  matches.forEach((m) => {
-    parts.push(text.slice(lastIndex, m.index));
-    const id = m[1];
-
-    parts.push(
-      <input
-        key={id}
-        type="text"
-        className={blankInputClass}
-        value={answers[id] || ''}
-        disabled={answered}
-        onChange={(e) => {
-          setAnswers((prev) => ({ ...prev, [id]: e.target.value }));
-        }}
-      />
-    );
-    lastIndex = (m.index || 0) + m[0].length;
-  });
-  parts.push(text.slice(lastIndex));
-
-  const handleSubmit = () => {
-    if (answered) return;
-    setAnswered(true);
-    // Emit Record<string, string>: blankId → given answer
-    const result: Record<string, string> = {};
-    matches.forEach((m) => {
-      result[m[1]] = answers[m[1]] ?? '';
-    });
-    const blanks = activity.blancos ?? [];
-    if (blanks.length > 0) {
-      play(isFillBlanksSubmissionCorrect(activity, result) ? 'correct' : 'wrong');
+  function enviar(ctx: ActivityShellContext) {
+    if (enviada || ctx.sesion.fase !== 'jugando') return;
+    setEnviada(true);
+    // Se emite `{ idHueco: texto }` con todos los huecos del texto (los vacíos, como '').
+    const resultado: Record<string, string> = {};
+    for (const m of (activity.texto || '').matchAll(MARCADOR_HUECO)) resultado[m[1]] = respuestas[m[1]] ?? '';
+    if ((activity.blancos ?? []).length > 0) {
+      feedback.emitir(isFillBlanksSubmissionCorrect(activity, resultado) ? 'acierto' : 'error', {
+        movimiento: false,
+      });
     } else {
-      play('submit');
+      feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
     }
-    onResponse?.(result);
-  };
+    onResponse?.(resultado);
+    ctx.completar();
+  }
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
-        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
-      )}
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'cb'}
+      ajustes={ajustes}
+      resultado="ninguno"
     >
-      <div className={cn('text-base font-medium leading-relaxed', isDark ? 'text-white' : 'text-[#111827]')}>
-        {parts}
-      </div>
-      {answered ? (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
-          <span>✓</span> ¡Respuesta enviada!
-        </div>
-      ) : (
-        <div className="flex justify-end">
-          <Button onClick={handleSubmit}>Enviar</Button>
-        </div>
+      {(ctx) => (
+        <Cuerpo
+          activity={activity}
+          isDark={variant === 'dark'}
+          ctx={ctx}
+          respuestas={respuestas}
+          enviada={enviada}
+          onRespuesta={(id, valor) => setRespuestas((prev) => ({ ...prev, [id]: valor }))}
+          onEnviar={() => enviar(ctx)}
+        />
       )}
-    </div>
+    </ActivityShell>
   );
 }

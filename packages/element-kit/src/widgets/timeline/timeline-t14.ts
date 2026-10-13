@@ -7,7 +7,7 @@ import type {
   TimelineOrientacion,
   TimelineWidget,
 } from '@lumina/types/widget';
-import type { EntradaVariante } from '../_motion/motion-presets.js';
+import type { EntradaVariante } from '../../_efectos/motion/motion-presets.js';
 
 /**
  * Opciones de T14 (orientación, densidad, animación de entrada): viven en `TimelineConfiguracion`

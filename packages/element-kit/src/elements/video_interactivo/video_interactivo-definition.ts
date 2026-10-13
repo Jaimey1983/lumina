@@ -7,19 +7,27 @@ import {
 } from "../../activities/_classic/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
+import { crearPropiedadesConAjustes } from "../_shared/propiedades-con-ajustes.js";
+import { PRESETS_VIDEO_INTERACTIVO } from "./video_interactivo-estilos.js";
 import {
   VIDEO_INTERACTIVO_TIPO,
   type VideoInteractivoConfig,
   type VideoInteractivoEstado,
 } from "./video_interactivo-types.js";
 
-const { Editor, Viewer, Propiedades } = crearAdaptadoresClasicos<
+const { Editor, Viewer, Propiedades: PropiedadesBase } = crearAdaptadoresClasicos<
   VideoInteractivoEstado,
   VideoInteractivoConfig
 >({
   Editor: VideoInteractiveActivityEditor,
   viewer: { via: "modo", Activity: VideoInteractiveActivity },
   editorNeedsSyncKey: true,
+});
+
+/** U9d.5: el panel suma estilos y ajustes comunes al editor de siempre. */
+const Propiedades = crearPropiedadesConAjustes(PropiedadesBase, {
+  presets: PRESETS_VIDEO_INTERACTIVO,
+  storageKey: "actividad.video_interactivo.estilos",
 });
 
 export {
@@ -40,11 +48,13 @@ export const videoInteractivoDefinition = {
   Editor,
   Viewer,
   Propiedades,
+  // U9d.5: el estilo (`ajustes.estilo`) es color; la tipografía no se toca y no hay movimiento.
   apariencia: {
-    color: false,
+    color: true,
     tipografia: false,
     animacion: false,
   },
+  presets: PRESETS_VIDEO_INTERACTIVO,
   puntuacion: (estado: VideoInteractivoEstado, respuesta?: unknown) =>
     evaluarVideoInteractivo(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["video_interactivo"],

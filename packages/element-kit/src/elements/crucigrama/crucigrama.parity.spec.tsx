@@ -123,8 +123,9 @@ describe("Crucigrama — paridad ElementDefinition vs legacy (E2.4)", () => {
       | undefined;
     expect(def).toBe(crucigramaDefinition);
     expect(def?.puntuacion).toBeTypeOf("function");
+    // U9c.3: el estilo (`ajustes.estilo`) es color.
     expect(def?.apariencia).toEqual({
-      color: false,
+      color: true,
       tipografia: false,
       animacion: false,
     });

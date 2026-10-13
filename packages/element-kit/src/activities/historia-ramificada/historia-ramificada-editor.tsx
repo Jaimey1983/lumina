@@ -11,7 +11,8 @@ import type {
 } from '@lumina/editor-shared/graph-editor'
 
 import { HistoriaRamificadaNodeEditor } from './historia-ramificada-node-editor.js'
-import { COLORES_NODO, ETIQUETAS_NODO, generarIdHR } from './historia-ramificada-config.js'
+import { laVar } from '../_shared/activity-tokens.js'
+import { COLORES_NODO, COLOR_NODO_DEFAULT, ETIQUETAS_NODO, generarIdHR } from './historia-ramificada-config.js'
 
 interface HistoriaRamificadaEditorProps {
   actividad: HistoriaRamificadaActivity
@@ -35,7 +36,7 @@ function actividadToGraphModel(actividad: HistoriaRamificadaActivity): GraphMode
       label: ETIQUETAS_NODO[n.tipo] ?? n.tipo,
       sublabel: n.titulo ?? n.id,
       body: n.contenido.texto,
-      accent: COLORES_NODO[n.tipo] ?? '#6B7280',
+      accent: COLORES_NODO[n.tipo] ?? COLOR_NODO_DEFAULT,
       highlighted: n.id === nodoInicial,
       meta: { tipo: n.tipo },
     })),
@@ -160,7 +161,8 @@ export function HistoriaRamificadaEditor({
         <div className="absolute top-3 left-3 z-10 flex gap-2">
           <button
             onClick={handleAddNodo}
-            className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-xs font-semibold shadow hover:bg-blue-700 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-white text-xs font-semibold shadow transition-colors"
+            style={{ backgroundColor: laVar('color-seleccionado') }}
           >
             + Nodo
           </button>

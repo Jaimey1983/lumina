@@ -1,152 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { CheckCircle, CheckCircle2, Trash2, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Trash2, XCircle } from 'lucide-react';
 
+import { evaluateActivityResponse } from '@lumina/scoring';
 import type { TrueFalse } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { cn } from '@lumina/ui/lib/utils';
-import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
-interface Props {
-  actividad: TrueFalse;
-  modo: 'editor' | 'viewer';
-}
-
-// ─── Editor ───────────────────────────────────────────────────────────────────
-
-function EditorView({ actividad }: { actividad: TrueFalse }) {
-  return (
-    <div className="space-y-3 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
-      <div className="flex items-center gap-2">
-        <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-purple-700">
-          Verdadero / Falso
-        </span>
-        {actividad.puntos !== undefined && (
-          <span className="ml-auto text-[10px] tabular-nums text-[#9ca3af]">
-            {actividad.puntos} pts
-          </span>
-        )}
-      </div>
-
-      <p className="text-sm font-medium">{actividad.afirmacion}</p>
-
-      <div className="flex gap-3">
-        {([true, false] as const).map((val) => {
-          const isCorrect = val === actividad.respuestaCorrecta;
-          return (
-            <div
-              key={String(val)}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-2 rounded-md border py-3 text-sm font-medium',
-                isCorrect
-                  ? 'border-green-300 bg-green-50 text-green-800'
-                  : 'border-[#e5e7eb] bg-[#f9fafb] text-[#9ca3af]',
-              )}
-            >
-              {isCorrect && <CheckCircle className="size-4 shrink-0 text-green-600" />}
-              {val ? 'Verdadero' : 'Falso'}
-              {isCorrect && (
-                <span className="rounded bg-green-100 px-1 py-0.5 text-[10px] font-medium text-green-700">
-                  Correcta
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {actividad.retroalimentacion?.explicacion && (
-        <p className="rounded-md bg-[#f9fafb] px-3 py-2 text-xs italic text-[#9ca3af]">
-          {actividad.retroalimentacion.explicacion}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ─── Viewer ───────────────────────────────────────────────────────────────────
-
-function ViewerView({ actividad }: { actividad: TrueFalse }) {
-  const [answer, setAnswer] = useState<boolean | null>(null);
-
-  const submitted = answer !== null;
-  const isCorrect = submitted && answer === actividad.respuestaCorrecta;
-
-  return (
-    <div className="space-y-5 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <p className="text-sm font-medium leading-snug">{actividad.afirmacion}</p>
-
-      <div className="flex gap-3">
-        {([true, false] as const).map((val) => {
-          const label = val ? 'Verdadero' : 'Falso';
-          const isSel = answer === val;
-          const isRight = submitted && isSel && val === actividad.respuestaCorrecta;
-          const isWrong = submitted && isSel && val !== actividad.respuestaCorrecta;
-
-          return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => { if (!submitted) setAnswer(val); }}
-              disabled={submitted}
-              className={cn(
-                'flex flex-1 flex-col items-center gap-2 rounded-md border border-[#e5e7eb] py-6 text-sm font-medium transition-colors',
-                !submitted && !isSel && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
-                !submitted && isSel  && 'border-[#2563EB] bg-[#dbeafe]',
-                isRight && 'border-green-400 bg-green-50 text-green-800',
-                isWrong && 'border-red-400 bg-red-50 text-red-800',
-                submitted && !isSel && 'opacity-40',
-              )}
-            >
-              {isRight && <CheckCircle className="size-6 text-green-600" />}
-              {isWrong && <XCircle className="size-6 text-red-500" />}
-              {!isRight && !isWrong && (
-                <span className="text-2xl font-bold">{val ? 'V' : 'F'}</span>
-              )}
-              {label}
-            </button>
-          );
-        })}
-      </div>
-
-      {submitted && (
-        <div
-          className={cn(
-            'rounded-md px-3 py-2 text-sm',
-            isCorrect
-              ? 'bg-green-50 text-green-800'
-              : 'bg-red-50 text-red-800',
-          )}
-        >
-          {isCorrect
-            ? (actividad.retroalimentacion?.correcto ?? '¡Correcto!')
-            : (actividad.retroalimentacion?.incorrecto ??
-              `La respuesta correcta es ${actividad.respuestaCorrecta ? 'Verdadero' : 'Falso'}.`)}
-          {actividad.retroalimentacion?.mostrarExplicacion &&
-            actividad.retroalimentacion.explicacion && (
-              <p className="mt-1 text-xs opacity-80">
-                {actividad.retroalimentacion.explicacion}
-              </p>
-            )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Export ───────────────────────────────────────────────────────────────────
-
-export function TrueFalseActivity({ actividad, modo }: Props) {
-  return modo === 'editor'
-    ? <EditorView actividad={actividad} />
-    : <ViewerView actividad={actividad} />;
-}
+import { FeedbackMotion } from '../../_efectos/motion/feedback-motion.js';
+import { useActivityFeedback, type ActivityFeedback } from '../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import styles from './true-false.module.css';
 
 // ─── Activity Editor ──────────────────────────────────────────────────────────
 
@@ -209,15 +78,15 @@ export function TrueFalseActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(50vh,300px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
-        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
+          : 'flex max-h-[min(50vh,300px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-2 py-1.5">
         <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-purple-700">
           Verdadero / Falso
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -225,7 +94,7 @@ export function TrueFalseActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
+            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               flush();
@@ -283,7 +152,7 @@ export function TrueFalseActivityEditor({
               });
             }}
             onBlur={(e) => updateExplanation(e.target.value)}
-            className="h-8 text-xs text-[#9ca3af]"
+            className="h-8 text-xs text-muted-foreground"
             placeholder="Aparecerá al elegir la respuesta incorrecta..."
           />
         </div>
@@ -292,7 +161,97 @@ export function TrueFalseActivityEditor({
   );
 }
 
-// ─── TrueFalseViewer (con onResponse y answered) ─────────────────────────────
+// ─── TrueFalseViewer (sobre el ActivityShell, U4) ────────────────────────────
+
+interface CuerpoProps {
+  activity: TrueFalse;
+  isDark: boolean;
+  ctx: ActivityShellContext;
+  selected: boolean | null;
+  feedback: ActivityFeedback;
+  onSelect: (val: boolean) => void;
+}
+
+function Cuerpo({ activity, isDark, ctx, selected, feedback, onSelect }: CuerpoProps) {
+  const answered = selected !== null;
+  const hasDefinedCorrect = typeof activity.respuestaCorrecta === 'boolean';
+  const overallCorrect = hasDefinedCorrect && answered ? selected === activity.respuestaCorrecta : false;
+  const sinTiempo = !answered && ctx.sesion.motivoFin === 'sin_tiempo';
+  const bloqueado = answered || ctx.sesion.fase !== 'jugando';
+  const retro = activity.retroalimentacion;
+  const mostrarMensaje = ctx.ajustes.retroalimentacion !== 'ninguna';
+
+  return (
+    <div className={cn(styles.tarjeta, isDark ? styles.oscuro : styles.claro)}>
+      <p className={styles.enunciado}>{activity.afirmacion}</p>
+      <div className={styles.opciones}>
+        {([true, false] as const).map((val) => {
+          const label = val ? 'Verdadero' : 'Falso';
+          const isSel = selected === val;
+          const isCorrectOption = hasDefinedCorrect && val === activity.respuestaCorrecta;
+          const showAuto = answered && hasDefinedCorrect;
+          const showCorrectReveal = showAuto && !overallCorrect && isCorrectOption;
+          const selectedWrong = showAuto && isSel && !overallCorrect;
+          const selectedRight = showAuto && isSel && overallCorrect;
+
+          return (
+            <FeedbackMotion
+              key={label}
+              className={styles.envoltura}
+              senal={showCorrectReveal ? 'acierto' : isSel ? feedback.senal : null}
+              n={feedback.n}
+            >
+              <button
+                type="button"
+                onClick={() => onSelect(val)}
+                disabled={bloqueado}
+                className={cn(
+                  styles.opcion,
+                  !answered && !isSel && styles.opcionLibre,
+                  !answered && isSel && styles.opcionElegida,
+                  answered && !hasDefinedCorrect && isSel && styles.opcionElegida,
+                  answered && !hasDefinedCorrect && !isSel && styles.opcionSinClave,
+                  (selectedRight || showCorrectReveal) && styles.opcionAcierto,
+                  selectedWrong && styles.opcionError,
+                  showAuto && !isSel && !showCorrectReveal && !selectedRight && styles.opcionApagada,
+                )}
+              >
+                {(selectedRight || (showCorrectReveal && !isSel)) && (
+                  <CheckCircle2 className={cn(styles.icono, styles.iconoAcierto)} aria-hidden />
+                )}
+                {selectedWrong && isSel && (
+                  <XCircle className={cn(styles.icono, styles.iconoError)} aria-hidden />
+                )}
+                <span className={styles.letra}>{val ? 'V' : 'F'}</span>
+                {label}
+              </button>
+            </FeedbackMotion>
+          );
+        })}
+      </div>
+
+      {mostrarMensaje && answered && hasDefinedCorrect && (
+        <p
+          role="status"
+          className={cn(styles.mensaje, overallCorrect ? styles.mensajeAcierto : styles.mensajeError)}
+        >
+          {overallCorrect
+            ? (retro?.correcto ?? '¡Correcto!')
+            : (retro?.incorrecto ??
+              `La respuesta correcta es ${activity.respuestaCorrecta ? 'Verdadero' : 'Falso'}.`)}
+          {(retro?.mostrarExplicacion || ctx.ajustes.mostrarSolucion) && retro?.explicacion && (
+            <span className={styles.explicacion}>{retro.explicacion}</span>
+          )}
+        </p>
+      )}
+      {sinTiempo && (
+        <p role="status" className={cn(styles.mensaje, styles.mensajeTiempo)}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function TrueFalseViewer({
   activity,
@@ -305,113 +264,48 @@ export function TrueFalseViewer({
   onResponse?: (response: unknown) => void;
   variant?: 'dark' | 'light';
 }) {
-  const [answered, setAnswered] = useState(false);
   const [selected, setSelected] = useState<boolean | null>(null);
-  const { play } = useSound();
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
-  const hasDefinedCorrect = typeof activity.respuestaCorrecta === 'boolean';
-
+  // Un slide distinto (otra `editorSyncKey`) arranca sin respuesta.
   useEffect(() => {
-    setAnswered(false);
     setSelected(null);
   }, [editorSyncKey]);
 
-  function handleSelect(val: boolean) {
-    if (answered) return;
+  const hasDefinedCorrect = typeof activity.respuestaCorrecta === 'boolean';
+  const evaluation = useMemo(
+    () => (selected === null ? null : evaluateActivityResponse('verdadero_falso', activity, selected)),
+    [activity, selected],
+  );
+
+  function handleSelect(val: boolean, ctx: ActivityShellContext) {
+    if (selected !== null || ctx.sesion.fase !== 'jugando') return;
     setSelected(val);
-    setAnswered(true);
-    if (hasDefinedCorrect) {
-      play(val === activity.respuestaCorrecta ? 'correct' : 'wrong');
-    } else {
-      play('submit');
-    }
+    if (!hasDefinedCorrect) feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
+    else feedback.emitir(val === activity.respuestaCorrecta ? 'acierto' : 'error');
     onResponse?.(val);
+    ctx.completar();
   }
 
-  const overallCorrect =
-    hasDefinedCorrect && selected !== null ? selected === activity.respuestaCorrecta : false;
-
-  const isDark = variant === 'dark';
-
   return (
-    <div
-      className={cn(
-        'space-y-5 rounded-xl p-6 shadow-lumina-xs',
-        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
-      )}
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'tf'}
+      ajustes={ajustes}
+      resultado="ninguno"
+      evaluation={evaluation}
     >
-      <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>{activity.afirmacion}</p>
-      <div className="flex gap-3">
-        {([true, false] as const).map((val) => {
-          const label = val ? 'Verdadero' : 'Falso';
-          const isSel = selected === val;
-          const isCorrectOption = hasDefinedCorrect && val === activity.respuestaCorrecta;
-          const showAuto = answered && hasDefinedCorrect;
-          const showCorrectReveal = showAuto && !overallCorrect && isCorrectOption;
-          const selectedWrong = showAuto && isSel && !overallCorrect;
-          const selectedRight = showAuto && isSel && overallCorrect;
-
-          return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => handleSelect(val)}
-              disabled={answered}
-              className={cn(
-                'relative flex flex-1 flex-col items-center gap-2 rounded-md border py-6 text-sm font-medium transition-colors',
-                !answered &&
-                  !isSel &&
-                  (isDark
-                    ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
-                    : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
-                !answered &&
-                  isSel &&
-                  (isDark
-                    ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
-                    : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
-                answered &&
-                  !hasDefinedCorrect &&
-                  isSel &&
-                  (isDark
-                    ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
-                    : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
-                answered && !hasDefinedCorrect && !isSel && (isDark ? 'border-white/20 opacity-40' : 'border-[#e5e7eb] opacity-40'),
-                selectedRight &&
-                  (isDark
-                    ? 'origin-center border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
-                    : 'origin-center border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
-                selectedWrong &&
-                  (isDark
-                    ? 'border-red-400 bg-red-500/30 text-red-300 lumina-viewer-shake'
-                    : 'border-[#f87171] bg-[#fee2e2] text-[#f87171] lumina-viewer-shake'),
-                showCorrectReveal &&
-                  (isDark
-                    ? 'border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
-                    : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
-                showAuto && !isSel && !showCorrectReveal && !selectedRight && (isDark ? 'border-white/20 opacity-50' : 'border-[#e5e7eb] opacity-50'),
-              )}
-            >
-              {selectedRight && (
-                <CheckCircle2
-                  className="absolute right-2 top-2 size-5 text-[#16A34A]"
-                  aria-hidden
-                />
-              )}
-              {selectedWrong && isSel && (
-                <XCircle className="absolute right-2 top-2 size-5 text-[#DC2626]" aria-hidden />
-              )}
-              {showCorrectReveal && !isSel && (
-                <CheckCircle2
-                  className="absolute right-2 top-2 size-5 text-[#16A34A]"
-                  aria-hidden
-                />
-              )}
-              <span className="text-2xl font-bold">{val ? 'V' : 'F'}</span>
-              {label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+      {(ctx) => (
+        <Cuerpo
+          activity={activity}
+          isDark={variant === 'dark'}
+          ctx={ctx}
+          selected={selected}
+          feedback={feedback}
+          onSelect={(val) => handleSelect(val, ctx)}
+        />
+      )}
+    </ActivityShell>
   );
 }

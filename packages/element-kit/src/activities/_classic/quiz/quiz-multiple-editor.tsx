@@ -110,14 +110,14 @@ function SortablePreguntaRow({
       className={cn(
         'flex items-center gap-1 rounded-md border px-1 py-1',
         isActive
-          ? 'border-[#2563EB] bg-[#eff6ff]'
-          : 'border-[#e5e7eb] bg-white hover:border-[#bfdbfe]',
+          ? 'border-primary bg-primary/10'
+          : 'border-border bg-white hover:border-primary/40',
         isDragging && 'shadow-lumina-sm',
       )}
     >
       <button
         type="button"
-        className="cursor-grab touch-none rounded p-0.5 text-[#9ca3af] hover:text-[#6b7280] active:cursor-grabbing"
+        className="cursor-grab touch-none rounded p-0.5 text-muted-foreground hover:text-foreground active:cursor-grabbing"
         {...attributes}
         {...listeners}
         aria-label={`Reordenar ${preguntaSummary(pregunta, index)}`}
@@ -128,16 +128,16 @@ function SortablePreguntaRow({
       <button
         type="button"
         onClick={onSelect}
-        className="min-w-0 flex-1 truncate text-left text-[11px] font-medium text-[#111827]"
+        className="min-w-0 flex-1 truncate text-left text-[11px] font-medium text-foreground"
       >
-        <span className="text-[#9ca3af]">{index + 1}.</span>{' '}
+        <span className="text-muted-foreground">{index + 1}.</span>{' '}
         {preguntaSummary(pregunta, index)}
       </button>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-6 shrink-0 text-[#9ca3af] hover:text-destructive"
+        className="size-6 shrink-0 text-muted-foreground hover:text-destructive"
         disabled={!canRemove}
         onClick={(e) => {
           e.stopPropagation();
@@ -311,15 +311,15 @@ export function QuizMultipleActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(70vh,520px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
-        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
+          : 'flex max-h-[min(70vh,520px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-2 py-1.5">
         <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700">
           Quiz
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
           {local.preguntas.length} pregunta{local.preguntas.length === 1 ? '' : 's'}
         </span>
         {onRemove && (
@@ -327,7 +327,7 @@ export function QuizMultipleActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
+            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               flush();
@@ -381,7 +381,7 @@ export function QuizMultipleActivityEditor({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <div className="flex flex-col gap-2 rounded-md border border-border bg-muted/40 px-2 py-1.5">
           <div className="flex items-center justify-between gap-2">
             <Label className="cursor-pointer text-[11px] font-medium leading-tight">
               Mezclar opciones
@@ -490,13 +490,13 @@ export function QuizMultipleActivityEditor({
               <Plus className="mr-1.5 size-3" /> Agregar pregunta
             </Button>
           ) : (
-            <p className="text-[10px] text-[#9ca3af]">Máximo {QUIZ_MAX_PREGUNTAS} preguntas.</p>
+            <p className="text-[10px] text-muted-foreground">Máximo {QUIZ_MAX_PREGUNTAS} preguntas.</p>
           )}
         </div>
 
         {activePregunta ? (
-          <div className="space-y-2 rounded-md border border-[#e5e7eb] bg-[#fafafa] p-2">
-            <p className="text-[11px] font-semibold text-[#374151]">
+          <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2">
+            <p className="text-[11px] font-semibold text-foreground">
               Editando pregunta {activeIndex + 1}
             </p>
 
@@ -526,7 +526,7 @@ export function QuizMultipleActivityEditor({
               </div>
             ) : null}
 
-            <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-white px-2 py-1.5">
+            <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-white px-2 py-1.5">
               <Label className="cursor-pointer text-[11px] font-medium leading-tight">
                 Varias respuestas correctas
               </Label>
@@ -539,8 +539,8 @@ export function QuizMultipleActivityEditor({
               />
             </div>
 
-            <div className="space-y-2 rounded-md border border-[#e5e7eb] bg-white px-2 py-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6b7280]">
+            <div className="space-y-2 rounded-md border border-border bg-white px-2 py-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Retroalimentación
               </p>
               <div className="space-y-1">
@@ -575,7 +575,7 @@ export function QuizMultipleActivityEditor({
                     updateActiveRetroalimentacion({ explicacion: e.target.value }, true)
                   }
                   onBlur={flush}
-                  className="h-8 text-xs text-[#9ca3af]"
+                  className="h-8 text-xs text-muted-foreground"
                   placeholder="Aparece tras responder si está activada abajo"
                 />
               </div>
@@ -603,7 +603,7 @@ export function QuizMultipleActivityEditor({
                         type="checkbox"
                         checked={op.esCorrecta}
                         onChange={() => toggleCorrectOption(op.id)}
-                        className="size-4 shrink-0 cursor-pointer accent-[#2563EB]"
+                        className="size-4 shrink-0 cursor-pointer accent-primary"
                         aria-label={`Marcar opción ${idx + 1} como correcta`}
                       />
                     ) : (
@@ -626,7 +626,7 @@ export function QuizMultipleActivityEditor({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
+                      className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
                       onClick={() => removeOption(op.id)}
                     >
                       <Trash2 className="size-3.5" />

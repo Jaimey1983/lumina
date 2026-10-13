@@ -3,11 +3,17 @@
 
 @config "../../tailwind.config.ts";
 
-/* Primitivos shadcn/radix extraídos a @lumina/ui (E7.6.2) y substrato del editor
-   a @lumina/editor-shared (E7.6.3-pre): fuera de la raíz que Tailwind autodetecta
-   (lumina-frontend/), hay que declararlos. */
+/* Paquetes del workspace que emiten clases Tailwind: fuera de la raíz que Tailwind
+   autodetecta (lumina-frontend/) —y sin pasar por node_modules, que no escanea—,
+   hay que declararlos. Primitivos shadcn/radix en @lumina/ui (E7.6.2), substrato del
+   editor en @lumina/editor-shared (E7.6.3-pre), elementos (widgets, actividades,
+   bloques) en @lumina/element-kit (X.4) y el contenedor de gráficos en
+   @lumina/charts (X.4). Un paquete nuevo con `className="…"` se declara acá:
+   `src/lib/tailwind-sources.spec.ts` lo hace cumplir. */
 @source "../../../packages/ui/src";
 @source "../../../packages/editor-shared/src";
+@source "../../../packages/element-kit/src";
+@source "../../../packages/charts/src";
 
 @import 'tw-animate-css';
 

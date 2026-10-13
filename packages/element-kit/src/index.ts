@@ -257,6 +257,105 @@ export {
 } from "./elements/puzzle_palabras/index.js";
 
 export {
+  problemaPasosDefinition,
+  registrarProblemaPasos,
+  evaluarProblemaPasos,
+  PROBLEMA_PASOS_TIPO,
+  ProblemaPasosEditor,
+  ProblemaPasosViewer,
+  ProblemaPasosPropiedades,
+  type ProblemaPasosConfig,
+  type ProblemaPasosEstado,
+  type ProblemaPasosDefinition,
+} from "./elements/problema_pasos/index.js";
+export { createDefaultProblemaPasos } from "./activities/problema-pasos/index.js";
+
+export {
+  relacionarLineasDefinition,
+  registrarRelacionarLineas,
+  evaluarRelacionarLineas,
+  RELACIONAR_LINEAS_TIPO,
+  RelacionarLineasEditor,
+  RelacionarLineasViewer,
+  RelacionarLineasPropiedades,
+  type RelacionarLineasConfig,
+  type RelacionarLineasEstado,
+  type RelacionarLineasDefinition,
+} from "./elements/relacionar_lineas/index.js";
+export { createDefaultRelacionarLineas } from "./activities/relacionar-lineas/index.js";
+
+export {
+  etiquetarImagenDefinition,
+  registrarEtiquetarImagen,
+  evaluarEtiquetarImagen,
+  ETIQUETAR_IMAGEN_TIPO,
+  EtiquetarImagenEditor,
+  EtiquetarImagenViewer,
+  EtiquetarImagenPropiedades,
+  type EtiquetarImagenConfig,
+  type EtiquetarImagenEstado,
+  type EtiquetarImagenDefinition,
+} from "./elements/etiquetar_imagen/index.js";
+export { createDefaultEtiquetarImagen } from "./activities/etiquetar-imagen/index.js";
+
+export {
+  lineaTiempoDefinition,
+  registrarLineaTiempo,
+  evaluarLineaTiempo,
+  LINEA_TIEMPO_TIPO,
+  LineaTiempoEditor,
+  LineaTiempoViewer,
+  LineaTiempoPropiedades,
+  type LineaTiempoConfig,
+  type LineaTiempoEstado,
+  type LineaTiempoDefinition,
+} from "./elements/linea_tiempo/index.js";
+export { createDefaultLineaTiempo } from "./activities/linea-tiempo/index.js";
+
+export {
+  clozeBancoDefinition,
+  registrarClozeBanco,
+  evaluarClozeBanco,
+  CLOZE_BANCO_TIPO,
+  ClozeBancoEditor,
+  ClozeBancoViewer,
+  ClozeBancoPropiedades,
+  type ClozeBancoConfig,
+  type ClozeBancoEstado,
+  type ClozeBancoDefinition,
+} from "./elements/cloze_banco/index.js";
+export { createDefaultClozeBanco } from "./activities/cloze-banco/index.js";
+
+export {
+  torneoDefinition,
+  registrarTorneo,
+  TORNEO_TIPO,
+  TorneoEditor,
+  TorneoViewer,
+  TorneoPropiedades,
+  type TorneoConfig,
+  type TorneoEstado,
+  type TorneoDefinition,
+} from "./elements/torneo/index.js";
+export {
+  escapeRoomDefinition,
+  registrarEscapeRoom,
+  ESCAPE_ROOM_TIPO,
+  EscapeRoomEditor,
+  EscapeRoomViewer,
+  EscapeRoomPropiedades,
+  type EscapeRoomConfig,
+  type EscapeRoomEstado,
+  type EscapeRoomDefinition,
+} from "./elements/escape-room/index.js";
+export {
+  createDefaultTorneo,
+  normalizeTorneo,
+  type TorneoAnswerPayload,
+  type TorneoRankingRow,
+} from "./activities/torneo/index.js";
+
+export {
   globosDefinition,
   registrarGlobos,
   evaluarGlobos,
@@ -451,6 +550,13 @@ import { progresoDefinition } from "./elements/progreso/progreso-definition.js";
 import { clasificarDefinition } from "./elements/clasificar/clasificar-definition.js";
 import { crucigramaDefinition } from "./elements/crucigrama/crucigrama-definition.js";
 import { globosDefinition } from "./elements/globos/globos-definition.js";
+import { torneoDefinition } from "./elements/torneo/torneo-definition.js";
+import { relacionarLineasDefinition } from "./elements/relacionar_lineas/relacionar_lineas-definition.js";
+import { problemaPasosDefinition } from "./elements/problema_pasos/problema_pasos-definition.js";
+import { etiquetarImagenDefinition } from "./elements/etiquetar_imagen/etiquetar_imagen-definition.js";
+import { lineaTiempoDefinition } from "./elements/linea_tiempo/linea_tiempo-definition.js";
+import { clozeBancoDefinition } from "./elements/cloze_banco/cloze_banco-definition.js";
+import { escapeRoomDefinition } from "./elements/escape-room/escape-room-definition.js";
 import { historiaRamificadaDefinition } from "./elements/historia_ramificada/historia_ramificada-definition.js";
 import { memoriaDefinition } from "./elements/memoria/memoria-definition.js";
 import { puzzleImagenDefinition } from "./elements/puzzle_imagen/puzzle_imagen-definition.js";
@@ -499,6 +605,13 @@ export type ElementCatalog = {
   ahorcado: typeof ahorcadoDefinition;
   puzzle_palabras: typeof puzzlePalabrasDefinition;
   globos: typeof globosDefinition;
+  torneo: typeof torneoDefinition;
+  relacionar_lineas: typeof relacionarLineasDefinition;
+  problema_pasos: typeof problemaPasosDefinition;
+  etiquetar_imagen: typeof etiquetarImagenDefinition;
+  linea_tiempo: typeof lineaTiempoDefinition;
+  cloze_banco: typeof clozeBancoDefinition;
+  escape_room: typeof escapeRoomDefinition;
   topo: typeof topoDefinition;
   historia_ramificada: typeof historiaRamificadaDefinition;
   quiz_multiple: typeof quizMultipleDefinition;
@@ -549,6 +662,13 @@ elementRegistry.registrar(abrirCajaDefinition);
 elementRegistry.registrar(ahorcadoDefinition);
 elementRegistry.registrar(puzzlePalabrasDefinition);
 elementRegistry.registrar(globosDefinition);
+elementRegistry.registrar(torneoDefinition);
+elementRegistry.registrar(relacionarLineasDefinition);
+elementRegistry.registrar(problemaPasosDefinition);
+elementRegistry.registrar(etiquetarImagenDefinition);
+elementRegistry.registrar(lineaTiempoDefinition);
+elementRegistry.registrar(clozeBancoDefinition);
+elementRegistry.registrar(escapeRoomDefinition);
 elementRegistry.registrar(topoDefinition);
 elementRegistry.registrar(quizMultipleDefinition);
 elementRegistry.registrar(verdaderoFalsoDefinition);

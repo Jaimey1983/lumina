@@ -3,7 +3,7 @@
  * Es un extra «de mejor esfuerzo»: sin WebAudio, o con el navegador bloqueando el audio hasta
  * que el alumno toque la página, el contador avisa solo en lo visual. Nunca lanza.
  */
-import { obtenerAudioContextCtor } from '../_audio/audio-context.js';
+import { obtenerAudioContextCtor } from '../../_efectos/audio/audio-context.js';
 
 let contexto: AudioContext | null = null;
 

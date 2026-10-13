@@ -23,7 +23,10 @@ export function ClasificarViewer({
   config,
 }: ElementViewerProps<ClasificarEstado, ClasificarConfig>) {
   return (
-    <LegacyClasificarViewer actividad={estado} onComplete={config.onComplete} />
+    <LegacyClasificarViewer
+      actividad={estado}
+      onResponse={config.onResponse}
+    />
   );
 }
 

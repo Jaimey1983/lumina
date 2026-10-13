@@ -2,9 +2,11 @@ import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultAnagrama } from "../../activities/anagrama/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
+import { crearPropiedadesConAjustes } from "../_shared/propiedades-con-ajustes.js";
+import { PRESETS_ANAGRAMA } from "./anagrama-estilos.js";
 import {
   AnagramaEditor,
-  AnagramaPropiedades,
+  AnagramaPropiedades as AnagramaPropiedadesBase,
   AnagramaViewer,
 } from "./anagrama-adapters.js";
 import {
@@ -12,6 +14,12 @@ import {
   type AnagramaConfig,
   type AnagramaEstado,
 } from "./anagrama-types.js";
+
+/** U9c.2: el panel suma estilos y ajustes comunes al panel de siempre (palabras y pistas). */
+const AnagramaPropiedades = crearPropiedadesConAjustes(AnagramaPropiedadesBase, {
+  presets: PRESETS_ANAGRAMA,
+  storageKey: "actividad.anagrama.estilos",
+});
 
 /**
  * Evalúa una respuesta contra el estado del Anagrama.
@@ -32,11 +40,13 @@ export const anagramaDefinition = {
   Editor: AnagramaEditor,
   Viewer: AnagramaViewer,
   Propiedades: AnagramaPropiedades,
+  // U9c.2: el estilo (`ajustes.estilo`) es color; la tipografía no se toca y no hay movimiento.
   apariencia: {
-    color: false,
+    color: true,
     tipografia: false,
     animacion: false,
   },
+  presets: PRESETS_ANAGRAMA,
   puntuacion: (estado: AnagramaEstado, respuesta?: unknown) =>
     evaluarAnagrama(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["anagrama"],

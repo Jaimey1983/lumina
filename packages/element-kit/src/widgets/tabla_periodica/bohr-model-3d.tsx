@@ -30,7 +30,7 @@ import {
   puntoEnOrbita,
   radioNucleo,
 } from './bohr-geometry.js';
-import { prefiereMovimientoReducido } from '../_motion/reduced-motion.js';
+import { prefiereMovimientoReducido } from '../../_efectos/motion/reduced-motion.js';
 import styles from './tabla-periodica.module.css';
 
 interface BohrModel3DProps {

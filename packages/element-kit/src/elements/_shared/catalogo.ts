@@ -172,6 +172,18 @@ export const CATALOGO_ELEMENTOS = {
     familia: "actividad",
   },
 
+  torneo: {
+    nombre: "Torneo de preguntas",
+    descripcion: "Preguntas de opción múltiple con ranking, en vivo o a tu ritmo",
+    familia: "actividad",
+  },
+
+  escape_room: {
+    nombre: "Escape Room",
+    descripcion: "Salas con acertijos, pistas y tiempo límite; solo o en equipos",
+    familia: "actividad",
+  },
+
   // ─── Actividades clásicas ──────────────────────────────────────────────────
   quiz_multiple: { nombre: "Opción múltiple", familia: "actividad" },
   verdadero_falso: { nombre: "Verdadero o falso", familia: "actividad" },
@@ -198,6 +210,31 @@ export const CATALOGO_ELEMENTOS = {
     familia: "actividad",
   },
   arrastrar_soltar: { nombre: "Arrastrar y soltar", familia: "actividad" },
+  problema_pasos: {
+    nombre: "Problema paso a paso",
+    descripcion: "Un problema resuelto en pasos, con respuesta numérica o algebraica y pistas escalonadas",
+    familia: "actividad",
+  },
+  relacionar_lineas: {
+    nombre: "Relacionar con líneas",
+    descripcion: "Une dos columnas trazando líneas; la de la derecha puede traer distractores",
+    familia: "actividad",
+  },
+  etiquetar_imagen: {
+    nombre: "Etiquetar imagen",
+    descripcion: "Coloca cada etiqueta en su marcador sobre una imagen: anatomía, mapas, circuitos",
+    familia: "actividad",
+  },
+  linea_tiempo: {
+    nombre: "Línea de tiempo",
+    descripcion: "Ordena eventos cronológicamente sobre un eje y revela las fechas al comprobar",
+    familia: "actividad",
+  },
+  cloze_banco: {
+    nombre: "Cloze con banco",
+    descripcion: "Completa un texto arrastrando palabras de un banco (con distractores) a los huecos",
+    familia: "actividad",
+  },
   emparejar: { nombre: "Emparejar", familia: "actividad" },
   ordenar_pasos: { nombre: "Ordenar pasos", familia: "actividad" },
   video_interactivo: { nombre: "Video interactivo", familia: "actividad" },

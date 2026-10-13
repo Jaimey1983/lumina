@@ -1,0 +1,278 @@
+/*
+ * U3 — estilos del marco de actividad (`ActivityShell`, `ActivityHeader`,
+ * `ActivityResultScreen`). Todo color, radio y sombra sale de los tokens `--la-*` de
+ * `activity-tokens.module.css` (la raíz del shell aplica `.tokens`); aquí no hay hex.
+ */
+.raiz {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border-radius: var(--la-radio-lg);
+}
+
+.contenido {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── Encabezado ─────────────────────────────────────────────────────────── */
+.encabezado {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--la-color-borde);
+}
+
+.progreso {
+  display: flex;
+  flex: 1 1 8rem;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 6rem;
+}
+
+.progresoPista {
+  flex: 1 1 auto;
+  height: 0.5rem;
+  overflow: hidden;
+  background: var(--la-color-bloqueado-suave);
+  border-radius: 999px;
+}
+
+.progresoRelleno {
+  height: 100%;
+  background: var(--la-color-seleccionado);
+  border-radius: inherit;
+  transition: width 200ms ease;
+}
+
+.etiqueta {
+  font-variant-numeric: tabular-nums;
+  color: var(--la-color-texto-suave);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.625rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--la-color-texto);
+  background: var(--la-color-bloqueado-suave);
+  border-radius: 999px;
+}
+
+.chipUrgente {
+  color: var(--la-color-incorrecto-texto);
+  background: var(--la-color-incorrecto-suave);
+}
+
+.vidas {
+  display: inline-flex;
+  gap: 0.125rem;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.vidaLlena {
+  color: var(--la-color-incorrecto);
+}
+
+.vidaVacia {
+  color: var(--la-color-bloqueado);
+}
+
+/* ── Intro y barra de revisión ──────────────────────────────────────────── */
+.intro {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.instruccion {
+  max-width: 36rem;
+  margin: 0;
+  color: var(--la-color-texto-suave);
+}
+
+.barraRevision {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--la-color-seleccionado-suave);
+  border-top: 1px solid var(--la-color-borde);
+}
+
+.boton {
+  padding: 0.5rem 1.25rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--la-color-superficie);
+  cursor: pointer;
+  background: var(--la-color-seleccionado);
+  border: 0;
+  border-radius: var(--la-radio-md);
+}
+
+.boton:hover {
+  filter: brightness(0.92);
+}
+
+.boton:focus-visible,
+.botonSecundario:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.botonSecundario {
+  padding: 0.5rem 1.25rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--la-color-texto);
+  cursor: pointer;
+  background: var(--la-color-superficie);
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+}
+
+/* ── Pantalla de resultados ─────────────────────────────────────────────── */
+.velo {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 0.6);
+  border-radius: inherit;
+}
+
+.dialogo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(100%, 24rem);
+  max-height: 100%;
+  padding: 1.5rem;
+  overflow-y: auto;
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border-radius: var(--la-radio-xl);
+  box-shadow: var(--la-elevacion-2);
+}
+
+.dialogo:focus {
+  outline: none;
+}
+
+.resultadoTitulo {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.nota {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.notaAprobada {
+  color: var(--la-color-correcto-texto);
+}
+
+.notaReprobada {
+  color: var(--la-color-incorrecto-texto);
+}
+
+.resumen {
+  margin: 0;
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--la-color-texto-suave);
+}
+
+.desglose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  border-radius: var(--la-radio-sm);
+}
+
+.itemCorrecto {
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+}
+
+.itemIncorrecto {
+  color: var(--la-color-incorrecto-texto);
+  background: var(--la-color-incorrecto-suave);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progresoRelleno {
+    transition: none;
+  }
+}

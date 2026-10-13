@@ -23,7 +23,10 @@ export function PuzzleImagenViewer({
   config,
 }: ElementViewerProps<PuzzleImagenEstado, PuzzleImagenConfig>) {
   return (
-    <LegacyPuzzleImagenViewer actividad={estado} onComplete={config.onComplete} />
+    <LegacyPuzzleImagenViewer
+      actividad={estado}
+      onResponse={config.onResponse}
+    />
   );
 }
 

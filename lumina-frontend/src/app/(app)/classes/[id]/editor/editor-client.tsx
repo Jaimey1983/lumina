@@ -126,11 +126,16 @@ import {
   wordCloudTemplate,
 } from '@lumina/element-kit/activities/_classic/activity-templates';
 import { createDefaultGlobos } from '@lumina/element-kit/activities/globos/globos-defaults';
+import { createDefaultTorneo } from '@lumina/element-kit/activities/torneo/torneo-defaults';
+import { createDefaultRelacionarLineas } from '@lumina/element-kit/activities/relacionar-lineas/relacionar-lineas-defaults';
+import { createDefaultProblemaPasos } from '@lumina/element-kit/activities/problema-pasos/problema-pasos-defaults';
+import { createDefaultEtiquetarImagen } from '@lumina/element-kit/activities/etiquetar-imagen/etiquetar-imagen-defaults';
+import { createDefaultLineaTiempo } from '@lumina/element-kit/activities/linea-tiempo/linea-tiempo-defaults';
+import { createDefaultClozeBanco } from '@lumina/element-kit/activities/cloze-banco/cloze-banco-defaults';
 import { createDefaultTopo } from '@lumina/element-kit/activities/topo/topo-defaults';
 import { createDefaultHistoriaRamificada } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-defaults';
 import { activityTitleFromContent } from './components/panels/activities-ai-normalize';
 import {
-  BLOCK_FALLBACKS,
   parseClassModoEntrega,
   type Activity,
   type Block,
@@ -242,7 +247,7 @@ import {
   SheetTitle,
 } from '@lumina/ui/sheet';
 import { SlideRenderer } from './components/slide-renderer';
-import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';
+import { createDefaultEscapeRoom } from '@lumina/element-kit/activities/escape-room/escape-room-defaults';
 import { api } from '@/lib/api';
 import {
   getCustomThemesForClass,
@@ -271,28 +276,9 @@ import { NUDGE_STEP_PX, NUDGE_STEP_SHIFT_PX } from '@/hooks/use-block-drag';
 
 // Las 10 plantillas de la familia clásica viven en `@lumina/element-kit/activities/_classic/activity-templates`
 // (extraídas en E2.5 para que `@lumina/element-kit` las consuma como
-// `crearPorDefecto`). `torneo` y `escape_room` siguen acá — no son parte de E2.5.
+// `crearPorDefecto`). `torneo` y `escape_room` también viven en el kit (U11.1/U11.4).
 
 const EMPTY_CLASS_VARIABLES: readonly VariableDef[] = [];
-
-function torneoTemplate(): Activity {
-  const fb = BLOCK_FALLBACKS.torneo;
-  return {
-    tipo: 'torneo',
-    preguntas: fb.preguntas.map((p) => ({
-      enunciado: p.enunciado,
-      opciones: [...p.opciones],
-      correcta: p.correcta,
-      tiempoSegundos: p.tiempoSegundos,
-    })),
-    puntosBase: fb.puntosBase,
-    bonusVelocidad: fb.bonusVelocidad,
-  };
-}
-
-function escapeRoomTemplate(): Activity {
-  return normalizeEscapeRoomActivity(undefined);
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -2013,12 +1999,17 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'formular-compuesto': formularCompuestoActivityTemplate,
         'drag-drop':        dragDropTemplate,
         'match':            matchPairsTemplate,
+        relacionar_lineas:  createDefaultRelacionarLineas,
+        problema_pasos:     createDefaultProblemaPasos,
+        etiquetar_imagen:   createDefaultEtiquetarImagen,
+        linea_tiempo:       createDefaultLineaTiempo,
+        cloze_banco:        createDefaultClozeBanco,
         'sort-steps':       orderStepsTemplate,
         'video-interactive': videoInteractiveTemplate,
         'live-poll':        livePollTemplate,
         'word-cloud':       wordCloudTemplate,
-        torneo:             torneoTemplate,
-        escape_room:        escapeRoomTemplate,
+        torneo:             createDefaultTorneo,
+        escape_room:        createDefaultEscapeRoom,
         clasificar:         createDefaultClasificar,
         memoria:            createDefaultMemoria,
         puzzle_imagen:      createDefaultPuzzleImagen,
@@ -2043,6 +2034,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'formular-compuesto': 'Formular compuesto',
         'drag-drop':        'Arrastrar y soltar',
         'match':            'Emparejar',
+        relacionar_lineas:  'Relacionar con líneas',
+        problema_pasos:     'Problema paso a paso',
+        etiquetar_imagen:   'Etiquetar imagen',
+        linea_tiempo:       'Línea de tiempo',
+        cloze_banco:        'Cloze con banco',
         'sort-steps':       'Ordenar pasos',
         'video-interactive': 'Video interactivo',
         'live-poll':        'Encuesta en vivo',

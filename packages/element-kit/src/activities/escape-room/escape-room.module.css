@@ -1,0 +1,187 @@
+/*
+ * U11.3b — color del viewer de Escape Room. Sale de los tokens `--la-*` (ver `activity-tokens.module.css`);
+ * la variante oscura (`data-variante='dark'`) es la del modo presentación sobre fondo oscuro.
+ */
+.raiz {
+  border-color: var(--la-color-borde);
+  background: color-mix(in srgb, var(--la-color-superficie) 95%, transparent);
+}
+.raiz[data-variante='dark'] {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+}
+
+/* ─── Textos ─── */
+.titulo { color: var(--la-color-texto); }
+.suave { color: var(--la-color-texto-suave); }
+.suaveFuerte { color: var(--la-color-texto-suave); }
+.tenue { color: var(--la-color-bloqueado); }
+.tenueBajo { color: var(--la-color-bloqueado); }
+.puntosOk { color: var(--la-color-seleccionado); }
+.letra { color: var(--la-color-bloqueado); }
+.raiz[data-variante='dark'] .titulo { color: white; }
+.raiz[data-variante='dark'] .suave { color: rgb(255 255 255 / 0.6); }
+.raiz[data-variante='dark'] .suaveFuerte { color: rgb(255 255 255 / 0.7); }
+.raiz[data-variante='dark'] .tenue { color: rgb(255 255 255 / 0.5); }
+.raiz[data-variante='dark'] .tenueBajo { color: rgb(255 255 255 / 0.4); }
+
+/* ─── Progreso de salas ─── */
+.progresoOn { background: var(--la-color-seleccionado); }
+.progresoOff { background: var(--la-color-borde); }
+.raiz[data-variante='dark'] .progresoOff { background: rgb(255 255 255 / 0.2); }
+
+/* ─── Cajas neutras (equipo, datos de resultado, filas del desglose y del podio) ─── */
+.cajaEquipo,
+.cajaDato {
+  border-color: var(--la-color-borde);
+  background: color-mix(in srgb, var(--la-color-texto-suave) 6%, var(--la-color-superficie));
+  color: var(--la-color-texto);
+}
+.raiz[data-variante='dark'] .cajaEquipo,
+.raiz[data-variante='dark'] .cajaDato {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+  color: white;
+}
+.raiz[data-variante='dark'] .cajaEquipo { color: rgb(255 255 255 / 0.9); }
+
+.filaDato {
+  background: color-mix(in srgb, var(--la-color-texto-suave) 6%, var(--la-color-superficie));
+  color: var(--la-color-texto);
+}
+.filaPropia {
+  background: var(--la-color-seleccionado-suave);
+  color: var(--la-color-seleccionado-texto);
+}
+.raiz[data-variante='dark'] .filaDato {
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.9);
+}
+.raiz[data-variante='dark'] .filaPropia {
+  background: color-mix(in srgb, var(--la-color-seleccionado) 30%, transparent);
+  color: white;
+}
+
+/* ─── Píldoras, icono de la intro y reloj ─── */
+.circuloIcono { background: var(--la-color-seleccionado-suave); }
+.iconoPrimario { color: var(--la-color-seleccionado); }
+.pildora {
+  background: var(--la-color-seleccionado-suave);
+  color: var(--la-color-seleccionado);
+}
+.pildoraTiempo {
+  background: var(--la-color-pista-suave);
+  color: var(--la-color-pista);
+}
+.pildoraReloj {
+  background: color-mix(in srgb, var(--la-color-texto-suave) 10%, var(--la-color-superficie));
+  color: var(--la-color-texto);
+}
+.raiz[data-variante='dark'] .circuloIcono,
+.raiz[data-variante='dark'] .pildora,
+.raiz[data-variante='dark'] .pildoraTiempo,
+.raiz[data-variante='dark'] .pildoraReloj {
+  background: rgb(255 255 255 / 0.15);
+  color: white;
+}
+.raiz[data-variante='dark'] .iconoPrimario { color: white; }
+
+/* ─── Botón «Finalizar» ─── */
+.botonSecundario {
+  background: color-mix(in srgb, var(--la-color-texto-suave) 10%, var(--la-color-superficie));
+  color: var(--la-color-texto);
+}
+.botonSecundario:hover { background: var(--la-color-borde); }
+.raiz[data-variante='dark'] .botonSecundario {
+  background: rgb(255 255 255 / 0.15);
+  color: white;
+}
+.raiz[data-variante='dark'] .botonSecundario:hover { background: rgb(255 255 255 / 0.25); }
+
+/* ─── Separadores y borde del lienzo de la sala ─── */
+.bordeSuave { border-color: var(--la-color-borde); }
+.separador { background: var(--la-color-borde); }
+.raiz[data-variante='dark'] .bordeSuave { border-color: rgb(255 255 255 / 0.15); }
+.raiz[data-variante='dark'] .separador { background: rgb(255 255 255 / 0.15); }
+
+/* ─── Opciones de respuesta ─── */
+.opcion {
+  border-color: var(--la-color-borde);
+  background: var(--la-color-superficie);
+  color: var(--la-color-texto);
+}
+.opcion:enabled:hover {
+  border-color: var(--la-color-seleccionado);
+  background: var(--la-color-seleccionado-suave);
+}
+.opcionSel {
+  border-color: var(--la-color-seleccionado);
+  background: var(--la-color-seleccionado-suave);
+  color: var(--la-color-seleccionado);
+}
+.raiz[data-variante='dark'] .opcion {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.05);
+  color: rgb(255 255 255 / 0.8);
+}
+.raiz[data-variante='dark'] .opcion:enabled:hover {
+  border-color: rgb(255 255 255 / 0.4);
+  background: rgb(255 255 255 / 0.05);
+}
+.raiz[data-variante='dark'] .opcionSel {
+  border-color: var(--la-color-seleccionado);
+  background: color-mix(in srgb, var(--la-color-seleccionado) 30%, transparent);
+  color: white;
+}
+
+/* ─── Campo de texto / código ─── */
+.campo {
+  border-color: var(--la-color-borde);
+  background: var(--la-color-superficie);
+  color: var(--la-color-texto);
+}
+.campo::placeholder { color: var(--la-color-bloqueado); }
+.campo:focus {
+  border-color: var(--la-color-seleccionado);
+  box-shadow: 0 0 0 2px var(--la-color-seleccionado-suave);
+}
+.campoError {
+  border-color: color-mix(in srgb, var(--la-color-incorrecto) 45%, white);
+  background: color-mix(in srgb, var(--la-color-incorrecto) 4%, var(--la-color-superficie));
+}
+.raiz[data-variante='dark'] .campo {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+  color: white;
+}
+.raiz[data-variante='dark'] .campo::placeholder { color: rgb(255 255 255 / 0.3); }
+.raiz[data-variante='dark'] .campo:focus {
+  border-color: var(--la-color-seleccionado);
+  box-shadow: none;
+}
+.raiz[data-variante='dark'] .campoError {
+  border-color: rgb(248 113 113 / 0.6);
+  background: rgb(255 255 255 / 0.1);
+}
+
+/* ─── Pistas ─── */
+.botonPista {
+  border-color: var(--la-color-borde);
+  background: color-mix(in srgb, var(--la-color-texto-suave) 6%, var(--la-color-superficie));
+  color: var(--la-color-texto-suave);
+}
+.botonPista:hover {
+  background: color-mix(in srgb, var(--la-color-texto-suave) 10%, var(--la-color-superficie));
+}
+.raiz[data-variante='dark'] .botonPista {
+  border-color: rgb(255 255 255 / 0.15);
+  background: rgb(255 255 255 / 0.05);
+  color: rgb(255 255 255 / 0.7);
+}
+.raiz[data-variante='dark'] .botonPista:hover { background: rgb(255 255 255 / 0.1); }
+
+.cajaPista {
+  border-color: color-mix(in srgb, var(--la-color-pista) 35%, white);
+  background: var(--la-color-pista-suave);
+  color: var(--la-color-pista-texto);
+}

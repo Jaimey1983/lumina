@@ -28,6 +28,11 @@ import {
   FlaskConical,
   TableProperties,
   Atom,
+  Spline,
+  Footprints,
+  ImagePlus,
+  GalleryHorizontal,
+  TextCursorInput,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
@@ -50,6 +55,11 @@ export type ActivityType =
   | 'formular-compuesto'
   | 'drag-drop'
   | 'match'
+  | 'relacionar_lineas'
+  | 'problema_pasos'
+  | 'etiquetar_imagen'
+  | 'linea_tiempo'
+  | 'cloze_banco'
   | 'sort-steps'
   | 'video-interactive'
   | 'live-poll'
@@ -96,6 +106,11 @@ const QUIMICA: ActivityItem[] = [
 const INTERACTION: ActivityItem[] = [
   { type: 'drag-drop',         label: 'Drag & Drop',        Icon: GripVertical },
   { type: 'match',             label: 'Emparejar',           Icon: Columns2 },
+  { type: 'relacionar_lineas', label: 'Relacionar con líneas', Icon: Spline },
+  { type: 'problema_pasos', label: 'Problema paso a paso', Icon: Footprints },
+  { type: 'etiquetar_imagen', label: 'Etiquetar imagen', Icon: ImagePlus },
+  { type: 'linea_tiempo', label: 'Línea de tiempo', Icon: GalleryHorizontal },
+  { type: 'cloze_banco', label: 'Cloze con banco', Icon: TextCursorInput },
   { type: 'sort-steps',        label: 'Ordenar pasos',       Icon: ListOrdered },
   { type: 'video-interactive', label: 'Video interactivo',   Icon: Video },
 ];

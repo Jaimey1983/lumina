@@ -1,4 +1,6 @@
 import type { GlobosActivity, GlobosPregunta } from '@lumina/types/slide'
+import { barajar } from '../_shared/barajar.js'
+import { normalizarOpcionesTexto } from '../_shared/opciones.js'
 
 export const GLOBOS_MAX_PREGUNTAS = 30
 export const GLOBOS_MIN_PREGUNTAS = 1
@@ -16,14 +18,13 @@ export function generarIdGlobos(prefijo: string): string {
   return `${prefijo}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-/** Mezcla opciones/globos para que la respuesta correcta no quede siempre a la izquierda. */
-export function mezclarOpcionesGlobos<T>(opciones: T[]): T[] {
-  const result = [...opciones]
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[result[i], result[j]] = [result[j], result[i]]
-  }
-  return result
+/**
+ * Mezcla opciones/globos para que la respuesta correcta no quede siempre a la izquierda.
+ * Con `semilla` (`ajustes.semilla`, DU3) el orden es el mismo para toda la clase; `sal` separa
+ * una pregunta de otra dentro de la misma semilla.
+ */
+export function mezclarOpcionesGlobos<T>(opciones: T[], semilla?: number | null, sal = 0): T[] {
+  return barajar(opciones, semilla, sal)
 }
 
 export function crearOpcionesGlobosDefault(): GlobosPregunta['opciones'] {
@@ -39,21 +40,7 @@ export function crearOpcionesGlobosDefault(): GlobosPregunta['opciones'] {
 function normalizarOpciones(
   opciones: GlobosPregunta['opciones'],
 ): GlobosPregunta['opciones'] {
-  const limpias = opciones
-    .map((op) => ({
-      texto: typeof op.texto === 'string' ? op.texto.trim() : '',
-      correcta: op.correcta === true,
-    }))
-    .filter((op) => op.texto.length > 0)
-
-  if (limpias.length >= GLOBOS_MIN_OPCIONES) {
-    if (!limpias.some((op) => op.correcta)) {
-      return limpias.map((op, index) => ({ ...op, correcta: index === 0 }))
-    }
-    return limpias
-  }
-
-  return crearOpcionesGlobosDefault()
+  return normalizarOpcionesTexto(opciones, GLOBOS_MIN_OPCIONES, crearOpcionesGlobosDefault)
 }
 
 /** Repara actividades guardadas con pocas opciones o textos vacíos. */
@@ -86,6 +73,8 @@ export function normalizarGlobos(act: GlobosActivity): GlobosActivity {
 
   return {
     tipo: 'globos',
+    // `ajustes` (etapa U) viaja intacto: antes se descartaba al hidratar el slide.
+    ...(act.ajustes ? { ajustes: act.ajustes } : {}),
     configuracion: {
       velocidad: cfg.velocidad === 'lenta' || cfg.velocidad === 'rapida' ? cfg.velocidad : 'normal',
       vidas: typeof cfg.vidas === 'number' && cfg.vidas >= 1 ? Math.min(5, cfg.vidas) : 3,
@@ -97,8 +86,11 @@ export function normalizarGlobos(act: GlobosActivity): GlobosActivity {
   }
 }
 
+/** Huella del CONTENIDO: cambiar un ajuste (estilo, sonido…) no reinicia la partida. */
 export function globosFingerprint(act: GlobosActivity): string {
-  return JSON.stringify(normalizarGlobos(act))
+  const { ajustes: _ajustes, ...contenido } = normalizarGlobos(act)
+  void _ajustes
+  return JSON.stringify(contenido)
 }
 
 export function calcularTamanoGlobo(

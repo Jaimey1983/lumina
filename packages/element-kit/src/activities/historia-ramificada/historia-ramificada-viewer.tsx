@@ -1,14 +1,30 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
-import { HistoriaRamificadaActivity } from '@lumina/types/slide'
+/**
+ * Viewer de Historia ramificada sobre el `ActivityShell` (U9d.4).
+ *
+ * El shell aporta el reloj (si el docente fija un límite), los tokens de estilo y la pantalla de
+ * resultados. Lo que sale hacia `@lumina/scoring` NO cambió: UNA respuesta `{ historial }` al llegar
+ * a un nodo final (o, si hay límite de tiempo y se agota, el recorrido hasta ese momento); sale por
+ * `onResponse` (canal unificado, DU2).
+ * El progreso («N pasos») y «Volver atrás» siguen siendo propios del tipo (`mostrarProgreso`,
+ * `permitirRetroceder`).
+ */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { HistoriaRamificadaActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
-import { ActivityResultOverlay } from '../_shared/activity-result-overlay.js'
-import { esNodoFinal, COLORES_NODO } from './historia-ramificada-config.js'
 
-interface HistoriaRamificadaViewerProps {
+import { useActivityFeedback } from '../_shared/activity-feedback.js'
+import { hayJuicioDefinido } from '../_shared/opciones.js'
+import { normalizarAjustes } from '../_shared/activity-settings.js'
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js'
+import { COLORES_NODO, COLOR_NODO_DEFAULT, esNodoFinal } from './historia-ramificada-config.js'
+import styles from './historia-ramificada.module.css'
+
+export interface HistoriaRamificadaViewerProps {
   actividad: HistoriaRamificadaActivity
-  onComplete?: (response: unknown) => void
+  /** Canal de respuesta unificado (DU2). */
+  onResponse?: (response: unknown) => void
 }
 
 interface PasoHistorial {
@@ -17,208 +33,225 @@ interface PasoHistorial {
   fueCorrecta?: boolean
 }
 
-export function HistoriaRamificadaViewer({ actividad, onComplete }: HistoriaRamificadaViewerProps) {
-  const { configuracion, nodos, conexiones, nodoInicial } = actividad
+const MS_FEEDBACK = 1200
+/** Pausa entre llegar al final y abrir el resultado, para ver el nodo final. */
+const MS_RESULTADO = 800
 
-  const [historial, setHistorial] = useState<PasoHistorial[]>([{ nodoId: nodoInicial }])
-  const [mostrarResultado, setMostrarResultado] = useState(false)
-  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
-  const [feedback, setFeedback] = useState<string | null>(null)
-
-  const nodoActualId = historial[historial.length - 1].nodoId
-  const nodoActual = nodos.find(n => n.id === nodoActualId)
-
-  const esFinal = nodoActual ? esNodoFinal(nodoActual.tipo) : false
-
-  // Determinar si la actividad tiene evaluación
-  const tieneEvaluacion = nodos.some(
+const hayEvaluacion = (nodos: HistoriaRamificadaActivity['nodos']) =>
+  nodos.some(
     (n) =>
       n.tipo === 'final_bueno' ||
       n.tipo === 'final_malo' ||
-      (n.tipo === 'pregunta' && n.opciones?.some((o) => o.esCorrecta !== undefined)),
+      (n.tipo === 'pregunta' && hayJuicioDefinido(n.opciones ?? [])),
   )
 
-  const handleOpcion = useCallback((opcionId: string) => {
-    if (!nodoActual) return
+interface CuerpoProps {
+  actividad: HistoriaRamificadaActivity
+  ctx: ActivityShellContext
+  responder: (r: unknown) => void
+  alEvaluar: (e: ActivityEvaluationResult) => void
+}
+
+function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
+  const { configuracion, nodos, conexiones, nodoInicial } = actividad
+  const jugando = ctx.sesion.fase === 'jugando'
+  const motivoFin = ctx.sesion.motivoFin
+  const { completar } = ctx
+  const feedbackSonoro = useActivityFeedback({ sonido: ctx.ajustes.sonido })
+
+  const [historial, setHistorial] = useState<PasoHistorial[]>([{ nodoId: nodoInicial }])
+  const [feedback, setFeedback] = useState<string | null>(null)
+  const emitidaRef = useRef(false)
+  const historialRef = useRef(historial)
+  const temporizadores = useRef<number[]>([])
+  const jugandoRef = useRef(jugando)
+  const completarRef = useRef(completar)
+
+  useEffect(() => {
+    historialRef.current = historial
+    jugandoRef.current = jugando
+    completarRef.current = completar
+  })
+  useEffect(
+    () => () => {
+      temporizadores.current.forEach((t) => window.clearTimeout(t))
+    },
+    [],
+  )
+
+  const nodoActualId = historial[historial.length - 1]!.nodoId
+  const nodoActual = nodos.find((n) => n.id === nodoActualId)
+  const esFinal = nodoActual ? esNodoFinal(nodoActual.tipo) : false
+  const tieneEvaluacion = hayEvaluacion(nodos)
+
+  const emitir = useCallback(
+    (pasos: PasoHistorial[]) => {
+      if (emitidaRef.current) return
+      emitidaRef.current = true
+      const raw = {
+        historial: pasos.map(({ nodoId, opcionElegida }) => ({ nodoId, ...(opcionElegida ? { opcionElegida } : {}) })),
+      }
+      alEvaluar(evaluateActivityResponse('historia_ramificada', actividad, raw))
+      responder(raw)
+    },
+    [actividad, alEvaluar, responder],
+  )
+
+  // Con límite de tiempo: si se agota, sale el recorrido hecho hasta ahora.
+  useEffect(() => {
+    if (motivoFin === 'sin_tiempo') emitir(historialRef.current)
+    // Solo reacciona al fin por tiempo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [motivoFin])
+
+  const despues = (fn: () => void, ms: number) => {
+    temporizadores.current.push(window.setTimeout(fn, ms))
+  }
+
+  const handleOpcion = (opcionId: string) => {
+    if (!nodoActual || !jugando) return
     setFeedback(null)
-
-    const opcion = nodoActual.opciones?.find(o => o.id === opcionId)
+    const opcion = nodoActual.opciones?.find((o) => o.id === opcionId)
     if (!opcion) return
+    if (opcion.feedback) setFeedback(opcion.feedback)
+    if (opcion.esCorrecta !== undefined) feedbackSonoro.emitir(opcion.esCorrecta ? 'acierto' : 'error', { movimiento: false })
 
-    // Mostrar feedback si existe
-    if (opcion.feedback) {
-      setFeedback(opcion.feedback)
-    }
-
-    // Buscar la conexión para esta opción
-    const conexion = conexiones.find(
-      c => c.desdeNodoId === nodoActualId && c.opcionId === opcionId
-    )
-
+    const conexion = conexiones.find((c) => c.desdeNodoId === nodoActualId && c.opcionId === opcionId)
     const fueCorrecta = opcion.esCorrecta === true
 
-    setTimeout(() => {
-      setFeedback(null)
-      if (conexion) {
+    despues(
+      () => {
+        setFeedback(null)
+        if (!conexion || !jugandoRef.current) return
         const nuevoPaso: PasoHistorial = {
           nodoId: conexion.haciaNodoId,
           opcionElegida: opcionId,
           fueCorrecta: opcion.esCorrecta !== undefined ? fueCorrecta : undefined,
         }
-        setHistorial(h => [...h, nuevoPaso])
+        const nuevo = [...historialRef.current, nuevoPaso]
+        historialRef.current = nuevo
+        setHistorial(nuevo)
 
-        const nodoDestino = nodos.find(n => n.id === conexion.haciaNodoId)
-        if (nodoDestino && esNodoFinal(nodoDestino.tipo)) {
-          const historialFinal = [...historial, nuevoPaso]
-          const raw = {
-            historial: historialFinal.map(({ nodoId, opcionElegida }) => ({
-              nodoId,
-              ...(opcionElegida ? { opcionElegida } : {}),
-            })),
-          }
-          const evaluated = evaluateActivityResponse('historia_ramificada', actividad, raw)
-          setEvaluation(evaluated)
-          onComplete?.(raw)
-          if (evaluated.score !== null) {
-            setTimeout(() => setMostrarResultado(true), 800)
-          }
+        const destino = nodos.find((n) => n.id === conexion.haciaNodoId)
+        if (destino && esNodoFinal(destino.tipo)) {
+          emitir(nuevo)
+          despues(() => completarRef.current(), MS_RESULTADO)
         }
-      }
-    }, opcion.feedback ? 1200 : 0)
-  }, [nodoActual, nodoActualId, conexiones, nodos, historial, actividad, onComplete])
+      },
+      opcion.feedback ? MS_FEEDBACK : 0,
+    )
+  }
 
-  const handleRetroceder = useCallback(() => {
+  const handleRetroceder = () => {
     if (historial.length <= 1) return
-    setHistorial(h => h.slice(0, -1))
+    setHistorial((h) => h.slice(0, -1))
     setFeedback(null)
-  }, [historial])
+  }
 
   if (!nodoActual) return null
 
-  const colorNodo = COLORES_NODO[nodoActual.tipo] ?? '#6B7280'
+  const colorNodo = COLORES_NODO[nodoActual.tipo] ?? COLOR_NODO_DEFAULT
   const progreso = tieneEvaluacion
-    ? historial.filter(p => {
-        const n = nodos.find(nd => nd.id === p.nodoId)
-        return n?.tipo === 'pregunta'
-      }).length
+    ? historial.filter((p) => nodos.find((nd) => nd.id === p.nodoId)?.tipo === 'pregunta').length
     : historial.length - 1
-
-  const totalPreguntas = nodos.filter(n => n.tipo === 'pregunta').length
-
-  const correctasHistorial = historial.filter(p => p.fueCorrecta === true).length
+  const totalPreguntas = nodos.filter((n) => n.tipo === 'pregunta').length
+  const correctasHistorial = historial.filter((p) => p.fueCorrecta === true).length
+  const anuncio = feedback ? `Retroalimentación: ${feedback}` : `${nodoActual.titulo ?? nodoActual.tipo}. ${nodoActual.contenido.texto ?? ''}`
 
   return (
-    <div className="relative w-full h-full flex flex-col" style={{ minHeight: 300 }}>
-      {/* Barra de progreso */}
+    <div className={styles.raiz} style={{ '--color-nodo': colorNodo } as React.CSSProperties}>
       {configuracion.mostrarProgreso && (
-        <div className="px-4 pt-3 pb-1">
-          <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+        <div className={styles.progreso}>
+          <div className={styles.progresoTexto}>
             <span>Progreso</span>
             <span>{historial.length - 1} pasos</span>
           </div>
-          <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className={styles.progresoPista}>
             <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: totalPreguntas > 0 ? `${(progreso / totalPreguntas) * 100}%` : '10%',
-                backgroundColor: colorNodo,
-              }}
+              className={styles.progresoRelleno}
+              style={{ width: totalPreguntas > 0 ? `${(progreso / totalPreguntas) * 100}%` : '10%' }}
             />
           </div>
         </div>
       )}
 
-      {/* Contenido del nodo */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 gap-4">
-        {/* Badge de tipo */}
-        <div
-          className="px-3 py-1 rounded-full text-xs font-semibold text-white self-start"
-          style={{ backgroundColor: colorNodo }}
-        >
-          {nodoActual.titulo ?? nodoActual.tipo}
-        </div>
+      <div className={styles.nodo}>
+        <div className={styles.insignia}>{nodoActual.titulo ?? nodoActual.tipo}</div>
 
-        {/* Imagen */}
         {nodoActual.contenido.imagen && (
-          <img
-            src={nodoActual.contenido.imagen}
-            alt=""
-            className="max-h-32 rounded-xl object-cover shadow-md"
-          />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={nodoActual.contenido.imagen} alt="" className={styles.imagen} />
         )}
 
-        {/* Texto */}
-        {nodoActual.contenido.texto && (
-          <p className="text-base text-gray-800 text-center leading-relaxed max-w-md">
-            {nodoActual.contenido.texto}
-          </p>
-        )}
+        {nodoActual.contenido.texto && <p className={styles.texto}>{nodoActual.contenido.texto}</p>}
 
-        {/* Feedback de opción */}
-        {feedback && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-sm text-blue-700 text-center">
-            {feedback}
-          </div>
-        )}
+        {feedback && <div className={styles.feedback}>{feedback}</div>}
 
-        {/* Opciones */}
         {!esFinal && nodoActual.opciones && nodoActual.opciones.length > 0 && !feedback && (
-          <div className="flex flex-col gap-2 w-full max-w-sm">
-            {nodoActual.opciones.map(opcion => {
-              const tieneConexion = conexiones.some(
-                c => c.desdeNodoId === nodoActualId && c.opcionId === opcion.id
-              )
+          <div className={styles.opciones}>
+            {nodoActual.opciones.map((opcion) => {
+              const tieneConexion = conexiones.some((c) => c.desdeNodoId === nodoActualId && c.opcionId === opcion.id)
               return (
                 <button
                   key={opcion.id}
+                  type="button"
                   onClick={() => handleOpcion(opcion.id)}
-                  disabled={!tieneConexion}
-                  className="px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-sm text-gray-700 font-medium hover:border-blue-400 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-left"
+                  disabled={!tieneConexion || !jugando}
+                  className={styles.opcion}
                 >
                   {opcion.texto}
-                  {!tieneConexion && (
-                    <span className="text-xs text-gray-400 ml-2">(sin conexión)</span>
-                  )}
+                  {!tieneConexion && <span className={styles.sinConexion}>(sin conexión)</span>}
                 </button>
               )
             })}
           </div>
         )}
 
-        {/* Nodo final */}
         {esFinal && (
-          <div className="flex flex-col items-center gap-3">
-            <div className="text-4xl">
-              {nodoActual.tipo === 'final_bueno' ? '🏆' : '😔'}
-            </div>
-            {tieneEvaluacion && (
-              <div className="text-sm text-gray-500">
-                Respuestas correctas: {correctasHistorial}
-              </div>
-            )}
+          <div className={styles.final}>
+            <div className={styles.emoji}>{nodoActual.tipo === 'final_bueno' ? '🏆' : '😔'}</div>
+            {tieneEvaluacion && <div className={styles.correctas}>Respuestas correctas: {correctasHistorial}</div>}
           </div>
         )}
       </div>
 
-      {/* Botón retroceder */}
       {configuracion.permitirRetroceder && historial.length > 1 && !esFinal && (
-        <div className="px-4 pb-3">
-          <button
-            onClick={handleRetroceder}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-          >
+        <div className={styles.volver}>
+          <button type="button" onClick={handleRetroceder} className={styles.volverBoton} disabled={!jugando}>
             ← Volver atrás
           </button>
         </div>
       )}
 
-      {/* Overlay resultado */}
-      {mostrarResultado && tieneEvaluacion && (
-        <ActivityResultOverlay
-          evaluation={evaluation ?? undefined}
-          mostrarReintentar={false}
-        />
-      )}
+      {/* El lector de pantalla oye el nodo nuevo (o el feedback de la opción elegida). */}
+      <div role="status" aria-live="polite" className={styles.soloLector}>
+        {anuncio}
+      </div>
     </div>
+  )
+}
+
+export function HistoriaRamificadaViewer({ actividad, onResponse }: HistoriaRamificadaViewerProps) {
+  const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad])
+  // Se recorre una sola vez (como siempre): no se ofrece «Reintentar».
+  const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes])
+  const evaluable = hayEvaluacion(actividad.nodos)
+  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
+
+  const salida = useRef(onResponse)
+  useEffect(() => {
+    salida.current = onResponse
+  }, [onResponse])
+  const responder = useCallback((r: unknown) => salida.current?.(r), [])
+
+  return (
+    <ActivityShell
+      ajustes={ajustesShell}
+      evaluation={evaluation}
+      resultado={evaluable && evaluation?.score !== null ? 'dialogo' : 'ninguno'}
+      className={styles.shell}
+    >
+      {(ctx) => <Cuerpo actividad={actividad} ctx={ctx} responder={responder} alEvaluar={setEvaluation} />}
+    </ActivityShell>
   )
 }

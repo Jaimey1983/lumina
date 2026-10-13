@@ -24,7 +24,10 @@ export function PuzzlePalabrasViewer({
   config,
 }: ElementViewerProps<PuzzlePalabrasEstado, PuzzlePalabrasConfig>) {
   return (
-    <LegacyPuzzlePalabrasViewer actividad={estado} onComplete={config.onComplete} />
+    <LegacyPuzzlePalabrasViewer
+      actividad={estado}
+      onResponse={config.onResponse}
+    />
   );
 }
 

@@ -1,46 +1,68 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+/**
+ * Viewer de Anagrama sobre el `ActivityShell` (U9c.2).
+ *
+ * El shell aporta fases, cronómetro, progreso y la pantalla de resultados; el estado de cada
+ * palabra es puro (`anagrama-estado.ts`). Lo que sale hacia `@lumina/scoring` NO cambió: UNA
+ * respuesta `{ slotsPorPalabra }` al finalizar, sin borradores. Sale por `onResponse` (canal
+ * unificado, DU2). Se puede arrastrar
+ * (ratón, táctil o teclado) o usar «tocar y colocar» (DU8).
+ */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDroppable, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
-import { AnagramaActivity } from '@lumina/types/slide'
+import type { AnagramaActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
-import { ActivityDragWord } from '../_shared/activity-drag-word.js'
-import { ActivityDndRoot } from '../_shared/activity-dnd-root.js'
-import { ActivityResultOverlay } from '../_shared/activity-result-overlay.js'
-import { mezclarLetras } from './anagrama-config.js'
 
-// ── Slot destino para una letra ───────────────────────────────────────────────
-interface SlotLetraProps {
-  slotId: string
+import { ActivityDndRoot } from '../_shared/activity-dnd-root.js'
+import { ActivityDragWord } from '../_shared/activity-drag-word.js'
+import { useActivityFeedback } from '../_shared/activity-feedback.js'
+import { normalizarAjustes } from '../_shared/activity-settings.js'
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js'
+import {
+  AnuncioTocarColocar,
+  ModoEntradaToggle,
+  useModoEntrada,
+  useTocarColocar,
+} from '../_shared/activity-tap-place.js'
+import { colocarLetra, crearEstadoPalabra, idHueco, type EstadoPalabra } from './anagrama-estado.js'
+import styles from './anagrama.module.css'
+
+// ── Hueco destino para una letra ──────────────────────────────────────────────
+function HuecoLetra({
+  indice,
+  letraColocada,
+  esperada,
+  verificado,
+  propsTocar,
+}: {
+  indice: number
   letraColocada: string | null
   esperada: string
   verificado: boolean
-}
-
-function SlotLetra({ slotId, letraColocada, esperada, verificado }: SlotLetraProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: slotId })
-
-  const estado = verificado && letraColocada !== null
-    ? letraColocada === esperada ? 'correcto' : 'incorrecto'
-    : 'neutro'
+  propsTocar?: React.HTMLAttributes<HTMLElement>
+}) {
+  const nombre = `Casilla ${indice + 1}`
+  const { setNodeRef, isOver } = useDroppable({ id: idHueco(indice), data: { etiqueta: nombre } })
+  const estado =
+    verificado && letraColocada !== null ? (letraColocada === esperada ? 'correcto' : 'incorrecto') : 'neutro'
 
   return (
     <div
       ref={setNodeRef}
-      className={`
-        w-10 h-10 flex items-center justify-center
-        rounded border-2 font-bold text-sm
-        transition-all duration-200
-        ${isOver ? 'bg-blue-100 border-blue-400' : 'bg-white border-gray-300'}
-        ${estado === 'correcto' ? 'border-green-500 bg-green-50' : ''}
-        ${estado === 'incorrecto' ? 'border-red-500 bg-red-50' : ''}
-      `}
+      {...propsTocar}
+      aria-label={
+        propsTocar ? (letraColocada ? `${nombre}, con ${letraColocada}` : `${nombre}, vacía`) : undefined
+      }
+      className={[
+        styles.hueco,
+        isOver ? styles.huecoSobre : '',
+        estado === 'correcto' ? styles.huecoCorrecto : '',
+        estado === 'incorrecto' ? styles.huecoIncorrecto : '',
+      ].join(' ')}
     >
       {letraColocada && (
-        <span className={`
-          ${estado === 'correcto' ? 'text-green-600' : ''}
-          ${estado === 'incorrecto' ? 'text-red-600' : ''}
-        `}>
+        <span className={estado === 'correcto' ? styles.letraCorrecta : estado === 'incorrecto' ? styles.letraIncorrecta : ''}>
           {letraColocada}
         </span>
       )}
@@ -48,249 +70,251 @@ function SlotLetra({ slotId, letraColocada, esperada, verificado }: SlotLetraPro
   )
 }
 
-// ── Viewer principal ──────────────────────────────────────────────────────────
-interface AnagramaViewerProps {
+export interface AnagramaViewerProps {
   actividad: AnagramaActivity
-  onComplete?: (response: unknown) => void
+  /** Canal de respuesta unificado (DU2). */
+  onResponse?: (response: unknown) => void
 }
 
-interface EstadoPalabra {
-  letrasOrigen: { id: string; letra: string }[]
-  slots: (string | null)[]
-  intentosRestantes: number
-  verificado: boolean
-  correcta: boolean | null
+interface CuerpoProps {
+  actividad: AnagramaActivity
+  estados: EstadoPalabra[]
+  setEstados: React.Dispatch<React.SetStateAction<EstadoPalabra[]>>
+  indice: number
+  setIndice: (n: number | ((n: number) => number)) => void
+  crear: (texto: string, sal: number, prefijo?: string) => EstadoPalabra
+  ctx: ActivityShellContext
+  responder: (r: unknown) => void
+  alEvaluar: (e: ActivityEvaluationResult) => void
 }
 
-export function AnagramaViewer({ actividad, onComplete }: AnagramaViewerProps) {
+function Cuerpo({ actividad, estados, setEstados, indice, setIndice, crear, ctx, responder, alEvaluar }: CuerpoProps) {
   const { configuracion, palabras } = actividad
-  const [indicePalabra, setIndicePalabra] = useState(0)
-  const [estados, setEstados] = useState<EstadoPalabra[]>(() =>
-    palabras.map(p => {
-      const letras = mezclarLetras(p.texto)
-      return {
-        letrasOrigen: letras.map((l, i) => ({ id: `letra-${i}-${l}`, letra: l })),
-        slots: Array(p.texto.length).fill(null),
-        intentosRestantes: configuracion.intentos === 0 ? Number.MAX_SAFE_INTEGER : configuracion.intentos,
-        verificado: false,
-        correcta: null,
-      } as EstadoPalabra
-    })
-  )
-  const [activeDragId, setActiveDragId] = useState<string | null>(null)
-  const [mostrarResultado, setMostrarResultado] = useState(false)
-  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
+  const palabra = palabras[indice]
+  const estado = estados[indice]
+  const jugando = ctx.sesion.fase === 'jugando'
+  const { setProgreso, completar } = ctx
+  const [activa, setActiva] = useState<string | null>(null)
+  const reintentos = useRef<Record<number, number>>({})
+  const entrada = useModoEntrada()
+  const tocar = entrada.modo === 'tocar'
+  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido })
 
-  const palabraActual = palabras[indicePalabra]
-  const estadoActual = estados[indicePalabra]
-
-  const todosCompletos = estadoActual.slots.every(s => s !== null)
-
-  // Verificación automática al completar todos los slots
+  const verificadas = estados.filter((e) => e.verificado).length
   useEffect(() => {
-    if (!todosCompletos || estadoActual.verificado) return
-    const target = palabraActual.texto.toUpperCase()
-    const respuesta = estadoActual.slots.join('')
-    const correcta = respuesta === target
+    setProgreso(verificadas)
+  }, [verificadas, setProgreso])
 
-    setEstados(prev => prev.map((e, i) =>
-      i === indicePalabra ? { ...e, verificado: true as const, correcta } : e
-    ) as EstadoPalabra[])
-  }, [todosCompletos, estadoActual.verificado, estadoActual.slots, palabraActual, indicePalabra])
+  const aplicar = useCallback(
+    (idLetra: string, destino: string) => {
+      if (!jugando || !destino.startsWith('slot-')) return
+      const hueco = parseInt(destino.replace('slot-', ''), 10)
+      const siguiente = colocarLetra(estado, idLetra, hueco, palabra.texto)
+      if (siguiente === estado) return
+      setEstados((prev) => prev.map((e, i) => (i === indice ? siguiente : e)))
+      if (siguiente.verificado) feedback.emitir(siguiente.correcta ? 'acierto' : 'error', { movimiento: false })
+    },
+    [jugando, estado, palabra.texto, indice, setEstados, feedback],
+  )
 
-  const handleDragStart = useCallback((e: DragStartEvent) => {
-    setActiveDragId(e.active.id as string)
-  }, [])
+  const letraDe = useCallback((id: string) => estado.letrasOrigen.find((l) => l.id === id)?.letra, [estado.letrasOrigen])
+  const tocarColocar = useTocarColocar({
+    onColocar: aplicar,
+    etiquetaItem: (id) => (letraDe(id) ? `la letra ${letraDe(id)}` : undefined),
+    etiquetaZona: (id) => `la casilla ${parseInt(id.replace('slot-', ''), 10) + 1}`,
+    deshabilitado: !tocar || !jugando || estado.verificado,
+  })
 
-  const handleDragEnd = useCallback((e: DragEndEvent) => {
-    const { active, over } = e
-    setActiveDragId(null)
-    if (!over || estadoActual.verificado) return
+  const alSoltar = useCallback(
+    (e: DragEndEvent) => {
+      setActiva(null)
+      if (!e.over) return
+      aplicar(e.active.id as string, e.over.id as string)
+    },
+    [aplicar],
+  )
 
-    const activeId = active.id as string
-    const overId = over.id as string
+  const reiniciarPalabra = () => {
+    if (!jugando) return
+    const n = (reintentos.current[indice] = (reintentos.current[indice] ?? 0) + 1)
+    setEstados((prev) =>
+      prev.map((e, i) => {
+        if (i !== indice) return e
+        const nuevo = crear(palabra.texto, indice * 100 + n, `letra-r${e.intentosRestantes}-`)
+        return { ...nuevo, intentosRestantes: e.intentosRestantes }
+      }),
+    )
+  }
 
-    if (!overId.startsWith('slot-')) return
-
-    const slotIndex = parseInt(overId.replace('slot-', ''))
-    const letra = estadoActual.letrasOrigen.find(l => l.id === activeId)
-    if (!letra) return
-    if (estadoActual.slots[slotIndex] !== null) return  // slot ocupado
-
-    setEstados(prev => prev.map((e, i) => {
-      if (i !== indicePalabra) return e
-      const nuevosSlots = [...e.slots]
-      nuevosSlots[slotIndex] = letra.letra
-      return {
-        ...e,
-        slots: nuevosSlots,
-        letrasOrigen: e.letrasOrigen.filter(l => l.id !== activeId),
-      }
-    }))
-  }, [estadoActual, indicePalabra])
-
-  const handleReiniciarPalabra = useCallback(() => {
-    const letras = mezclarLetras(palabraActual.texto)
-    setEstados(prev => prev.map((e, i) =>
-      i !== indicePalabra ? e : {
-        ...e,
-        letrasOrigen: letras.map((l, idx) => ({ id: `letra-r${e.intentosRestantes}-${idx}-${l}`, letra: l })),
-        slots: Array(palabraActual.texto.length).fill(null),
-        verificado: false,
-        correcta: null,
-      }
-    ))
-  }, [palabraActual, indicePalabra])
-
-  const handleSiguiente = useCallback(() => {
-    if (indicePalabra < palabras.length - 1) {
-      setIndicePalabra(i => i + 1)
-    } else {
-      // Fin del juego
-      const raw = { slotsPorPalabra: estados.map((e) => [...e.slots]) }
-      const evaluated = evaluateActivityResponse('anagrama', actividad, raw)
-      setEvaluation(evaluated)
-      onComplete?.(raw)
-      setMostrarResultado(true)
+  const siguiente = () => {
+    if (!jugando) return
+    if (indice < palabras.length - 1) {
+      setIndice((i) => i + 1)
+      return
     }
-  }, [indicePalabra, palabras.length, estados, actividad, onComplete])
+    const raw = { slotsPorPalabra: estados.map((e) => [...e.slots]) }
+    alEvaluar(evaluateActivityResponse('anagrama', actividad, raw))
+    responder(raw)
+    completar()
+  }
 
-  const puedeReintentar =
-    estadoActual.verificado &&
-    estadoActual.correcta === false &&
-    estadoActual.intentosRestantes > 0
-
-  const activeLetter = activeDragId
-    ? estadoActual.letrasOrigen.find(l => l.id === activeDragId)
-    : null
-
+  const puedeReintentar = estado.verificado && estado.correcta === false && estado.intentosRestantes > 0
+  const arrastrada = activa ? letraDe(activa) : undefined
+  const sinTiempo = ctx.sesion.motivoFin === 'sin_tiempo'
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-y-auto p-4 bg-white">
-      {/* Progreso */}
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-medium text-gray-700">
-          Palabra {indicePalabra + 1} de {palabras.length}
+    <div className={styles.raiz}>
+      <div className={styles.cabecera}>
+        <span className={styles.progreso}>
+          Palabra {indice + 1} de {palabras.length}
         </span>
-        {configuracion.intentos > 0 && (
-          <span className="text-xs text-gray-600">
-            Intentos restantes: {estadoActual.intentosRestantes}
-          </span>
-        )}
+        <div className={styles.derecha}>
+          {configuracion.intentos > 0 && (
+            <span className={styles.intentos}>Intentos restantes: {estado.intentosRestantes}</span>
+          )}
+          <ModoEntradaToggle modo={entrada.modo} onAlternar={entrada.alternar} />
+        </div>
       </div>
 
-      {/* Pista */}
-      {configuracion.mostrarPista && palabraActual.pista && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-3">
-          <p className="text-sm text-blue-900">
-            💡 &quot;{palabraActual.pista}&quot;
-          </p>
+      {configuracion.mostrarPista && palabra.pista && (
+        <div className={styles.pista}>
+          <p>💡 &quot;{palabra.pista}&quot;</p>
         </div>
       )}
 
       <ActivityDndRoot
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        overlay={
-          activeLetter ? (
-            <div className="flex h-10 w-10 items-center justify-center rounded border-2 border-blue-600 bg-blue-500 text-sm font-bold text-white shadow-lg">
-              {activeLetter.letra}
-            </div>
-          ) : null
-        }
+        arrastreActivo={!tocar}
+        onDragStart={(e: DragStartEvent) => setActiva(e.active.id as string)}
+        onDragEnd={alSoltar}
+        overlay={arrastrada ? <div className={styles.fantasma}>{arrastrada}</div> : null}
       >
         {/* Letras origen (mezcladas) */}
-        <div className="bg-gray-50 p-4 rounded border border-gray-200">
-          <p className="text-xs text-gray-600 mb-2">Letras disponibles:</p>
-          <div className="flex gap-2 flex-wrap">
-            {estadoActual.letrasOrigen.map(({ id, letra }) => (
+        <div className={styles.zona}>
+          <p className={styles.rotulo}>Letras disponibles:</p>
+          <div className={styles.piezas}>
+            {estado.letrasOrigen.map(({ id, letra }) => (
               <ActivityDragWord
                 key={id}
                 id={id}
                 texto={letra}
                 variant="letra"
-                disabled={estadoActual.verificado}
+                disabled={estado.verificado || !jugando}
+                propsTocar={tocar ? tocarColocar.propsItem(id) : undefined}
               />
             ))}
           </div>
         </div>
 
-        {/* Slots destino */}
-        <div className="bg-gray-50 p-4 rounded border border-gray-200">
-          <p className="text-xs text-gray-600 mb-2">Coloca las letras aquí:</p>
-          <div className="flex gap-2 flex-wrap">
-            {estadoActual.slots.map((letraEnSlot, i) => (
-              <SlotLetra
+        {/* Huecos destino */}
+        <div className={styles.zona}>
+          <p className={styles.rotulo}>Coloca las letras aquí:</p>
+          <div className={styles.piezas}>
+            {estado.slots.map((letraEnHueco, i) => (
+              <HuecoLetra
                 key={`slot-${i}`}
-                slotId={`slot-${i}`}
-                letraColocada={letraEnSlot}
-                esperada={palabraActual.texto[i]}
-                verificado={estadoActual.verificado}
+                indice={i}
+                letraColocada={letraEnHueco}
+                esperada={palabra.texto[i]}
+                verificado={estado.verificado}
+                propsTocar={tocar ? tocarColocar.propsZona(idHueco(i)) : undefined}
               />
             ))}
           </div>
         </div>
       </ActivityDndRoot>
+      <AnuncioTocarColocar anuncio={tocarColocar.anuncio} />
 
-      {/* Feedback + acciones */}
-      {estadoActual.verificado && (
-        <div className="space-y-3">
-          <div className={`p-3 rounded border ${
-            estadoActual.correcta
-              ? 'bg-green-50 border-green-200 text-green-800'
-              : 'bg-red-50 border-red-200 text-red-800'
-          }`}>
-            {estadoActual.correcta ? (
-              <p className="text-sm font-medium">✓ ¡Correcto!</p>
+      {estado.verificado && (
+        <div className={styles.resultadoPalabra}>
+          <div role="status" className={[styles.mensaje, estado.correcta ? styles.mensajeAcierto : styles.mensajeError].join(' ')}>
+            {estado.correcta ? (
+              <p className={styles.mensajeTitulo}>✓ ¡Correcto!</p>
             ) : (
-              <div className="space-y-1">
-                <p className="text-sm font-medium">✗ Incorrecto</p>
-                <p className="text-xs opacity-80">
-                  Respuesta: {palabraActual.texto.toUpperCase()}
-                </p>
+              <div>
+                <p className={styles.mensajeTitulo}>✗ Incorrecto</p>
+                <p className={styles.mensajeDetalle}>Respuesta: {palabra.texto.toUpperCase()}</p>
               </div>
             )}
           </div>
-
-          <div className="flex gap-2">
+          <div className={styles.acciones}>
             {puedeReintentar && (
-              <button
-                onClick={handleReiniciarPalabra}
-                className="px-3 py-2 text-sm rounded bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium"
-              >
+              <button type="button" className={styles.secundario} onClick={reiniciarPalabra} disabled={!jugando}>
                 Reintentar
               </button>
             )}
-            <button
-              onClick={handleSiguiente}
-              className="px-3 py-2 text-sm rounded bg-[#2563EB] hover:bg-blue-600 text-white font-medium"
-            >
-              {indicePalabra < palabras.length - 1 ? 'Siguiente' : 'Finalizar'}
+            <button type="button" className={styles.accion} onClick={siguiente} disabled={!jugando}>
+              {indice < palabras.length - 1 ? 'Siguiente' : 'Finalizar'}
             </button>
           </div>
         </div>
       )}
-
-      {/* Resultado final */}
-      {mostrarResultado && (
-        <ActivityResultOverlay
-          evaluation={evaluation ?? undefined}
-          onReintentar={() => {
-            // Reintentar toda la actividad
-            setEstados(estados.map(e => ({
-              ...e,
-              slots: Array(e.slots.length).fill(null),
-              intentosRestantes: e.intentosRestantes,
-              verificado: false,
-              correcta: null,
-            })))
-            setIndicePalabra(0)
-            setMostrarResultado(false)
-            setEvaluation(null)
-          }}
-          mostrarReintentar={true}
-        />
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
       )}
     </div>
+  )
+}
+
+export function AnagramaViewer({ actividad, onResponse }: AnagramaViewerProps) {
+  const { configuracion, palabras } = actividad
+  const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad])
+  // `configuracion.intentos` es POR PALABRA (dato del editor): el shell no debe leerlo como los
+  // intentos de la actividad completa. Solo cuenta si el docente fijó `ajustes.intentos`.
+  const ajustesShell = useMemo(
+    () => (actividad.ajustes?.intentos === undefined ? { ...ajustes, intentos: null } : ajustes),
+    [actividad.ajustes?.intentos, ajustes],
+  )
+  const semilla = ajustes.semilla
+  const corrida = useRef(0)
+
+  const crear = useCallback(
+    (texto: string, sal: number, prefijo = 'letra-') =>
+      // `corrida` separa el orden de cada intento completo dentro de la misma semilla.
+      crearEstadoPalabra(texto, configuracion.intentos, semilla, corrida.current * 10_000 + sal, prefijo),
+    [configuracion.intentos, semilla],
+  )
+  const [estados, setEstados] = useState<EstadoPalabra[]>(() => palabras.map((p, i) => crear(p.texto, i)))
+  const [indice, setIndice] = useState(0)
+  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
+
+  // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
+  const salida = useRef(onResponse)
+  useEffect(() => {
+    salida.current = onResponse
+  }, [onResponse])
+  const responder = useCallback((r: unknown) => salida.current?.(r), [])
+
+  // «Reintentar» toda la actividad: letras nuevas y huecos vacíos (el viejo dejaba el origen vacío).
+  const alReintentar = useCallback(() => {
+    corrida.current += 1
+    setEstados(palabras.map((p, i) => crear(p.texto, i)))
+    setIndice(0)
+    setEvaluation(null)
+  }, [palabras, crear])
+
+  return (
+    <ActivityShell
+      ajustes={ajustesShell}
+      total={palabras.length}
+      evaluation={evaluation}
+      onReintentar={alReintentar}
+      className={styles.shell}
+    >
+      {(ctx) => (
+        <Cuerpo
+          actividad={actividad}
+          estados={estados}
+          setEstados={setEstados}
+          indice={indice}
+          setIndice={setIndice}
+          crear={crear}
+          ctx={ctx}
+          responder={responder}
+          alEvaluar={setEvaluation}
+        />
+      )}
+    </ActivityShell>
   )
 }

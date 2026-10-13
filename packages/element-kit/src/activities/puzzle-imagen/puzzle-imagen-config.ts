@@ -1,3 +1,5 @@
+import { barajar } from '../_shared/barajar.js';
+
 export const PUZZLE_IMAGEN_MIN_FILAS = 3;
 export const PUZZLE_IMAGEN_MAX_FILAS = 5;
 export const PUZZLE_IMAGEN_MIN_COLUMNAS = 3;
@@ -31,12 +33,13 @@ export function generarOrdenCorrecto(filas: number, columnas: number): number[] 
   return Array.from({ length: filas * columnas }, (_, i) => i);
 }
 
-export function generarOrdenMezclado(filas: number, columnas: number): number[] {
+/** Orden mezclado de las piezas; con `semilla` es el mismo para toda la clase, `sal` lo cambia por intento. */
+export function generarOrdenMezclado(
+  filas: number,
+  columnas: number,
+  semilla?: number | null,
+  sal = 0,
+): number[] {
   const total = filas * columnas;
-  const orden = Array.from({ length: total }, (_, i) => i);
-  for (let i = orden.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [orden[i], orden[j]] = [orden[j], orden[i]];
-  }
-  return orden;
+  return barajar(Array.from({ length: total }, (_, i) => i), semilla, sal);
 }

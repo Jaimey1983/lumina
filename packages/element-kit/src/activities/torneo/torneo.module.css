@@ -1,0 +1,51 @@
+/*
+ * U11.1 — color del viewer de Torneo. Sale de los tokens `--la-*` (ver `activity-tokens.module.css`);
+ * la variante oscura (`data-variante='dark'`) es la del modo presentación sobre fondo oscuro.
+ * La paleta A–D de las cuatro opciones vive en `torneo-viewer.tsx` (identidad del juego).
+ */
+.raiz {
+  border-color: var(--la-color-borde);
+  background: color-mix(in srgb, var(--la-color-superficie) 95%, transparent);
+}
+.raiz[data-variante='dark'] {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+}
+
+.titulo { color: var(--la-color-texto); }
+.suave { color: var(--la-color-texto-suave); }
+.suaveFuerte { color: var(--la-color-texto-suave); }
+.apagado { color: var(--la-color-bloqueado); }
+.motivacion { color: var(--la-color-pista-texto); }
+.cuenta { color: var(--la-color-seleccionado); }
+
+.raiz[data-variante='dark'] .titulo { color: white; }
+.raiz[data-variante='dark'] .suave { color: rgb(255 255 255 / 0.6); }
+.raiz[data-variante='dark'] .suaveFuerte { color: rgb(255 255 255 / 0.7); }
+.raiz[data-variante='dark'] .apagado { color: rgb(255 255 255 / 0.4); }
+.raiz[data-variante='dark'] .cuenta { color: rgb(255 255 255 / 0.8); }
+
+/* Tarjeta del resumen autónomo */
+.tarjeta {
+  border-color: var(--la-color-borde);
+  background: color-mix(in srgb, var(--la-color-texto-suave) 6%, var(--la-color-superficie));
+}
+.raiz[data-variante='dark'] .tarjeta {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+}
+
+/* Filas del ranking */
+.fila {
+  border-color: var(--la-color-borde);
+  background: color-mix(in srgb, var(--la-color-texto-suave) 6%, var(--la-color-superficie));
+  color: var(--la-color-texto);
+}
+.raiz[data-variante='dark'] .fila {
+  border-color: rgb(255 255 255 / 0.15);
+  background: rgb(255 255 255 / 0.05);
+  color: rgb(255 255 255 / 0.9);
+}
+.raiz[data-variante='dark'] 
+/* Pista de la barra de tiempo */
+.pista { background: color-mix(in srgb, var(--la-color-borde) 80%, transparent); }

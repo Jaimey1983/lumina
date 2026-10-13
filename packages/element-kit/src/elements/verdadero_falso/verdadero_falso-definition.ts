@@ -7,19 +7,27 @@ import {
 } from "../../activities/_classic/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
+import { crearPropiedadesConAjustes } from "../_shared/propiedades-con-ajustes.js";
+import { PRESETS_VERDADERO_FALSO } from "./verdadero_falso-estilos.js";
 import {
   VERDADERO_FALSO_TIPO,
   type VerdaderoFalsoConfig,
   type VerdaderoFalsoEstado,
 } from "./verdadero_falso-types.js";
 
-const { Editor, Viewer, Propiedades } = crearAdaptadoresClasicos<
+const { Editor, Viewer, Propiedades: PropiedadesBase } = crearAdaptadoresClasicos<
   VerdaderoFalsoEstado,
   VerdaderoFalsoConfig
 >({
   Editor: TrueFalseActivityEditor,
   viewer: { via: "component", Viewer: TrueFalseViewer },
   editorNeedsSyncKey: true,
+});
+
+/** U8: el panel suma estilos y ajustes comunes al editor de siempre. */
+const Propiedades = crearPropiedadesConAjustes(PropiedadesBase, {
+  presets: PRESETS_VERDADERO_FALSO,
+  storageKey: "actividad.verdadero_falso.estilos",
 });
 
 export {
@@ -40,11 +48,14 @@ export const verdaderoFalsoDefinition = {
   Editor,
   Viewer,
   Propiedades,
+  // U8: el estilo (`ajustes.estilo`) es color; la tipografía no se toca y el movimiento del
+  // feedback no es configurable (solo respeta «reducir movimiento»).
   apariencia: {
-    color: false,
+    color: true,
     tipografia: false,
     animacion: false,
   },
+  presets: PRESETS_VERDADERO_FALSO,
   puntuacion: (estado: VerdaderoFalsoEstado, respuesta?: unknown) =>
     evaluarVerdaderoFalso(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["verdadero_falso"],

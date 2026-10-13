@@ -115,8 +115,9 @@ describe("Memoria — paridad ElementDefinition vs legacy (E2.4)", () => {
       | undefined;
     expect(def).toBe(memoriaDefinition);
     expect(def?.puntuacion).toBeTypeOf("function");
+    // U8: Memoria tiene estilos y color de dorso: su `apariencia` declara color.
     expect(def?.apariencia).toEqual({
-      color: false,
+      color: true,
       tipografia: false,
       animacion: false,
     });

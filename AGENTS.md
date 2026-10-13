@@ -172,7 +172,7 @@ Las fichas viven en `docs/tablero/`, **una por etapa**. No se cargan de forma au
 
 | Etapa / IDs | Archivo | Estado |
 |---|---|---|
-| F1.x, L.x, X.1–X.3 | `docs/tablero/fase1-lint-abiertos.md` | X.2/X.3 en revisión |
+| F1.x, L.x, X.1–X.4 | `docs/tablero/fase1-lint-abiertos.md` | X.2, X.3 y X.4 en revisión |
 | E1–E7 (migración) | `docs/tablero/migracion-E1-E7.md` | cerrada |
 | G (alineación/guías) | `docs/tablero/etapa-G.md` | cerrada |
 | H (`@lumina/charts`) | `docs/tablero/etapa-H.md` | cerrada |
@@ -185,5 +185,6 @@ Las fichas viven en `docs/tablero/`, **una por etapa**. No se cargan de forma au
 | R (ayudas largas tras icono ⓘ) | `docs/tablero/etapa-R.md` | R1–R7 hecho; R8 en revisión |
 | S (secciones plegables en paneles del editor) | `docs/tablero/etapa-S.md` | S1–S12 en revisión |
 | T (sistema de diseño y rework de widgets) | `docs/tablero/etapa-T.md` | T0, T1, T2, T2b, T3, T4 y T5 en revisión; T6, T6b, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20 y T21 (auditoría) en revisión; **etapa T completa, sin pasos pendientes** |
+| U (actividades de nivel profesional) | `docs/tablero/etapa-U.md` | U0–U8, U9a (U9a.1–U9a.8), U9b (U9b.1–U9b.6) y U9c (U9c.1–U9c.4) en revisión; **U9d hecho**; U10 (U10.1–U10.4), U11 (U11.1–U11.5) y U12 (U12.1a–U12.3) y U13 (primera tanda elegida) en revisión; **U14 (`relacionar_lineas`), U15 (`problema_pasos`), U16 (`etiquetar_imagen`) y U17 (`linea_tiempo`) y U18 (`cloze_banco`) en revisión — **primera tanda de actividades nuevas (U14–U18) completa** |
 
 Las etapas cerradas son historial: no se leen salvo que una ficha activa las cite.

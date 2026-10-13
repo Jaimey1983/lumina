@@ -1,5 +1,6 @@
 'use client';
 
+import { laVar } from '../_shared/activity-tokens.js';
 import React, { useCallback } from 'react';
 import { SopaLetrasActivity, SopaLetrasPalabra } from '@lumina/types/slide';
 import {
@@ -140,7 +141,8 @@ export function SopaLetrasProperties({ actividad, onChange }: SopaLetrasProperti
           <button
             onClick={addPalabra}
             disabled={palabras.length >= SOPA_LETRAS_MAX_PALABRAS}
-            className="text-xs px-2 py-1 rounded bg-[#2563EB] text-white disabled:opacity-40"
+            className="text-xs px-2 py-1 rounded text-white disabled:opacity-40"
+            style={{ backgroundColor: laVar('color-seleccionado') }}
           >
             + Añadir
           </button>

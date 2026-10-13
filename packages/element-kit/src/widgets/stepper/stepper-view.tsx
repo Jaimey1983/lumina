@@ -4,7 +4,7 @@ import { cn } from "@lumina/ui/lib/utils";
 import type { EstadoObjeto, EventoTipo } from "@lumina/types/interaction";
 import { useSlideNav } from "@lumina/editor-shared/slide-nav-context";
 import { looksLikeRichHtml, sanitizeWidgetHtml } from "@lumina/editor-shared/rich-text/widget-html";
-import { WidgetMotion } from "../_motion/widget-motion.js";
+import { WidgetMotion } from "../../_efectos/motion/widget-motion.js";
 import { VISUALLY_HIDDEN } from "../visually-hidden.js";
 import { normalizeStepperWidget } from "./stepper-defaults.js";
 import type { StepperEstado, StepperPaso, StepperTransicion } from "./stepper-types.js";

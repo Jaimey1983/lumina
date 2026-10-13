@@ -107,6 +107,56 @@ export interface Feedback {
   intentosPermitidos?: number;
 }
 
+// ─── Ajustes comunes de actividad (Etapa U / U2) ──────────────────────────────
+
+/** Cómo se comporta la actividad frente al alumno: ensayo libre o intento evaluado. */
+export type ActivityModo = 'practica' | 'evaluacion';
+
+/** Cuándo ve el alumno si acertó. */
+export type ActivityRetroMomento = 'inmediata' | 'al_final' | 'ninguna';
+
+/** Aspecto de la actividad: cambia los tokens `--la-*` (colores, radios, relieve) del `ActivityShell`. */
+export type ActivityEstilo = 'escolar' | 'examen' | 'arcade' | 'minimal' | 'pizarra';
+
+export interface ActivityHintSettings {
+  /** Pistas disponibles. `0` = ninguna; `null` = ilimitadas. */
+  cantidad?: number | null;
+  /** Porcentaje de la nota que cuesta cada pista usada (0–100). */
+  costoPct?: number;
+}
+
+/**
+ * Ajustes comunes de toda actividad (DU3). **Todo es opcional**: un slide guardado antes
+ * de U2 no los trae y se normaliza al leer (`normalizarAjustes`, en `@lumina/element-kit`),
+ * derivándolos de los campos propios de cada tipo. `null` en un límite = sin límite.
+ */
+export interface ActivitySettings {
+  modo?: ActivityModo;
+  /** Intentos por unidad de respuesta (ítem, palabra o la actividad si es una sola). */
+  intentos?: number | null;
+  /** Tiempo límite en segundos (por pregunta en un quiz sincronizado). */
+  tiempoLimiteSeg?: number | null;
+  vidas?: number | null;
+  barajar?: boolean;
+  /** Semilla del barajado: misma semilla, mismo orden. Sin semilla, orden distinto por alumno. */
+  semilla?: number | null;
+  pistas?: ActivityHintSettings;
+  /** Muestra la nota 0–5 al terminar. */
+  mostrarNota?: boolean;
+  /** Muestra la solución/explicación tras responder. */
+  mostrarSolucion?: boolean;
+  retroalimentacion?: ActivityRetroMomento;
+  /** Sonidos de acierto, error y logro. Por defecto `true`. */
+  sonido?: boolean;
+  /** Aspecto visual. Por defecto `escolar` (el de siempre). */
+  estilo?: ActivityEstilo;
+}
+
+/** Base común de toda variante de `Activity`. */
+export interface ActivityBase {
+  ajustes?: ActivitySettings;
+}
+
 // ─── Activity variants ────────────────────────────────────────────────────────
 
 export interface QuizOption {
@@ -138,7 +188,7 @@ export type QuizLayoutVariant =
   | 'two-col-neutral-grid'
   | 'two-col-image-pills';
 
-export interface QuizMultiple {
+export interface QuizMultiple extends ActivityBase {
   tipo: 'quiz_multiple';
   preguntas: QuizPregunta[];
   deliveryMode: 'AUTONOMOUS' | 'SYNCED';
@@ -154,7 +204,7 @@ export interface QuizMultiple {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface TrueFalse {
+export interface TrueFalse extends ActivityBase {
   tipo: 'verdadero_falso';
   afirmacion: string;
   respuestaCorrecta: boolean;
@@ -164,7 +214,7 @@ export interface TrueFalse {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface ShortAnswerActivity {
+export interface ShortAnswerActivity extends ActivityBase {
   tipo: 'short_answer';
   question: string;
   expectedAnswer: string;
@@ -180,7 +230,7 @@ export interface ShortAnswerActivity {
  * `short_answer` sigue siendo manual y no cambia.
  */
 /** Balanceo de ecuación química (Etapa Q / Q4). */
-export interface BalancearEcuacionActivity {
+export interface BalancearEcuacionActivity extends ActivityBase {
   tipo: 'balancear_ecuacion';
   instruccion?: string;
   /** Ecuación sin coeficientes, p. ej. `H2 + O2 -> H2O`. */
@@ -196,7 +246,7 @@ export interface UbicarElementoItem {
   grupo: number;
 }
 
-export interface UbicarElementoActivity {
+export interface UbicarElementoActivity extends ActivityBase {
   tipo: 'ubicar_elemento';
   instruccion?: string;
   elementos: UbicarElementoItem[];
@@ -211,14 +261,14 @@ export interface FormularCompuestoPregunta {
 }
 
 /** Formulación inorgánica v1 (Etapa Q / Q4). */
-export interface FormularCompuestoActivity {
+export interface FormularCompuestoActivity extends ActivityBase {
   tipo: 'formular_compuesto';
   instruccion?: string;
   preguntas: FormularCompuestoPregunta[];
   retroalimentacion?: Feedback;
 }
 
-export interface MathAnswerActivity {
+export interface MathAnswerActivity extends ActivityBase {
   tipo: 'respuesta_matematica';
   /**
    * `numerico` (por defecto): se compara el número con una tolerancia.
@@ -237,6 +287,36 @@ export interface MathAnswerActivity {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Un paso de un problema paso a paso (etapa U / U15). */
+export interface ProblemaPaso {
+  id: string;
+  instruccion: string;
+  /** `numerico`: se compara el número con una tolerancia; `algebraico`: equivalencia de expresiones. */
+  modo: 'numerico' | 'algebraico';
+  /** Respuesta modelo (texto numérico, o una expresión en modo algebraico). */
+  respuesta: string;
+  tolerancia?: number;
+  toleranciaTipo?: 'absoluta' | 'porcentual';
+  unidad?: string;
+  /** Pistas escalonadas: la n-ésima se revela al pedir la n-ésima. */
+  pistas: string[];
+}
+
+/**
+ * Problema paso a paso (etapa U / U15): un enunciado y una secuencia de pasos, cada uno con su
+ * respuesta numérica o algebraica y pistas escalonadas. `ajustes.pistas` (cantidad y costo por pista)
+ * manda sobre la cantidad de pistas escritas.
+ */
+export interface ProblemaPasosActivity extends ActivityBase {
+  tipo: 'problema_pasos';
+  enunciado: string;
+  imagen?: string;
+  pasos: ProblemaPaso[];
+  /** No se ve el paso siguiente hasta resolver el actual. */
+  secuencial: boolean;
+  retroalimentacion?: Feedback;
+}
+
 export interface FillBlank {
   id: string;
   respuesta: string;
@@ -245,11 +325,33 @@ export interface FillBlank {
   ignorarMayusculas?: boolean;
 }
 
-export interface FillBlanks {
+export interface FillBlanks extends ActivityBase {
   tipo: 'completar_blancos';
   /** Use `{{blank:id}}` markers to indicate blank positions in the text. */
   texto: string;
   blancos: FillBlank[];
+  puntos?: number;
+  retroalimentacion?: Feedback;
+}
+
+/** Un hueco de «cloze con banco»: el alumno elige su palabra del banco. */
+export interface ClozeBancoBlanco {
+  id: string;
+  respuesta: string;
+}
+
+/**
+ * Cloze con banco de palabras (etapa U / U18): como `completar_blancos`, pero el alumno no escribe:
+ * arrastra palabras de un banco (respuestas + distractores) a los huecos. Tipo propio para no tocar
+ * `FillBlanks` ni su evaluador.
+ */
+export interface ClozeBancoActivity extends ActivityBase {
+  tipo: 'cloze_banco';
+  /** Usa marcadores `{{blank:id}}` donde va cada hueco. */
+  texto: string;
+  blancos: ClozeBancoBlanco[];
+  /** Palabras del banco que no son respuesta de ningún hueco. */
+  distractores: string[];
   puntos?: number;
   retroalimentacion?: Feedback;
 }
@@ -270,7 +372,7 @@ export interface DragDropZone {
   capacidadMaxima?: number;
 }
 
-export interface DragDrop {
+export interface DragDrop extends ActivityBase {
   tipo: 'arrastrar_soltar';
   instruccion: string;
   items: DragDropItem[];
@@ -295,7 +397,7 @@ export interface MatchPair {
 /** @alias MatchPair */
 export type EmparejaPar = MatchPair;
 
-export interface MatchPairs {
+export interface MatchPairs extends ActivityBase {
   tipo: 'emparejar';
   instruccion: string;
   pares: MatchPair[];
@@ -308,6 +410,86 @@ export type EmparejarActivity = MatchPairs;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Un elemento de una de las dos columnas de «relacionar con líneas». */
+export interface RelacionarLineasItem {
+  id: string;
+  texto?: string;
+  imagen?: string;
+}
+
+/**
+ * Relacionar con líneas (etapa U / U14): dos columnas independientes; el alumno traza líneas de la
+ * izquierda a la derecha. La derecha puede traer distractores (elementos sin relación). Una
+ * izquierda tiene a lo sumo una relación correcta.
+ */
+export interface RelacionarLineasActivity extends ActivityBase {
+  tipo: 'relacionar_lineas';
+  instruccion: string;
+  izquierda: RelacionarLineasItem[];
+  derecha: RelacionarLineasItem[];
+  /** Las relaciones correctas: `izquierdaId` → `derechaId`. */
+  relaciones: { izquierdaId: string; derechaId: string }[];
+  puntos?: number;
+  retroalimentacion?: Feedback;
+}
+
+/** Un marcador sobre la imagen; `x`/`y` son fracción 0–1 del ancho/alto. */
+export interface EtiquetarImagenZona {
+  id: string;
+  x: number;
+  y: number;
+  /** La etiqueta que va en este marcador. */
+  etiquetaId: string;
+}
+
+/** Una etiqueta del banco; las que ninguna zona usa son distractores. */
+export interface EtiquetarImagenEtiqueta {
+  id: string;
+  texto: string;
+}
+
+/**
+ * Etiquetar una imagen (etapa U / U16): marcadores sobre una imagen y un banco de etiquetas; el
+ * alumno coloca cada etiqueta en su marcador. Las coordenadas son fracciones de la imagen, así
+ * sobreviven al zoom y al redimensionado.
+ */
+export interface EtiquetarImagenActivity extends ActivityBase {
+  tipo: 'etiquetar_imagen';
+  instruccion: string;
+  imagen: string;
+  textoAlternativo: string;
+  zonas: EtiquetarImagenZona[];
+  etiquetas: EtiquetarImagenEtiqueta[];
+  puntos?: number;
+  retroalimentacion?: Feedback;
+}
+
+/** Un evento de la línea de tiempo. */
+export interface LineaTiempoEvento {
+  id: string;
+  texto: string;
+  /** Lo que se muestra al revelar («1810», «siglo XV»). */
+  fechaTexto: string;
+  /** Clave de orden cronológico (1-based, sin repetidos). */
+  orden: number;
+  imagen?: string;
+}
+
+/**
+ * Línea de tiempo (etapa U / U17): el alumno ordena cronológicamente tarjetas de eventos sobre un
+ * eje; al comprobar se revelan las fechas.
+ */
+export interface LineaTiempoActivity extends ActivityBase {
+  tipo: 'linea_tiempo';
+  instruccion: string;
+  eventos: LineaTiempoEvento[];
+  mostrarFechasAlFinal: boolean;
+  puntos?: number;
+  retroalimentacion?: Feedback;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface OrderStep {
   id: string;
   contenido: string;
@@ -316,7 +498,7 @@ export interface OrderStep {
   imagenUrl?: string;
 }
 
-export interface OrderSteps {
+export interface OrderSteps extends ActivityBase {
   tipo: 'ordenar_pasos';
   instruccion: string;
   pasos: OrderStep[];
@@ -334,7 +516,7 @@ export interface VideoQuestion {
   pausarVideo?: boolean;
 }
 
-export interface VideoInteractive {
+export interface VideoInteractive extends ActivityBase {
   tipo: 'video_interactivo';
   urlVideo: string;
   plataforma?: 'youtube' | 'vimeo' | 'directo';
@@ -350,7 +532,7 @@ export interface PollOption {
   texto: string;
 }
 
-export interface LivePoll {
+export interface LivePoll extends ActivityBase {
   tipo: 'encuesta_viva';
   pregunta: string;
   opciones: PollOption[];
@@ -362,7 +544,7 @@ export interface LivePoll {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface WordCloud {
+export interface WordCloud extends ActivityBase {
   tipo: 'nube_palabras';
   instruccion: string;
   palabrasIniciales?: string[];
@@ -374,7 +556,7 @@ export interface WordCloud {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Torneo tipo Kahoot: preguntas de opción múltiple sincronizadas por el docente (Socket.IO). */
-export interface TorneoActivity {
+export interface TorneoActivity extends ActivityBase {
   tipo: 'torneo';
   preguntas: {
     enunciado: string;
@@ -411,7 +593,7 @@ export interface EscapeRoomSala {
   fondo?: Background;
 }
 
-export interface EscapeRoomActivity {
+export interface EscapeRoomActivity extends ActivityBase {
   tipo: 'escape_room';
   titulo: string;
   introduccion: string;
@@ -439,7 +621,7 @@ export interface ClasificarItem {
   categoriaId: string; // categoría correcta
 }
 
-export interface ClasificarActivity {
+export interface ClasificarActivity extends ActivityBase {
   tipo: 'clasificar';
   configuracion: {
     columnas: 2 | 3 | 4;
@@ -457,7 +639,7 @@ export interface GlobosPregunta {
   opciones: { texto: string; correcta: boolean }[]
 }
 
-export interface GlobosActivity {
+export interface GlobosActivity extends ActivityBase {
   tipo: 'globos'
   configuracion: {
     velocidad: 'lenta' | 'normal' | 'rapida'
@@ -475,7 +657,7 @@ export interface TopoPregunta {
   opciones: { texto: string; correcta: boolean }[]
 }
 
-export interface TopoActivity {
+export interface TopoActivity extends ActivityBase {
   tipo: 'topo'
   configuracion: {
     velocidad: 'lenta' | 'normal' | 'rapida'
@@ -488,7 +670,7 @@ export interface TopoActivity {
 }
 
 // ruleta
-export interface RuletaActivity {
+export interface RuletaActivity extends ActivityBase {
   tipo: 'ruleta'
   configuracion: {
     colores: string[]
@@ -506,7 +688,7 @@ export interface MemoriaPar {
   lado2: { texto?: string; imagen?: string };
 }
 
-export interface MemoriaActivity {
+export interface MemoriaActivity extends ActivityBase {
   tipo: 'memoria';
   configuracion: {
     columnas: 2 | 3 | 4;
@@ -522,7 +704,7 @@ export interface MemoriaActivity {
 }
 
 // puzzle_imagen
-export interface PuzzleImagenActivity {
+export interface PuzzleImagenActivity extends ActivityBase {
   tipo: 'puzzle_imagen';
   configuracion: {
     filas: 3 | 4 | 5;
@@ -539,7 +721,7 @@ export interface SopaLetrasPalabra {
   pista?: string;
 }
 
-export interface SopaLetrasActivity {
+export interface SopaLetrasActivity extends ActivityBase {
   tipo: 'sopa_letras';
   configuracion: {
     filas: number;
@@ -562,7 +744,7 @@ export interface CrucigramaPalabra {
   columna: number;
 }
 
-export interface CrucigramaActivity {
+export interface CrucigramaActivity extends ActivityBase {
   tipo: 'crucigrama';
   configuracion: {
     tamanoCelda: number;
@@ -573,7 +755,7 @@ export interface CrucigramaActivity {
 }
 
 // anagrama
-export interface AnagramaActivity {
+export interface AnagramaActivity extends ActivityBase {
   tipo: 'anagrama';
   configuracion: {
     mostrarPista: boolean;
@@ -599,13 +781,13 @@ export interface AhorcadoState {
   ganado: boolean | null;
 }
 
-export interface AhorcadoActivity {
+export interface AhorcadoActivity extends ActivityBase {
   tipo: 'ahorcado';
   configuracion: AhorcadoConfig;
 }
 
 // puzzle_palabras
-export interface PuzzlePalabrasActivity {
+export interface PuzzlePalabrasActivity extends ActivityBase {
   tipo: 'puzzle_palabras';
   configuracion: {
     mostrarPista: boolean;
@@ -627,7 +809,7 @@ export interface AbrirCajaCaja {
   contenido: AbrirCajaContenido;
 }
 
-export interface AbrirCajaActivity {
+export interface AbrirCajaActivity extends ActivityBase {
   tipo: 'abrir_caja';
   configuracion: {
     filas: 2 | 3;
@@ -668,7 +850,7 @@ export interface HistoriaConexion {
   haciaNodoId: string
 }
 
-export interface HistoriaRamificadaActivity {
+export interface HistoriaRamificadaActivity extends ActivityBase {
   tipo: 'historia_ramificada'
   configuracion: {
     mostrarProgreso: boolean
@@ -688,12 +870,17 @@ export type Activity =
   | TrueFalse
   | ShortAnswerActivity
   | MathAnswerActivity
+  | ProblemaPasosActivity
   | BalancearEcuacionActivity
   | UbicarElementoActivity
   | FormularCompuestoActivity
   | FillBlanks
   | DragDrop
   | MatchPairs
+  | RelacionarLineasActivity
+  | EtiquetarImagenActivity
+  | LineaTiempoActivity
+  | ClozeBancoActivity
   | OrderSteps
   | VideoInteractive
   | LivePoll
