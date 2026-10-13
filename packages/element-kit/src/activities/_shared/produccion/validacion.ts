@@ -44,6 +44,7 @@ const VALIDADORES: Partial<Record<Activity['tipo'], Validador<never>>> = {
   problema_pasos: nuevos.validarProblemaPasos,
   etiquetar_imagen: nuevos.validarEtiquetarImagen,
   linea_tiempo: nuevos.validarLineaTiempo,
+  cloze_banco: nuevos.validarClozeBanco,
 };
 
 /** Tipos que ya tienen validador. */

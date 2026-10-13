@@ -1,0 +1,187 @@
+/*
+ * U18 — estilos de «Cloze con banco» sobre los tokens `--la-*` del shell (sin hex).
+ */
+.shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.raiz {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+  padding: 0.75rem;
+  overflow-y: auto;
+  color: var(--la-color-texto);
+}
+
+.herramientas {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.texto {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 2.4;
+}
+
+/* ─── Huecos ─── */
+.hueco {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5rem;
+  min-height: 2rem;
+  margin-inline: 0.125rem;
+  padding: 0 0.25rem;
+  vertical-align: middle;
+  line-height: 1.2;
+  background: color-mix(in srgb, var(--la-color-seleccionado) 6%, transparent);
+  border: 2px dashed var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.hueco:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.huecoLleno {
+  border-style: solid;
+}
+
+.huecoSobre {
+  background: var(--la-color-seleccionado-suave);
+  border-color: var(--la-color-seleccionado);
+}
+
+.numeroHueco {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--la-color-texto-suave);
+}
+
+/* ─── Palabras y banco ─── */
+.banco {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--la-color-seleccionado) 6%, transparent);
+  border: 2px dashed var(--la-color-borde);
+  border-radius: var(--la-radio-lg);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.bancoSobre {
+  border-color: var(--la-color-seleccionado);
+}
+
+.bancoVacio {
+  font-size: 0.8125rem;
+  color: var(--la-color-texto-suave);
+}
+
+.palabra {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--la-color-texto);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  background: var(--la-color-superficie);
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.palabraEnHueco {
+  box-shadow: none;
+}
+
+.palabra:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.elegida {
+  color: var(--la-color-seleccionado-texto);
+  background: var(--la-color-seleccionado-suave);
+  border-color: var(--la-color-seleccionado);
+  box-shadow: 0 0 0 1px var(--la-color-seleccionado);
+}
+
+.bloqueada {
+  cursor: default;
+}
+
+.correcta {
+  background: var(--la-color-correcto-suave);
+  border-color: var(--la-color-correcto);
+}
+
+/* El color solo no basta: la equivocada además va a trazos. */
+.incorrecta {
+  background: var(--la-color-incorrecto-suave);
+  border-color: var(--la-color-incorrecto);
+  border-style: dashed;
+}
+
+.fantasma {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--la-color-superficie);
+  background: var(--la-color-seleccionado);
+  border-radius: var(--la-radio-md);
+  box-shadow: var(--la-elevacion-2);
+}
+
+/* ─── Acciones ─── */
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.comprobar {
+  padding: 0.5rem 1.25rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--la-color-superficie);
+  cursor: pointer;
+  background: var(--la-color-seleccionado);
+  border: 0;
+  border-radius: var(--la-radio-md);
+}
+
+.comprobar:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.comprobar:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.estado {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hueco,
+  .banco {
+    transition: none;
+  }
+}

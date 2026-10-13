@@ -131,6 +131,7 @@ import { createDefaultRelacionarLineas } from '@lumina/element-kit/activities/re
 import { createDefaultProblemaPasos } from '@lumina/element-kit/activities/problema-pasos/problema-pasos-defaults';
 import { createDefaultEtiquetarImagen } from '@lumina/element-kit/activities/etiquetar-imagen/etiquetar-imagen-defaults';
 import { createDefaultLineaTiempo } from '@lumina/element-kit/activities/linea-tiempo/linea-tiempo-defaults';
+import { createDefaultClozeBanco } from '@lumina/element-kit/activities/cloze-banco/cloze-banco-defaults';
 import { createDefaultTopo } from '@lumina/element-kit/activities/topo/topo-defaults';
 import { createDefaultHistoriaRamificada } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-defaults';
 import { activityTitleFromContent } from './components/panels/activities-ai-normalize';
@@ -2002,6 +2003,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         problema_pasos:     createDefaultProblemaPasos,
         etiquetar_imagen:   createDefaultEtiquetarImagen,
         linea_tiempo:       createDefaultLineaTiempo,
+        cloze_banco:        createDefaultClozeBanco,
         'sort-steps':       orderStepsTemplate,
         'video-interactive': videoInteractiveTemplate,
         'live-poll':        livePollTemplate,
@@ -2036,6 +2038,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         problema_pasos:     'Problema paso a paso',
         etiquetar_imagen:   'Etiquetar imagen',
         linea_tiempo:       'Línea de tiempo',
+        cloze_banco:        'Cloze con banco',
         'sort-steps':       'Ordenar pasos',
         'video-interactive': 'Video interactivo',
         'live-poll':        'Encuesta en vivo',

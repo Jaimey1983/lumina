@@ -230,6 +230,11 @@ export const CATALOGO_ELEMENTOS = {
     descripcion: "Ordena eventos cronológicamente sobre un eje y revela las fechas al comprobar",
     familia: "actividad",
   },
+  cloze_banco: {
+    nombre: "Cloze con banco",
+    descripcion: "Completa un texto arrastrando palabras de un banco (con distractores) a los huecos",
+    familia: "actividad",
+  },
   emparejar: { nombre: "Emparejar", familia: "actividad" },
   ordenar_pasos: { nombre: "Ordenar pasos", familia: "actividad" },
   video_interactivo: { nombre: "Video interactivo", familia: "actividad" },

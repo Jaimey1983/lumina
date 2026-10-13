@@ -3,12 +3,14 @@
  */
 import { parseRespuestaNumerica, validarExpresionAlgebraica } from '@lumina/scoring';
 import type {
+  ClozeBancoActivity,
   LineaTiempoActivity,
   ProblemaPaso,
   ProblemaPasosActivity,
   RelacionarLineasActivity,
 } from '@lumina/types/slide';
 
+import { CLOZE_MAX_BLANCOS, generarIdCloze } from '../../cloze-banco/cloze-banco-config.js';
 import { LINEA_MAX_EVENTOS } from '../../linea-tiempo/linea-tiempo-config.js';
 import { PROBLEMA_MAX_PASOS, PROBLEMA_MAX_PISTAS_POR_PASO } from '../../problema-pasos/problema-pasos-config.js';
 import { RELACIONAR_MAX_DERECHA, RELACIONAR_MAX_IZQUIERDA } from '../../relacionar-lineas/relacionar-lineas-config.js';
@@ -116,5 +118,45 @@ export const importadorLineaTiempo: Importador<LineaTiempoActivity> = {
       }
     }
     return { actividad: { ...actividad, eventos }, leidas, descartadas };
+  },
+};
+
+/**
+ * «Una frase por fila, con las respuestas entre [corchetes]». `parsearTabla` parte cada fila en celdas
+ * por `,` (u otro separador) y aquí se vuelven a unir con «, »: las comas de la prosa se conservan
+ * (salvo el espacio que sigue a cada una). Una fila sin corchetes entra como texto sin huecos.
+ */
+export const importadorClozeBanco: Importador<ClozeBancoActivity> = {
+  tipo: 'cloze_banco',
+  titulo: 'Texto con huecos',
+  formato: 'Una frase por fila, con la palabra de cada hueco entre [corchetes]',
+  ejemplo: 'La [fotosíntesis] ocurre en las hojas.\nLas plantas liberan [oxígeno] al aire.',
+  encabezados: [],
+  importar(actividad, filas, modo) {
+    const base = modo === 'reemplazar' ? '' : (actividad.texto ?? '');
+    const blancos = modo === 'reemplazar' ? [] : [...(actividad.blancos ?? [])];
+    const frases: string[] = [];
+    const descartadas: FilaDescartada[] = [];
+    let leidas = 0;
+    for (const { fila, celdas } of prepararFilas(filas, [], sinAcentos)) {
+      const crudo = celdas.join(', ').trim();
+      const respuestas = [...crudo.matchAll(/\[([^\]]*)\]/g)].map((m) => m[1]!.trim());
+      if (respuestas.some((r) => r === '')) {
+        descartadas.push({ fila, motivo: 'Hay un hueco [] sin palabra.', texto: crudo });
+      } else if (blancos.length + respuestas.length > CLOZE_MAX_BLANCOS) {
+        descartadas.push({ fila, motivo: `Se superó el máximo de ${CLOZE_MAX_BLANCOS} huecos.`, texto: crudo });
+      } else {
+        let i = 0;
+        const frase = crudo.replace(/\[[^\]]*\]/g, () => {
+          const id = generarIdCloze();
+          blancos.push({ id, respuesta: respuestas[i++]! });
+          return `{{blank:${id}}}`;
+        });
+        frases.push(frase);
+        leidas += 1;
+      }
+    }
+    const texto = [base, ...frases].filter((t) => t.trim() !== '').join(' ');
+    return { actividad: { ...actividad, texto, blancos }, leidas, descartadas };
   },
 };

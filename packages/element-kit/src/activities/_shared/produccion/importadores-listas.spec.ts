@@ -36,8 +36,8 @@ const ruleta = (): RuletaActivity => ({
 });
 
 describe('cobertura de importadores', () => {
-  it('hay importador para los 23 tipos con contenido en lista', () => {
-    expect(tiposImportables()).toHaveLength(23);
+  it('hay importador para los 24 tipos con contenido en lista', () => {
+    expect(tiposImportables()).toHaveLength(24);
   });
   it('el ejemplo de cada importador de listas se lee entero y deja una actividad sin errores', () => {
     const bases: Record<string, Activity> = {

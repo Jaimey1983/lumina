@@ -4,6 +4,7 @@
  */
 import { parseRespuestaNumerica, validarExpresionAlgebraica } from '@lumina/scoring';
 import type {
+  ClozeBancoActivity,
   EtiquetarImagenActivity,
   LineaTiempoActivity,
   ProblemaPasosActivity,
@@ -11,6 +12,7 @@ import type {
   RelacionarLineasItem,
 } from '@lumina/types/slide';
 
+import { CLOZE_MAX_BLANCOS, CLOZE_MAX_DISTRACTORES, MARCADOR } from '../../cloze-banco/cloze-banco-config.js';
 import { LINEA_MAX_EVENTOS, LINEA_MIN_EVENTOS } from '../../linea-tiempo/linea-tiempo-config.js';
 import { ETIQUETAR_MAX_ETIQUETAS, ETIQUETAR_MAX_ZONAS, ETIQUETAR_MIN_ZONAS } from '../../etiquetar-imagen/etiquetar-imagen-config.js';
 import { PROBLEMA_MAX_PASOS } from '../../problema-pasos/problema-pasos-config.js';
@@ -121,6 +123,35 @@ export const validarLineaTiempo = (a: LineaTiempoActivity): P[] => {
       const orden = [...ordenes].sort((x, y) => x - y);
       if (orden.some((o, i) => o !== i + 1)) out.push(aviso('Los números de orden tienen huecos (usa «Ordenar por orden» para renumerarlos).'));
     }
+  }
+  return out;
+};
+
+export const validarClozeBanco = (a: ClozeBancoActivity): P[] => {
+  const out: P[] = [];
+  if (!hayTexto(a.texto)) out.push(error('El texto está vacío.'));
+  const blancos = a.blancos ?? [];
+  if (blancos.length === 0) out.push(error('No tiene huecos para completar.'));
+  if (blancos.length > CLOZE_MAX_BLANCOS) out.push(aviso(`Tiene más de ${CLOZE_MAX_BLANCOS} huecos.`));
+  if ((a.distractores ?? []).length > CLOZE_MAX_DISTRACTORES) {
+    out.push(aviso(`Tiene más de ${CLOZE_MAX_DISTRACTORES} distractores.`));
+  }
+  const marcados = [...(a.texto ?? '').matchAll(MARCADOR)].map((m) => m[1]!);
+  const definidos = new Set(blancos.map((b) => b.id));
+  for (const id of new Set(marcados)) {
+    if (!definidos.has(id)) out.push(error(`El texto marca el hueco «${id}» pero no tiene respuesta.`));
+  }
+  const repetidos = marcados.filter((id, i) => marcados.indexOf(id) !== i);
+  for (const id of new Set(repetidos)) out.push(error(`El hueco «${id}» aparece más de una vez en el texto.`));
+  const usados = new Set(marcados);
+  for (const b of blancos) {
+    if (!usados.has(b.id)) out.push(aviso(`El hueco «${b.id}» no aparece en el texto.`));
+    if (!hayTexto(b.respuesta)) out.push(error(`El hueco «${b.id}» no tiene respuesta.`));
+  }
+  if (new Set(blancos.map((b) => b.id)).size !== blancos.length) out.push(error('Hay huecos con el mismo identificador.'));
+  const respuestas = new Set(blancos.map((b) => b.respuesta.trim()));
+  for (const d of (a.distractores ?? []).map((x) => x.trim()).filter((x) => x !== '')) {
+    if (respuestas.has(d)) out.push(aviso(`El distractor «${d}» es igual a una respuesta: la actividad quedaría ambigua.`));
   }
   return out;
 };

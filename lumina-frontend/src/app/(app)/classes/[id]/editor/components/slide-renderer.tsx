@@ -179,6 +179,7 @@ const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
   problema_pasos: 'Actividad · Problema paso a paso',
   etiquetar_imagen: 'Actividad · Etiquetar imagen',
   linea_tiempo: 'Actividad · Línea de tiempo',
+  cloze_banco: 'Actividad · Cloze con banco',
   ordenar_pasos: 'Actividad · Ordenar pasos',
   video_interactivo: 'Actividad · Video interactivo',
   encuesta_viva: 'Actividad · Encuesta en vivo',

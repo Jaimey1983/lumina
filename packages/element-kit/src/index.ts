@@ -313,6 +313,20 @@ export {
 export { createDefaultLineaTiempo } from "./activities/linea-tiempo/index.js";
 
 export {
+  clozeBancoDefinition,
+  registrarClozeBanco,
+  evaluarClozeBanco,
+  CLOZE_BANCO_TIPO,
+  ClozeBancoEditor,
+  ClozeBancoViewer,
+  ClozeBancoPropiedades,
+  type ClozeBancoConfig,
+  type ClozeBancoEstado,
+  type ClozeBancoDefinition,
+} from "./elements/cloze_banco/index.js";
+export { createDefaultClozeBanco } from "./activities/cloze-banco/index.js";
+
+export {
   torneoDefinition,
   registrarTorneo,
   TORNEO_TIPO,
@@ -541,6 +555,7 @@ import { relacionarLineasDefinition } from "./elements/relacionar_lineas/relacio
 import { problemaPasosDefinition } from "./elements/problema_pasos/problema_pasos-definition.js";
 import { etiquetarImagenDefinition } from "./elements/etiquetar_imagen/etiquetar_imagen-definition.js";
 import { lineaTiempoDefinition } from "./elements/linea_tiempo/linea_tiempo-definition.js";
+import { clozeBancoDefinition } from "./elements/cloze_banco/cloze_banco-definition.js";
 import { escapeRoomDefinition } from "./elements/escape-room/escape-room-definition.js";
 import { historiaRamificadaDefinition } from "./elements/historia_ramificada/historia_ramificada-definition.js";
 import { memoriaDefinition } from "./elements/memoria/memoria-definition.js";
@@ -595,6 +610,7 @@ export type ElementCatalog = {
   problema_pasos: typeof problemaPasosDefinition;
   etiquetar_imagen: typeof etiquetarImagenDefinition;
   linea_tiempo: typeof lineaTiempoDefinition;
+  cloze_banco: typeof clozeBancoDefinition;
   escape_room: typeof escapeRoomDefinition;
   topo: typeof topoDefinition;
   historia_ramificada: typeof historiaRamificadaDefinition;
@@ -651,6 +667,7 @@ elementRegistry.registrar(relacionarLineasDefinition);
 elementRegistry.registrar(problemaPasosDefinition);
 elementRegistry.registrar(etiquetarImagenDefinition);
 elementRegistry.registrar(lineaTiempoDefinition);
+elementRegistry.registrar(clozeBancoDefinition);
 elementRegistry.registrar(escapeRoomDefinition);
 elementRegistry.registrar(topoDefinition);
 elementRegistry.registrar(quizMultipleDefinition);

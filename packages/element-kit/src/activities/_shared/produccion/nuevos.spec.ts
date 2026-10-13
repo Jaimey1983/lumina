@@ -1,7 +1,8 @@
 /** U14+ — validadores e importadores de las actividades nuevas (catálogo posterior a U12). */
 import { describe, expect, it } from 'vitest';
-import type { EtiquetarImagenActivity, LineaTiempoActivity, ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
+import type { ClozeBancoActivity, EtiquetarImagenActivity, LineaTiempoActivity, ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
 
+import { createDefaultClozeBanco } from '../../cloze-banco/cloze-banco-defaults.js';
 import { createDefaultLineaTiempo } from '../../linea-tiempo/linea-tiempo-defaults.js';
 import { createDefaultEtiquetarImagen } from '../../etiquetar-imagen/etiquetar-imagen-defaults.js';
 import { createDefaultProblemaPasos } from '../../problema-pasos/problema-pasos-defaults.js';
@@ -247,5 +248,69 @@ describe('linea_tiempo — validación e importación', () => {
     const r = importarTexto(a, '1;A', 'reemplazar').actividad;
     expect(r.ajustes).toEqual(a.ajustes);
     expect(r.instruccion).toBe(a.instruccion);
+  });
+});
+
+describe('cloze_banco — validación e importación', () => {
+  const nueva = (): ClozeBancoActivity => structuredClone(createDefaultClozeBanco());
+  const err = (a: ClozeBancoActivity) => validarActividad(a).filter((p) => p.nivel === 'error').map((p) => p.mensaje);
+  const avi = (a: ClozeBancoActivity) => validarActividad(a).filter((p) => p.nivel === 'aviso').map((p) => p.mensaje);
+
+  it('lo que se crea por defecto no tiene problemas (con distractores)', () => {
+    expect(validarActividad(nueva())).toEqual([]);
+  });
+  it('texto vacío, sin huecos, marcador sin definir, respuesta vacía y marcador repetido', () => {
+    const vacia = nueva();
+    vacia.texto = ' ';
+    vacia.blancos = [];
+    expect(err(vacia)).toEqual(['El texto está vacío.', 'No tiene huecos para completar.']);
+    const a = nueva();
+    a.texto += ' {{blank:nada}} {{blank:h1}}';
+    a.blancos[1] = { id: 'h2', respuesta: ' ' };
+    expect(err(a)).toEqual([
+      'El texto marca el hueco «nada» pero no tiene respuesta.',
+      'El hueco «h1» aparece más de una vez en el texto.',
+      'El hueco «h2» no tiene respuesta.',
+    ]);
+  });
+  it('avisos: hueco que no está en el texto y distractor igual a una respuesta', () => {
+    const a = nueva();
+    a.blancos.push({ id: 'suelto', respuesta: 'x' });
+    a.distractores.push('sol');
+    expect(err(a)).toEqual([]);
+    expect(avi(a)).toEqual([
+      'El hueco «suelto» no aparece en el texto.',
+      'El distractor «sol» es igual a una respuesta: la actividad quedaría ambigua.',
+    ]);
+  });
+  it('importa una frase por fila con las respuestas entre [corchetes]', () => {
+    const imp = importadorDe('cloze_banco')!;
+    const r = importarTexto(nueva(), imp.ejemplo, 'reemplazar');
+    expect(r.leidas).toBe(2);
+    expect(r.actividad.blancos.map((b) => b.respuesta)).toEqual(['fotosíntesis', 'oxígeno']);
+    expect(r.actividad.texto).toMatch(/^La \{\{blank:\w+\}\} ocurre en las hojas\. Las plantas liberan \{\{blank:\w+\}\} al aire\.$/);
+    expect(r.actividad.distractores).toEqual(nueva().distractores);
+    expect(validarActividad(r.actividad).filter((p) => p.nivel === 'error')).toEqual([]);
+  });
+  it('las comas de la prosa se conservan', () => {
+    const r = importarTexto(nueva(), 'En Colombia, país del sur, la capital es [Bogotá].', 'reemplazar');
+    expect(r.actividad.texto).toMatch(/^En Colombia, país del sur, la capital es \{\{blank:\w+\}\}\.$/);
+  });
+  it('agregar conserva lo anterior; respeta el máximo de huecos y descarta con motivo', () => {
+    const a = nueva();
+    const filas = Array.from({ length: 9 }, (_, i) => `Frase [p${i}]`).join('\n');
+    const r = importarTexto(a, `${filas}\nFrase [] rota`, 'agregar');
+    expect(r.actividad.blancos).toHaveLength(12);
+    expect(r.actividad.texto.startsWith(a.texto)).toBe(true);
+    expect(r.descartadas.map((d) => d.motivo)).toEqual([
+      'Se superó el máximo de 12 huecos.',
+      'Hay un hueco [] sin palabra.',
+    ]);
+  });
+  it('no toca ajustes ni distractores', () => {
+    const a = { ...nueva(), ajustes: { estilo: 'examen' as const } };
+    const r = importarTexto(a, 'Es [x].', 'reemplazar').actividad;
+    expect(r.ajustes).toEqual(a.ajustes);
+    expect(r.distractores).toEqual(a.distractores);
   });
 });
