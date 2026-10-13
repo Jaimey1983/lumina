@@ -334,7 +334,7 @@ U13 abre la primera tanda de actividades nuevas U14 → U18 (serie, mismos archi
 
 #### U18 — `cloze_banco`: completar un texto con banco de palabras
 - **Operador:** Claude Code · Cursor · Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U17 en revisión. Cumple CN1–CN10.
 - **Qué es:** como `completar_blancos`, pero el alumno no escribe: arrastra palabras de un banco (con distractores) a los huecos. **Tipo nuevo** (no se modifica `FillBlanks`): así `completar_blancos` y su evaluador siguen congelados (DU7).
 - **Datos:** `ClozeBancoActivity { tipo:'cloze_banco'; texto: string (con `{{blank:id}}`); blancos: { id; respuesta }[]; distractores: string[]; retroalimentacion? }`; el banco visible = respuestas + distractores (repetidos permitidos si hay dos huecos iguales).
