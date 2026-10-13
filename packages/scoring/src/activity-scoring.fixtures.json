@@ -34,7 +34,8 @@
     "relacionar_lineas",
     "problema_pasos",
     "etiquetar_imagen",
-    "linea_tiempo"
+    "linea_tiempo",
+    "cloze_banco"
   ],
   "notaCases": [
     {
@@ -2164,6 +2165,207 @@
       "correctEsperado": null,
       "detailsEsperados": 0,
       "scoreEsperado": null
+    },
+    {
+      "case": "u18_cloze_perfecto",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": "ciudad",
+        "b": "Colombia",
+        "c": "Lima"
+      },
+      "correctEsperado": true,
+      "detailsEsperados": 3,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u18_cloze_dos_de_tres",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": "ciudad",
+        "b": "Colombia",
+        "c": "Quito"
+      },
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u18_cloze_distractor_en_todos",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": "Quito",
+        "b": "Quito",
+        "c": "Quito"
+      },
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u18_cloze_vacio",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {},
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u18_cloze_exacto_distingue_mayusculas",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": "Ciudad",
+        "b": "Colombia",
+        "c": "Lima"
+      },
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u18_cloze_espacios_alrededor_se_ignoran",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "La {{blank:a}} es la capital de {{blank:b}} y {{blank:c}} la de Perú.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "ciudad"
+          },
+          {
+            "id": "b",
+            "respuesta": "Colombia"
+          },
+          {
+            "id": "c",
+            "respuesta": "Lima"
+          }
+        ],
+        "distractores": [
+          "Quito"
+        ]
+      },
+      "respuesta": {
+        "a": " ciudad ",
+        "b": "Colombia",
+        "c": "Lima"
+      },
+      "correctEsperado": true,
+      "detailsEsperados": 3,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u18_cloze_sin_blancos",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "x",
+        "blancos": [],
+        "distractores": []
+      },
+      "respuesta": {},
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
     }
   ],
   "expectedKinds": {
@@ -2200,7 +2402,8 @@
     "ubicar_elemento": "partial",
     "formular_compuesto": "partial",
     "etiquetar_imagen": "partial",
-    "linea_tiempo": "partial"
+    "linea_tiempo": "partial",
+    "cloze_banco": "partial"
   },
   "contractCases": [
     {
@@ -2802,6 +3005,23 @@
         "a",
         "b"
       ]
+    },
+    {
+      "case": "contrato_cloze_banco_perfecto",
+      "activityType": "cloze_banco",
+      "definicion": {
+        "texto": "Es {{blank:a}}.",
+        "blancos": [
+          {
+            "id": "a",
+            "respuesta": "x"
+          }
+        ],
+        "distractores": []
+      },
+      "respuesta": {
+        "a": "x"
+      }
     }
   ]
 }

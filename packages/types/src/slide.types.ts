@@ -334,6 +334,28 @@ export interface FillBlanks extends ActivityBase {
   retroalimentacion?: Feedback;
 }
 
+/** Un hueco de «cloze con banco»: el alumno elige su palabra del banco. */
+export interface ClozeBancoBlanco {
+  id: string;
+  respuesta: string;
+}
+
+/**
+ * Cloze con banco de palabras (etapa U / U18): como `completar_blancos`, pero el alumno no escribe:
+ * arrastra palabras de un banco (respuestas + distractores) a los huecos. Tipo propio para no tocar
+ * `FillBlanks` ni su evaluador.
+ */
+export interface ClozeBancoActivity extends ActivityBase {
+  tipo: 'cloze_banco';
+  /** Usa marcadores `{{blank:id}}` donde va cada hueco. */
+  texto: string;
+  blancos: ClozeBancoBlanco[];
+  /** Palabras del banco que no son respuesta de ningún hueco. */
+  distractores: string[];
+  puntos?: number;
+  retroalimentacion?: Feedback;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface DragDropItem {
@@ -858,6 +880,7 @@ export type Activity =
   | RelacionarLineasActivity
   | EtiquetarImagenActivity
   | LineaTiempoActivity
+  | ClozeBancoActivity
   | OrderSteps
   | VideoInteractive
   | LivePoll

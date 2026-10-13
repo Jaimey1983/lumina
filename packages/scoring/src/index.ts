@@ -83,6 +83,7 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   relacionar_lineas: 'partial',
   etiquetar_imagen: 'partial',
   linea_tiempo: 'partial',
+  cloze_banco: 'partial',
   ordenar_pasos: 'partial',
   video_interactivo: 'partial',
 
@@ -168,6 +169,7 @@ const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'problema_pasos',
   'etiquetar_imagen',
   'linea_tiempo',
+  'cloze_banco',
 ]);
 
 /** `partial` cuyo promedio de gradebook aún no está conectado (p. ej. `orden_rango`). */
@@ -818,6 +820,32 @@ function evaluateLineaTiempo(definicion: unknown, respuesta: unknown): ActivityE
   };
 }
 
+/**
+ * Cloze con banco (U18): un detalle por hueco con respuesta declarada. Comparación EXACTA (tras
+ * recortar espacios) con la `respuesta` del hueco: el alumno elige del banco, no escribe, así que no
+ * hay alternativas ni tolerancia. Un hueco vacío o con un distractor es incorrecto. La respuesta es
+ * `Record<idHueco, palabra>`, la misma forma que `completar_blancos`.
+ */
+function evaluateClozeBanco(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const blancos = (Array.isArray(def.blancos) ? def.blancos : [])
+    .map((b) => asRecord(b) ?? {})
+    .filter((b) => String(b.id ?? '') !== '' && String(b.respuesta ?? '').trim() !== '');
+  if (blancos.length === 0) return UNEVALUABLE;
+  const dadas = asRecord(respuesta) ?? {};
+  const details: ActivityEvaluationDetail[] = blancos.map((b, i) => ({
+    index: i,
+    correct: String(dadas[String(b.id)] ?? '').trim() === String(b.respuesta).trim(),
+    label: `Hueco ${i + 1}`,
+  }));
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, blancos.length, true),
+  };
+}
+
 function evaluateOrdenar(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
   const pasos = Array.isArray(def.pasos) ? def.pasos : [];
@@ -1243,6 +1271,8 @@ function evaluatePartial(
       return evaluateEtiquetarImagen(definicion, respuesta);
     case 'linea_tiempo':
       return evaluateLineaTiempo(definicion, respuesta);
+    case 'cloze_banco':
+      return evaluateClozeBanco(definicion, respuesta);
     case 'ordenar_pasos':
       return evaluateOrdenar(definicion, respuesta);
     case 'video_interactivo':
