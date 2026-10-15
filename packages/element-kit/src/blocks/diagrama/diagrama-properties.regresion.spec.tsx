@@ -17,9 +17,10 @@
 //    ocasional, como Plantillas).
 
 import { render, cleanup, screen, fireEvent } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiagramaProperties } from './diagrama-properties.js';
-import { createDefaultMapaMentalBlock } from './diagrama-defaults.js';
+import type { DiagramaBlock, DiagramaGrafoBlock } from '@lumina/types/slide';
+import { createDefaultFlujoBlock, createDefaultMapaMentalBlock } from './diagrama-defaults.js';
 
 afterEach(() => {
   cleanup();
@@ -73,5 +74,60 @@ describe('DiagramaProperties — sin plantillas duplicadas y panel colapsable (r
     screen.getByText('Editorial Académico');
     // Estilo Visual Global vive dentro del mismo bloque colapsable.
     screen.getByText('Estilo Visual Global');
+  });
+
+  describe('cambio de subtipo y `dirigida` por arista (V1.4)', () => {
+    // Las secciones recuerdan abierto/cerrado en localStorage: un test previo
+    // colapsa «Tipo de Diagrama» y ocultaría los botones de tipo.
+    beforeEach(() => {
+      window.localStorage.clear();
+    });
+
+    /** Aplica la última actualización enviada a `applyNow` sobre `base` y devuelve el bloque resultante. */
+    function ultimoBloque(applyNow: ReturnType<typeof vi.fn>, base: DiagramaBlock): DiagramaGrafoBlock {
+      const fn = applyNow.mock.calls.at(-1)?.[0] as (b: DiagramaBlock) => DiagramaBlock;
+      return fn(base) as DiagramaGrafoBlock;
+    }
+
+    function clicTipo(label: string) {
+      // El badge del encabezado repite el nombre del tipo actual: se busca el <button>.
+      const boton = screen.getAllByText(label).map((n) => n.closest('button')).find(Boolean);
+      fireEvent.click(boton as HTMLElement);
+    }
+
+    it('flujo → mapa mental → flujo conserva la `dirigida` explícita de cada arista', () => {
+      const base = createDefaultFlujoBlock({ id: 'b-dir' }) as DiagramaGrafoBlock;
+      const conDecisiones: DiagramaGrafoBlock = {
+        ...base,
+        aristas: base.aristas.map((a, i) => ({ ...a, dirigida: i === 0 })),
+      };
+      expect(conDecisiones.aristas.length).toBeGreaterThan(1);
+      const applyNow = vi.fn(async () => undefined);
+      render(<DiagramaProperties block={conDecisiones} applyNow={applyNow} />);
+
+      clicTipo('Mapa Mental');
+      const enMapa = ultimoBloque(applyNow, conDecisiones);
+      expect(enMapa.subtipo).toBe('mapa_mental');
+      expect(enMapa.aristas.map((a) => a.dirigida)).toEqual(conDecisiones.aristas.map((a) => a.dirigida));
+
+      clicTipo('Flujo');
+      const deVuelta = ultimoBloque(applyNow, enMapa);
+      expect(deVuelta.subtipo).toBe('flujo');
+      expect(deVuelta.aristas.map((a) => a.dirigida)).toEqual(conDecisiones.aristas.map((a) => a.dirigida));
+    });
+
+    it('las aristas sin `dirigida` explícita toman el valor por defecto del subtipo destino', () => {
+      const base = createDefaultMapaMentalBlock({ id: 'b-sin' }) as DiagramaGrafoBlock;
+      const sinDecision: DiagramaGrafoBlock = {
+        ...base,
+        aristas: base.aristas.map(({ dirigida: _d, ...resto }) => resto),
+      };
+      const applyNow = vi.fn(async () => undefined);
+      render(<DiagramaProperties block={sinDecision} applyNow={applyNow} />);
+
+      clicTipo('Flujo');
+      const enFlujo = ultimoBloque(applyNow, sinDecision);
+      expect(enFlujo.aristas.every((a) => a.dirigida === true)).toBe(true);
+    });
   });
 });

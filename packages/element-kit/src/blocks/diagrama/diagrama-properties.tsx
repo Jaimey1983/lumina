@@ -207,9 +207,11 @@ export function DiagramaProperties({
     if (!grafoBlock) return;
     const isDirected = newSubtipo === 'flujo' || newSubtipo === 'organigrama';
     let nextNodos: DiagramaNodo[] = [...grafoBlock.nodos];
+    // `dirigida` explícita (decisión del docente por arista) se conserva; solo las
+    // que no la tienen toman el valor por defecto del subtipo destino.
     let nextAristas: DiagramaArista[] = grafoBlock.aristas.map((a) => ({
       ...a,
-      dirigida: isDirected,
+      dirigida: a.dirigida ?? isDirected,
     }));
 
     if (newSubtipo === 'mapa_mental') {
