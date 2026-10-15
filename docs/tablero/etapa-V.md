@@ -43,7 +43,7 @@ V1.1–V1.4 tocan archivos que se solapan (`diagrama-defaults.ts`, `lumina-rf-br
 
 #### V1.2 — Formas, trazado y flecha prometidos sin render (D3)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (V1.1 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** V1.1 `hecho`.
 - **Alcance — PUEDE tocar:** `diagrama-shape-node.tsx` (ramas nuevas `rect`, `ellipse`, `hexagon`), `diagrama-properties.tsx` (`FORMAS_CONFIG`: sumar los 3 botones), `packages/editor-shared/src/graph-editor/graph-canvas.tsx` (arista: trazado `orthogonal`), `lumina-rf-bridge.ts` (`graphEdgeToRF`: `markerStart` cuando `flechaInicio`), `packages/types/src/slide.types.ts` **solo** si hay que quitar un valor del tipo, y sus specs. **NO** cambia el aspecto de las 11 formas actuales.
 - **Entregable:** (a) `rect`, `ellipse`, `hexagon` con render real y botón en el selector de forma; (b) `orthogonal` produce un trazado en ángulo recto (esquinas vivas, distinto de `smoothstep` con r=8); (c) `flechaInicio` pinta el marcador de inicio. **Regla de honestidad:** si una de las tres piezas se descarta, se **quita del tipo y del normalizador** en el mismo PR — ningún valor queda declarado sin render. Pruebas: render de cada forma/trazado y del marcador. Verificación: la de V1.1 más `pnpm --filter lumina-frontend test:unit` si se toca algún consumidor del frontend; specs de Historia ramificada y Mapa Edu en verde (DV4).
