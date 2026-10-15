@@ -1810,6 +1810,27 @@ export type DiagramaPaletaId =
   | 'monocromatico'
   | 'pastel';
 
+/** Cómo se rellena un nodo: solo contorno, tinte suave del acento, o acento pleno. */
+export type DiagramaRelleno = 'contorno' | 'tintado' | 'solido';
+
+/** Conector por defecto del diagrama; cada arista puede sobrescribirlo con sus propios campos. */
+export interface DiagramaEstiloConector {
+  trazado?: DiagramaAristaTrazado;
+  /** Grosor en px (0.5–8). */
+  grosor?: number;
+  patron?: DiagramaAristaEstiloLinea;
+}
+
+/**
+ * Estilo visual del diagrama (V2.1). Todo opcional: ausente = el aspecto de
+ * siempre. `sombra: false` quita la sombra propia de cada forma.
+ */
+export interface DiagramaEstilo {
+  relleno?: DiagramaRelleno;
+  sombra?: boolean;
+  conector?: DiagramaEstiloConector;
+}
+
 export interface DiagramaOpciones {
   tema?: 'auto' | 'claro' | 'oscuro';
   paleta?: DiagramaPaletaId;
@@ -1817,6 +1838,7 @@ export interface DiagramaOpciones {
   direccionLayout?: 'TB' | 'LR' | 'BT' | 'RL' | 'radial';
   densidad?: 'compacta' | 'normal' | 'amplia';
   animacionEntrada?: boolean;
+  estilo?: DiagramaEstilo;
 }
 
 export interface DiagramaGrafoBlock {

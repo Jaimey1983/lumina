@@ -1,4 +1,13 @@
-import type { DiagramaGrafoBlock, DiagramaPaletaId } from '@lumina/types/slide';
+import type {
+  DiagramaArista,
+  DiagramaAristaEstiloLinea,
+  DiagramaAristaTrazado,
+  DiagramaGrafoBlock,
+  DiagramaOpciones,
+  DiagramaPaletaId,
+  DiagramaRelleno,
+  DiagramaSubtipo,
+} from '@lumina/types/slide';
 
 export interface PaletaDef {
   id: DiagramaPaletaId;
@@ -152,5 +161,110 @@ export function aplicarPaletaADiagrama(
       ...(block.opciones ?? {}),
       paleta: paletaId,
     },
+  };
+}
+
+// ─── Estilo del diagrama (V2.1) ───────────────────────────────────────────────
+// Resuelve los valores efectivos de relleno, sombra, texto y conector. Con
+// `opciones.estilo` ausente reproduce el aspecto de siempre (DV2); el render
+// (V2.2/V2.3) solo lee lo que devuelven estas funciones.
+
+/** Grosor por defecto de una arista (el que ya usa `graphEdgeToRF`). */
+export const GROSOR_CONECTOR_DEFECTO = 1.5;
+
+export interface ConectorResuelto {
+  trazado: DiagramaAristaTrazado;
+  grosor: number;
+  patron: DiagramaAristaEstiloLinea;
+}
+
+export interface EstiloDiagramaResuelto {
+  relleno: DiagramaRelleno;
+  /** `true` = la sombra propia de cada forma (como hoy); `false` = sin sombra. */
+  sombra: boolean;
+  conector: ConectorResuelto;
+}
+
+export interface EstiloNodoResuelto {
+  relleno: DiagramaRelleno;
+  sombra: boolean;
+  /** Valor CSS del fondo del nodo. */
+  rellenoCss: string;
+  /** Valor CSS del texto principal, con contraste sobre el relleno. */
+  colorTexto: string;
+}
+
+/** Pirámide, embudo y cebolla ya se dibujan con tinte; el resto, solo con contorno. */
+const SUBTIPOS_TINTADOS: readonly DiagramaSubtipo[] = ['piramide', 'embudo', 'cebolla'];
+
+/** Trazado por defecto de cada subtipo (el mismo que aplicaba `diagramaToGraphModel`). */
+function trazadoPorDefecto(subtipo: DiagramaSubtipo): DiagramaAristaTrazado {
+  if (subtipo === 'flujo' || subtipo === 'organigrama') return 'smoothstep';
+  if (subtipo === 'cronologia') return 'straight';
+  return 'bezier';
+}
+
+export function resolverEstiloDiagrama(
+  opciones: DiagramaOpciones | undefined,
+  subtipo: DiagramaSubtipo,
+): EstiloDiagramaResuelto {
+  const estilo = opciones?.estilo;
+  return {
+    relleno: estilo?.relleno ?? (SUBTIPOS_TINTADOS.includes(subtipo) ? 'tintado' : 'contorno'),
+    sombra: estilo?.sombra ?? true,
+    conector: {
+      trazado: estilo?.conector?.trazado ?? trazadoPorDefecto(subtipo),
+      grosor: estilo?.conector?.grosor ?? GROSOR_CONECTOR_DEFECTO,
+      patron: estilo?.conector?.patron ?? 'solida',
+    },
+  };
+}
+
+/** Luminancia percibida (0–255) de `#rgb`/`#rrggbb`; `undefined` si no es un hex. */
+function luminanciaHex(color: string): number | undefined {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
+  if (!m) return undefined;
+  const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1];
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
+/** Texto legible sobre un relleno `solido` del color dado. */
+function textoSobreSolido(acento: string): string {
+  const lum = luminanciaHex(acento);
+  if (lum === undefined) return 'var(--primary-foreground, #ffffff)';
+  return lum > 150 ? '#0f172a' : '#ffffff';
+}
+
+/** Intensidad (%) del acento en el relleno `tintado`. */
+export const TINTE_PORCENTAJE = 14;
+
+export function resolverEstiloNodo(estilo: EstiloDiagramaResuelto, acento: string): EstiloNodoResuelto {
+  const { relleno, sombra } = estilo;
+  if (relleno === 'solido') {
+    return { relleno, sombra, rellenoCss: acento, colorTexto: textoSobreSolido(acento) };
+  }
+  return {
+    relleno,
+    sombra,
+    rellenoCss:
+      relleno === 'tintado'
+        ? `color-mix(in srgb, ${acento} ${TINTE_PORCENTAJE}%, var(--card, #ffffff))`
+        : 'var(--card, #ffffff)',
+    colorTexto: 'var(--foreground, #0f172a)',
+  };
+}
+
+/**
+ * Valores efectivos de una arista. Precedencia: lo que la arista declara por sí
+ * misma > el conector del estilo del diagrama > el default del subtipo.
+ */
+export function resolverEstiloArista(arista: DiagramaArista, estilo: EstiloDiagramaResuelto): ConectorResuelto {
+  return {
+    trazado: arista.tipoTrazado ?? estilo.conector.trazado,
+    grosor: arista.grosor ?? estilo.conector.grosor,
+    patron: arista.estiloLinea ?? estilo.conector.patron,
   };
 }

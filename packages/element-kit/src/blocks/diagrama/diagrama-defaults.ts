@@ -6,6 +6,7 @@ import {
   type BlockMarco,
   type DiagramaArista,
   type DiagramaBlock,
+  type DiagramaEstilo,
   type DiagramaGrafoBlock,
   type DiagramaNodo,
   type DiagramaOpciones,
@@ -71,6 +72,49 @@ function positiveSize(value: unknown): number | undefined {
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
   const rounded = Math.round(value);
   return rounded > 0 ? rounded : undefined;
+}
+
+const RELLENOS_VALIDOS: readonly string[] = ['contorno', 'tintado', 'solido'];
+const TRAZADOS_VALIDOS: readonly string[] = ['bezier', 'smoothstep', 'straight', 'orthogonal'];
+const PATRONES_VALIDOS: readonly string[] = ['solida', 'discontinua', 'punteada'];
+const GROSOR_MIN = 0.5;
+const GROSOR_MAX = 8;
+
+/**
+ * Sanea `opciones.estilo` (V2.1): cada valor desconocido o fuera de rango se
+ * descarta (cae al default del subtipo); si no queda nada, devuelve `undefined`
+ * para que un bloque sin estilo propio no gane una clave vacía.
+ */
+export function sanitizeEstilo(raw: unknown): DiagramaEstilo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const r = raw as Record<string, unknown>;
+
+  const rawConector = r.conector && typeof r.conector === 'object' ? (r.conector as Record<string, unknown>) : undefined;
+  const conector = rawConector
+    ? {
+        ...(typeof rawConector.trazado === 'string' && TRAZADOS_VALIDOS.includes(rawConector.trazado)
+          ? { trazado: rawConector.trazado as NonNullable<DiagramaEstilo['conector']>['trazado'] }
+          : {}),
+        ...(typeof rawConector.grosor === 'number' &&
+        Number.isFinite(rawConector.grosor) &&
+        rawConector.grosor >= GROSOR_MIN &&
+        rawConector.grosor <= GROSOR_MAX
+          ? { grosor: rawConector.grosor }
+          : {}),
+        ...(typeof rawConector.patron === 'string' && PATRONES_VALIDOS.includes(rawConector.patron)
+          ? { patron: rawConector.patron as NonNullable<DiagramaEstilo['conector']>['patron'] }
+          : {}),
+      }
+    : undefined;
+
+  const estilo: DiagramaEstilo = {
+    ...(typeof r.relleno === 'string' && RELLENOS_VALIDOS.includes(r.relleno)
+      ? { relleno: r.relleno as DiagramaEstilo['relleno'] }
+      : {}),
+    ...(typeof r.sombra === 'boolean' ? { sombra: r.sombra } : {}),
+    ...(conector && Object.keys(conector).length > 0 ? { conector } : {}),
+  };
+  return Object.keys(estilo).length > 0 ? estilo : undefined;
 }
 
 function sanitizeNodos(raw: unknown): DiagramaNodo[] {
@@ -382,6 +426,10 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
         ...(typeof rawOpciones.animacionEntrada === 'boolean'
           ? { animacionEntrada: rawOpciones.animacionEntrada }
           : {}),
+        ...(() => {
+          const estilo = sanitizeEstilo(rawOpciones.estilo);
+          return estilo ? { estilo } : {};
+        })(),
       }
     : undefined;
 
