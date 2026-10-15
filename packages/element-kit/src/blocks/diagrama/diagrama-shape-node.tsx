@@ -565,12 +565,89 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
     );
   }
 
-  // 11. Por defecto: Rectángulo con esquinas suaves (rounded / rect)
+  // 12. Forma: Elipse
+  if (forma === 'ellipse') {
+    return (
+      <div
+        onDoubleClick={() => setIsEditing(true)}
+        className="relative flex items-center justify-center w-[140px] h-[90px]"
+        style={customSizeStyle}
+      >
+        {toolbar}
+        {handles}
+        <svg
+          viewBox="0 0 140 90"
+          preserveAspectRatio="none"
+          className={cn(
+            'absolute inset-0 w-full h-full drop-shadow-2xs',
+            selected && 'filter drop-shadow-[0_0_4px_var(--primary)]',
+          )}
+        >
+          <ellipse cx="70" cy="45" rx="68" ry="43" className="fill-card stroke-2" style={{ stroke: accent }} />
+        </svg>
+        <div className="relative z-10 flex flex-col items-center justify-center p-2 text-center" style={{ maxWidth: '70%' }}>
+          {isEditing ? (
+            inlineInput
+          ) : (
+            <span className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2 cursor-text">
+              {nodeData.label}
+            </span>
+          )}
+          {nodeData.body && (
+            <span className="text-[9px] text-muted-foreground leading-tight line-clamp-1 mt-0.5">
+              {nodeData.body}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 13. Forma: Hexágono
+  if (forma === 'hexagon') {
+    return (
+      <div
+        onDoubleClick={() => setIsEditing(true)}
+        className="relative flex items-center justify-center w-[140px] h-[90px]"
+        style={customSizeStyle}
+      >
+        {toolbar}
+        {handles}
+        <svg
+          viewBox="0 0 140 90"
+          preserveAspectRatio="none"
+          className={cn(
+            'absolute inset-0 w-full h-full drop-shadow-2xs',
+            selected && 'filter drop-shadow-[0_0_4px_var(--primary)]',
+          )}
+        >
+          <polygon points="22,2 118,2 138,45 118,88 22,88 2,45" className="fill-card stroke-2" style={{ stroke: accent }} />
+        </svg>
+        <div className="relative z-10 flex flex-col items-center justify-center p-2 text-center" style={{ maxWidth: '72%' }}>
+          {isEditing ? (
+            inlineInput
+          ) : (
+            <span className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2 cursor-text">
+              {nodeData.label}
+            </span>
+          )}
+          {nodeData.body && (
+            <span className="text-[9px] text-muted-foreground leading-tight line-clamp-1 mt-0.5">
+              {nodeData.body}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 11. Por defecto: Rectángulo con esquinas suaves (rounded) o rectas (rect)
   return (
     <div
       onDoubleClick={() => setIsEditing(true)}
       className={cn(
-        'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-shadow min-w-[130px] max-w-[200px] p-2',
+        'relative border-2 bg-card text-card-foreground shadow-xs transition-shadow min-w-[130px] max-w-[200px] p-2',
+        forma === 'rect' ? 'rounded-none' : 'rounded-lg',
         selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
       style={{ borderColor: accent, ...customSizeStyle }}

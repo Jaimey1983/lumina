@@ -117,6 +117,9 @@ export function graphEdgeToRF(edge: GraphEdge): RFEdge {
       ...(strokeDasharray ? { strokeDasharray } : {}),
     },
     animated: Boolean(edge.meta?.animada),
+    ...(edge.meta?.flechaInicio === true
+      ? { markerStart: { type: 'arrowclosed' as const, color: strokeColor } }
+      : null),
     ...(edge.directed
       ? {
           markerEnd: {

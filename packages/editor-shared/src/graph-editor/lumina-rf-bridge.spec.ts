@@ -124,6 +124,14 @@ describe('graphEdgeToRF', () => {
     expect(graphEdgeToRF(base).markerEnd).toBeUndefined();
   });
 
+  it('`flechaInicio` pone punta en el origen y su ausencia no pone marcador (V1.2)', () => {
+    expect(graphEdgeToRF(base).markerStart).toBeUndefined();
+    expect(graphEdgeToRF({ ...base, meta: { flechaInicio: false } }).markerStart).toBeUndefined();
+    expect(graphEdgeToRF({ ...base, meta: { flechaInicio: true } }).markerStart).toMatchObject({
+      type: 'arrowclosed',
+    });
+  });
+
   it('con `directed` pone punta de flecha cerrada', () => {
     expect(graphEdgeToRF({ ...base, directed: true }).markerEnd).toMatchObject({
       type: 'arrowclosed',

@@ -89,7 +89,33 @@ const FORMAS_CONFIG: Array<{ forma: DiagramaNodoForma; label: string }> = [
   { forma: 'inverted-trapezoid', label: 'Trapecio Invertido' },
   { forma: 'triangle', label: 'Triángulo' },
   { forma: 'circle', label: 'Círculo' },
+  { forma: 'rect', label: 'Rectángulo' },
+  { forma: 'ellipse', label: 'Elipse' },
+  { forma: 'hexagon', label: 'Hexágono' },
 ];
+
+type TrazadoEditable = NonNullable<DiagramaArista['tipoTrazado']>;
+
+const TRAZADO_GLOBAL: Record<TrazadoEditable, string> = {
+  smoothstep: 'Curva',
+  orthogonal: 'Ortogonal',
+  bezier: 'Fluida',
+  straight: 'Recta',
+};
+
+const TRAZADO_ARISTA: Record<TrazadoEditable, string> = {
+  smoothstep: 'Curva',
+  orthogonal: 'Ángulo recto',
+  bezier: 'Bézier',
+  straight: 'Recta',
+};
+
+const TRAZADO_TITULO: Record<TrazadoEditable, string> = {
+  smoothstep: 'de esquinas redondeadas',
+  orthogonal: 'en ángulo recto',
+  bezier: 'bézier fluido',
+  straight: 'de línea recta',
+};
 
 // `piramide`/`embudo`/`cebolla` NO están acá — `handleLoadTemplate` los
 // resuelve con exactamente los mismos `createDefault*Block` que ya
@@ -747,15 +773,15 @@ export function DiagramaProperties({
                 <Spline className="h-3 w-3" /> Conexiones
               </span>
               <div className="flex items-center gap-1">
-                {(['smoothstep', 'bezier', 'straight'] as const).map((t) => (
+                {(['smoothstep', 'orthogonal', 'bezier', 'straight'] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => handleGlobalEdgeTrazado(t)}
                     className="px-1.5 py-0.5 rounded text-[10px] border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
-                    title={`Aplicar trazado ${t === 'smoothstep' ? 'curva ortogonal' : t === 'bezier' ? 'bézier fluido' : 'línea recta'} a todas las conexiones`}
+                    title={`Aplicar trazado ${TRAZADO_TITULO[t]} a todas las conexiones`}
                   >
-                    {t === 'smoothstep' ? 'Ortogonal' : t === 'bezier' ? 'Fluida' : 'Recta'}
+                    {TRAZADO_GLOBAL[t]}
                   </button>
                 ))}
               </div>
@@ -1040,7 +1066,7 @@ export function DiagramaProperties({
 
                   {/* Selector de trazado */}
                   <div className="flex items-center gap-1 pt-0.5">
-                    {(['smoothstep', 'bezier', 'straight'] as const).map((t) => (
+                    {(['smoothstep', 'orthogonal', 'bezier', 'straight'] as const).map((t) => (
                       <button
                         key={t}
                         type="button"
@@ -1052,7 +1078,7 @@ export function DiagramaProperties({
                             : 'border-border/50 text-muted-foreground hover:bg-muted/50',
                         )}
                       >
-                        {t === 'smoothstep' ? 'Curva' : t === 'bezier' ? 'Bézier' : 'Recta'}
+                        {TRAZADO_ARISTA[t]}
                       </button>
                     ))}
                   </div>
