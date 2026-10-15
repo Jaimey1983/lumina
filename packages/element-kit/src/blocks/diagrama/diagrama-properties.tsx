@@ -32,11 +32,7 @@ import type {
   DiagramaPaletaId,
   DiagramaSubtipo,
 } from '@lumina/types/slide';
-import {
-  computeDagreLayout,
-  type GraphEdge,
-  type GraphNode,
-} from '@lumina/editor-shared/graph-editor';
+import { aplicarDagre } from './diagrama-dagre.js';
 import { layoutCebolla, layoutEmbudo, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
@@ -236,27 +232,7 @@ export function DiagramaProperties({
       nextAristas = cEdges;
     } else {
       // flujo / organigrama / mapa_conceptual
-      const graphNodes: GraphNode[] = nextNodos.map((n) => ({
-        id: n.id,
-        x: n.x,
-        y: n.y,
-        label: n.etiqueta,
-        body: n.cuerpo,
-        accent: (n.estilo?.color as string) ?? '#2563EB',
-      }));
-      const graphEdges: GraphEdge[] = nextAristas.map((a) => ({
-        id: a.id,
-        source: a.desdeId,
-        target: a.haciaId,
-      }));
-      const laidOut = computeDagreLayout(graphNodes, graphEdges, {
-        direction: 'TB',
-      });
-      const posMap = new Map(laidOut.map((l) => [l.id, l]));
-      nextNodos = nextNodos.map((n) => {
-        const p = posMap.get(n.id);
-        return p ? { ...n, x: p.x, y: p.y } : n;
-      });
+      nextNodos = aplicarDagre(nextNodos, nextAristas);
     }
 
     commitChange(
@@ -533,29 +509,7 @@ export function DiagramaProperties({
       return;
     }
 
-    const graphNodes: GraphNode[] = grafoBlock.nodos.map((n) => ({
-      id: n.id,
-      x: n.x,
-      y: n.y,
-      label: n.etiqueta,
-      body: n.cuerpo,
-      accent: (n.estilo?.color as string) ?? '#2563EB',
-    }));
-    const graphEdges: GraphEdge[] = grafoBlock.aristas.map((a) => ({
-      id: a.id,
-      source: a.desdeId,
-      target: a.haciaId,
-    }));
-
-    const laidOut = computeDagreLayout(graphNodes, graphEdges, {
-      direction: currentSubtipo === 'flujo' || currentSubtipo === 'organigrama' ? 'TB' : 'TB',
-    });
-
-    const posMap = new Map(laidOut.map((l) => [l.id, l]));
-    const nextNodos = grafoBlock.nodos.map((n) => {
-      const p = posMap.get(n.id);
-      return p ? { ...n, x: p.x, y: p.y } : n;
-    });
+    const nextNodos = aplicarDagre(grafoBlock.nodos, grafoBlock.aristas);
 
     commitChange({ ...grafoBlock, nodos: nextNodos }, true);
   };
@@ -593,25 +547,7 @@ export function DiagramaProperties({
     if (currentSubtipo === 'mapa_mental') {
       positionedNodes = layoutRadial(nodos, aristas);
     } else {
-      const graphNodes: GraphNode[] = nodos.map((n) => ({
-        id: n.id,
-        x: n.x,
-        y: n.y,
-        label: n.etiqueta,
-        body: n.cuerpo,
-        accent: (n.estilo?.color as string) ?? '#2563EB',
-      }));
-      const graphEdges: GraphEdge[] = aristas.map((a) => ({
-        id: a.id,
-        source: a.desdeId,
-        target: a.haciaId,
-      }));
-      const laidOut = computeDagreLayout(graphNodes, graphEdges, { direction: 'TB' });
-      const posMap = new Map(laidOut.map((l) => [l.id, l]));
-      positionedNodes = nodos.map((n) => {
-        const p = posMap.get(n.id);
-        return p ? { ...n, x: p.x, y: p.y } : n;
-      });
+      positionedNodes = aplicarDagre(nodos, aristas);
     }
 
     commitChange(
