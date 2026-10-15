@@ -35,7 +35,7 @@ V1.1–V1.4 tocan archivos que se solapan (`diagrama-defaults.ts`, `lumina-rf-br
 
 #### V1.1 — Conservar `ancho`/`alto` de punta a punta (D1)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/diagrama/diagrama-defaults.ts` (solo `sanitizeNodos`), `diagrama-bridge.ts` (pasar `ancho`/`alto` en `meta`), `packages/editor-shared/src/graph-editor/lumina-rf-bridge.ts` (solo `graphNodeToRF`: copiar `ancho`/`alto` a `data`), `diagrama-shape-node.tsx` (las ramas `trapezoid`, `triangle`, `inverted-trapezoid`, `circle` ya leen `nodeData.ancho`; `rounded`/`root`/`chip` los usan solo si existen), sus specs. **NO** toca el catálogo de plantillas ni layouts (`layoutPiramide/Embudo/Cebolla` ya calculan los valores correctos).
 - **Entregable:** `sanitizeNodos` conserva `ancho`/`alto` si son números finitos > 0 (cualquier otro valor se descarta). Prueba de round-trip `DiagramaNodo → GraphNode → nodo RF → data` que **falla antes y pasa después**, para pirámide, embudo y cebolla (`createDefault*` → `ancho` no nulo en cada nodo). Los bloques sin `ancho` renderizan idéntico a hoy (DV2). Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/editor-shared lint`, más comprobación visual de las 3 plantillas.
