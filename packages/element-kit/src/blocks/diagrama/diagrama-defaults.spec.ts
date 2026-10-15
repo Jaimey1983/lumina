@@ -391,13 +391,19 @@ describe('cronología pedagógica (layout lineal restringido)', () => {
       ['piramide', createDefaultPiramideBlock],
       ['embudo', createDefaultEmbudoBlock],
       ['cebolla', createDefaultCebollaBlock],
-    ])('las plantillas de %s conservan ancho y alto en cada nodo', (_n, crear) => {
+    ])('las plantillas de %s conservan el ancho declarado en cada nodo', (_n, crear) => {
       const block = crear({ id: 'b-tam' }) as DiagramaGrafoBlock;
       expect(block.nodos.length).toBeGreaterThan(0);
       for (const nodo of block.nodos) {
         expect(nodo.ancho).toBeGreaterThan(0);
-        expect(nodo.alto).toBeGreaterThan(0);
+        // La altura solo la declara la cebolla (círculos); en las demás es la natural de la forma.
+        if (nodo.alto !== undefined) expect(nodo.alto).toBeGreaterThan(0);
       }
+    });
+
+    it('la cebolla conserva también el alto (diámetro) de cada capa', () => {
+      const block = createDefaultCebollaBlock({ id: 'b-alto' }) as DiagramaGrafoBlock;
+      for (const nodo of block.nodos) expect(nodo.alto).toBe(nodo.ancho);
     });
 
     it('la pirámide crece de la cúspide a la base y el valor llega a `data` del nodo RF', () => {
