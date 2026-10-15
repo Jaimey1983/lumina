@@ -51,7 +51,7 @@ V1.1–V1.4 tocan archivos que se solapan (`diagrama-defaults.ts`, `lumina-rf-br
 
 #### V1.3 — Dirección de layout real y una sola función dagre (D4, D6)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (V1.2 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** V1.2 `hecho`.
 - **Alcance — PUEDE tocar:** `diagrama-properties.tsx` (hoy 3 copias del bloque «nodos → GraphNode → dagre → posMap»; el ternario muerto `'TB' : 'TB'` de la línea ~525), `layout-dagre.ts` (solo si hace falta exponer `computeDagreLayout` con `rankSep`/`nodeSep`), un helper nuevo `aplicarDagre(block, opts)` junto al bloque `diagrama`, sus specs. **NO** cambia el resultado visual: sigue siendo `TB` en todos los subtipos (la dirección configurable es V3.1).
 - **Entregable:** una función `aplicarDagre` usada en los 3 sitios; el ternario muerto desaparece. Prueba de que el resultado de los tres caminos es idéntico al actual (mismas posiciones, dado el mismo bloque). Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`.
