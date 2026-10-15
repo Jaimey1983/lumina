@@ -31,6 +31,8 @@ export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
         forma: n.forma,
         icono: n.icono,
         imagen: n.imagen,
+        ancho: n.ancho,
+        alto: n.alto,
         subtipo: block.subtipo,
         isRoot,
         nodeType: 'diagramaShapeNode',
@@ -124,6 +126,8 @@ export function applyGraphModelToDiagrama(
       forma: (n.meta?.forma as DiagramaNodo['forma']) ?? original?.forma,
       icono: (n.meta?.icono as string | undefined) ?? original?.icono,
       imagen: (n.meta?.imagen as string | undefined) ?? original?.imagen,
+      ...(original?.ancho !== undefined ? { ancho: original.ancho } : {}),
+      ...(original?.alto !== undefined ? { alto: original.alto } : {}),
       estilo: {
         ...(original?.estilo ?? {}),
         ...(n.meta?.estilo as Record<string, unknown> | undefined),

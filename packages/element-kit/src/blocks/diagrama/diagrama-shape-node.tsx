@@ -51,6 +51,12 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
   const accent = nodeData.accent ?? 'var(--primary, #2563EB)';
   const forma = nodeData.forma ?? (nodeData.isRoot ? 'root' : nodeData.subtipo === 'mapa_mental' ? 'chip' : 'rounded');
 
+  // Ancho guardado en el bloque (V1.1): si existe, manda sobre los min/max de la forma.
+  const customSizeStyle: React.CSSProperties =
+    typeof nodeData.ancho === 'number' && nodeData.ancho > 0
+      ? { width: `${nodeData.ancho}px`, minWidth: 0, maxWidth: 'none' }
+      : {};
+
   const [isEditing, setIsEditing] = useState(false);
   const [labelValue, setLabelValue] = useState(nodeData.label || '');
 
@@ -212,7 +218,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
           'relative rounded-xl px-4 py-2.5 shadow-md border-2 bg-card text-card-foreground transition-all min-w-[150px] max-w-[220px]',
           (selected || nodeData.highlighted) && 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg',
         )}
-        style={{ borderColor: accent }}
+        style={{ borderColor: accent, ...customSizeStyle }}
       >
         {toolbar}
         {handles}
@@ -246,7 +252,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
           'relative rounded-full px-3 py-1.5 shadow-2xs border bg-card text-card-foreground transition-all flex items-center gap-1.5 min-w-[100px] max-w-[180px]',
           selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
         )}
-        style={{ borderColor: accent, borderLeftWidth: 4 }}
+        style={{ borderColor: accent, borderLeftWidth: 4, ...customSizeStyle }}
       >
         {toolbar}
         {handles}
@@ -567,7 +573,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-shadow min-w-[130px] max-w-[200px] p-2',
         selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
-      style={{ borderColor: accent }}
+      style={{ borderColor: accent, ...customSizeStyle }}
     >
       {toolbar}
       {handles}

@@ -12,6 +12,8 @@ import {
   createDefaultEmpatiaBlock,
   createDefaultFrayerBlock,
   createDefaultIshikawaBlock,
+  createDefaultCebollaBlock,
+  createDefaultEmbudoBlock,
   createDefaultPiramideBlock,
   layoutCronologiaLineal,
   normalizeDiagramaBlock,
@@ -20,6 +22,7 @@ import {
   applyGraphModelToDiagrama,
   diagramaToGraphModel,
 } from './diagrama-bridge.js';
+import { graphNodeToRF } from '@lumina/editor-shared/graph-editor';
 import {
   BLOCK_FALLBACKS,
   type DiagramaGrafoBlock,
@@ -381,5 +384,59 @@ describe('cronología pedagógica (layout lineal restringido)', () => {
     // Arriba: sale por arriba, entra por abajo
     expect(edgeArr?.meta?.sourceHandle).toBe('source-top');
     expect(edgeArr?.meta?.targetHandle).toBe('bottom');
+  });
+
+  describe('ancho/alto de nodo (V1.1)', () => {
+    it.each([
+      ['piramide', createDefaultPiramideBlock],
+      ['embudo', createDefaultEmbudoBlock],
+      ['cebolla', createDefaultCebollaBlock],
+    ])('las plantillas de %s conservan ancho y alto en cada nodo', (_n, crear) => {
+      const block = crear({ id: 'b-tam' }) as DiagramaGrafoBlock;
+      expect(block.nodos.length).toBeGreaterThan(0);
+      for (const nodo of block.nodos) {
+        expect(nodo.ancho).toBeGreaterThan(0);
+        expect(nodo.alto).toBeGreaterThan(0);
+      }
+    });
+
+    it('la pirámide crece de la cúspide a la base y el valor llega a `data` del nodo RF', () => {
+      const block = createDefaultPiramideBlock({ id: 'b-rf' }) as DiagramaGrafoBlock;
+      const model = diagramaToGraphModel(block);
+      const anchos = model.nodes.map((n) => graphNodeToRF(n).data.ancho as number);
+      expect(anchos.every((a) => typeof a === 'number' && a > 0)).toBe(true);
+      expect(anchos[anchos.length - 1]).toBeGreaterThan(anchos[0]);
+    });
+
+    it('applyGraphModelToDiagrama no pierde ancho/alto al mover un nodo', () => {
+      const block = createDefaultCebollaBlock({ id: 'b-mov' }) as DiagramaGrafoBlock;
+      const model = diagramaToGraphModel(block);
+      const movido = { ...model, nodes: model.nodes.map((n, i) => (i === 0 ? { ...n, x: n.x + 30 } : n)) };
+      const next = applyGraphModelToDiagrama(block, movido);
+      next.nodos.forEach((n, i) => {
+        expect(n.ancho).toBe(block.nodos[i].ancho);
+        expect(n.alto).toBe(block.nodos[i].alto);
+      });
+    });
+
+    it('normalizeDiagramaBlock descarta tamaños inválidos y redondea los válidos', () => {
+      const block = normalizeDiagramaBlock({
+        id: 'b-san',
+        tipo: 'diagrama',
+        subtipo: 'flujo',
+        nodos: [
+          { id: 'a', etiqueta: 'A', x: 0, y: 0, ancho: 120.6, alto: 40 },
+          { id: 'b', etiqueta: 'B', x: 0, y: 0, ancho: -5, alto: 0 },
+          { id: 'c', etiqueta: 'C', x: 0, y: 0, ancho: '100', alto: Number.NaN },
+          { id: 'd', etiqueta: 'D', x: 0, y: 0 },
+        ],
+        aristas: [],
+      }) as DiagramaGrafoBlock;
+      expect(block.nodos[0]).toMatchObject({ ancho: 121, alto: 40 });
+      for (const n of block.nodos.slice(1)) {
+        expect(n).not.toHaveProperty('ancho');
+        expect(n).not.toHaveProperty('alto');
+      }
+    });
   });
 });

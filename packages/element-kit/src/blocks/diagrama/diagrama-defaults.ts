@@ -66,6 +66,13 @@ export function layoutCronologiaLineal(nodos: DiagramaNodo[]): {
   return { nodos: laidOut, aristas };
 }
 
+/** Tamaño de nodo válido: número finito > 0 (redondeado); cualquier otro valor se descarta. */
+function positiveSize(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  const rounded = Math.round(value);
+  return rounded > 0 ? rounded : undefined;
+}
+
 function sanitizeNodos(raw: unknown): DiagramaNodo[] {
   if (!Array.isArray(raw) || raw.length === 0) {
     return [
@@ -129,12 +136,17 @@ function sanitizeNodos(raw: unknown): DiagramaNodo[] {
         ? (item as { imagen: string }).imagen
         : undefined;
 
+    const ancho = positiveSize((item as { ancho?: unknown }).ancho);
+    const alto = positiveSize((item as { alto?: unknown }).alto);
+
     cleaned.push({
       id,
       etiqueta,
       ...(cuerpo ? { cuerpo } : {}),
       x,
       y,
+      ...(ancho !== undefined ? { ancho } : {}),
+      ...(alto !== undefined ? { alto } : {}),
       ...(forma ? { forma } : {}),
       ...(icono ? { icono } : {}),
       ...(imagen ? { imagen } : {}),

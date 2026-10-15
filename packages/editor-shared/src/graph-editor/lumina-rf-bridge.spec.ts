@@ -40,6 +40,15 @@ describe('graphNodeToRF', () => {
     });
   });
 
+  it('copia `ancho`/`alto` numéricos de `meta` a `data` y descarta otros tipos (V1.1)', () => {
+    const rf = graphNodeToRF(node({ meta: { ancho: 220, alto: 40 } }));
+    expect(rf.data).toMatchObject({ ancho: 220, alto: 40 });
+
+    const sinTamano = graphNodeToRF(node({ meta: { ancho: '220', alto: null } }));
+    expect(sinTamano.data).not.toHaveProperty('ancho');
+    expect(sinTamano.data).not.toHaveProperty('alto');
+  });
+
   it('no arrastra `meta` del dominio a `data` de React Flow', () => {
     const rf = graphNodeToRF(node({ meta: { tipo: 'decision', opciones: [1, 2] } }));
     expect(rf.data).not.toHaveProperty('meta');
