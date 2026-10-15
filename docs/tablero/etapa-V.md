@@ -59,7 +59,7 @@ V1.1–V1.4 tocan archivos que se solapan (`diagrama-defaults.ts`, `lumina-rf-br
 
 #### V1.4 — Cambiar de subtipo no pisa `dirigida` por arista (D9)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (V1.3 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** V1.3 `hecho`.
 - **Alcance — PUEDE tocar:** `diagrama-properties.tsx` (`handleSubtipoChange`) y su spec (`diagrama-properties.regresion.spec.tsx` o nuevo). **NO** toca los defaults de plantillas.
 - **Entregable:** al cambiar de subtipo se re-aplica el layout pero `dirigida` se conserva en las aristas que ya existían; las aristas nuevas toman el valor por defecto del subtipo. Prueba: bloque con una arista dirigida y otra no, cambio `flujo → mapa_mental → flujo`, ambas conservan su valor. Verificación: la de V1.3.
