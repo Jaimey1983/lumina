@@ -73,7 +73,7 @@ El tema de EdrawMax = `ThemeColor + ThemeEffect + ThemeText + ThemeConnector` (p
 
 #### V2.1 — Modelo del tema y normalizador
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (V1.4 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** V1.4 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/types/src/slide.types.ts` (`DiagramaOpciones`: campo opcional `estilo?: { relleno?: 'contorno'|'tintado'|'solido'; sombra?: boolean; conector?: { trazado?; grosor?; patron? } }` — nombres exactos a fijar al implementar, siempre opcionales), `diagrama-temas.ts` (resolver `resolverEstiloDiagrama(opciones, subtipo)` con defaults por subtipo), `diagrama-defaults.ts` (**solo** el saneo de `opciones.estilo`, valores desconocidos → default), sus specs. **NO** toca render todavía.
 - **Entregable:** el resolver devuelve, por nodo y por arista, los valores efectivos (relleno, texto, sombra, trazado, grosor, patrón). Con `opciones.estilo` ausente reproduce **exactamente** el look actual (relleno `contorno`, DV2). Pruebas de saneo y de defaults por subtipo. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter @lumina/types build`.
