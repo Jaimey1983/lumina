@@ -54,9 +54,8 @@ describe('aplicarDagre (V1.3)', () => {
     const out = aplicarDagre(block.nodos, block.aristas);
     expect(out.map((n) => n.id)).toEqual(block.nodos.map((n) => n.id));
     out.forEach((n, i) => {
-      const { x: _x, y: _y, ...resto } = n;
-      const { x: _ox, y: _oy, ...restoOriginal } = block.nodos[i];
-      expect(resto).toEqual(restoOriginal);
+      // Sin x/y (las únicas que cambian) el nodo es idéntico al original.
+      expect({ ...n, x: 0, y: 0 }).toEqual({ ...block.nodos[i], x: 0, y: 0 });
     });
   });
 
