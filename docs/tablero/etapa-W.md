@@ -55,7 +55,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W3 — Elemento `dibujo`: render de solo lectura y registro
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (W2 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** W2 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/` (nuevo: `dibujo-definition.ts`, `dibujo-types.ts`, `dibujo-render.tsx`, `register.ts`, `index.ts`, specs), el índice/registro de `element-kit` y el catálogo de inserción de la misma forma que lo hace `diagrama` (`_shared/catalogo.ts`), `packages/element-kit/package.json` solo para declarar `@lumina/drawing`. **NO** toca el editor del frontend más allá de lo que exija el registro.
 - **Entregable:** `dibujoDefinition` (`tipo: 'dibujo'`, `crearPorDefecto()` con una escena de ejemplo con 3 formas y 1 flecha, `Viewer` real que dibuja la escena en SVG con `role="img"`/`<title>`/`<desc>`, `Editor` y `Propiedades` provisionales que muestran el Viewer y el título), `catalogo` para el panel «Elementos», entrada en el union/registro **por el camino vigente** (Regla 3). `renderEscenaSvg(escena, {tema})` puro, reutilizable por exportar y por el Viewer. Pruebas: la escena de ejemplo produce tantos nodos SVG como elementos; escape de texto; tema claro/oscuro sin variables CSS en el archivo exportable; registro único (`ElementRegistry.registrar`). Verificación: `pnpm --filter @lumina/drawing test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual de insertar el elemento en un slide.
