@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { WIDGET_TIPOS, esWidgetSoloRegistry } from "@lumina/types/widget";
 import { BLOCK_FALLBACKS } from "@lumina/types/slide";
 import { elementRegistry } from "@lumina/element-kit-core";
-import { createDefaultDibujoBlock, DibujoSvg, escenaDeEjemplo, normalizeDibujoWidget } from "../../widgets/dibujo/index.js";
+import { createDefaultDibujoBlock, DibujoSvg, escenaDeEjemplo, normalizeDibujoWidget, plantillasDibujo } from "../../widgets/dibujo/index.js";
 import { dibujoDefinition } from "./dibujo-definition.js";
 import { normalizarEscena } from "@lumina/drawing";
 
@@ -263,21 +263,79 @@ describe("Propiedades", () => {
     expect(document.querySelector("[data-dibujo-resumen]")?.textContent).toBe("El lienzo está vacío.");
   });
 
-  it("«Cargar el ejemplo» repone la escena de ejemplo sin tocar el título", () => {
+  it("ofrece las plantillas y al elegir una reemplaza la escena sin tocar el título", () => {
     const vacio = normalizeDibujoWidget({ titulo: "Mío" });
     const onChange = montar(vacio);
-    fireEvent.click(screen.getByRole("button", { name: "Cargar el ejemplo" }));
+    for (const nombre of ["Proceso de decisión", "Pasos en secuencia", "Ciclo", "Lienzo en blanco"]) {
+      expect(screen.getByRole("button", { name: new RegExp(nombre) })).toBeTruthy();
+    }
+    fireEvent.click(screen.getByRole("button", { name: /Ciclo/ }));
     const llamado = onChange.mock.calls.at(-1)?.[0];
     expect(llamado.titulo).toBe("Mío");
-    expect(llamado.escena).toEqual(escenaDeEjemplo());
+    expect(llamado.escena).toEqual(plantillasDibujo().find((p) => p.id === "ciclo")?.escena);
+    expect(llamado.escena.elementos.filter((e: { tipo: string }) => e.tipo === "forma")).toHaveLength(4);
+  });
+
+  it("la plantilla activa se marca como pulsada", () => {
+    montar(normalizeDibujoWidget({ escena: plantillasDibujo().find((p) => p.id === "pasos")?.escena }));
+    expect(screen.getByRole("button", { name: /Pasos en secuencia/ }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: /Ciclo/ }).getAttribute("aria-pressed")).toBe("false");
   });
 
   it("avisa con franqueza que la edición llega después", () => {
     montar();
-    expect(document.body.textContent).toContain("Esta versión muestra el dibujo");
+    expect(document.body.textContent).toContain("Las herramientas para crear y editar formas");
   });
 
   it("tolera un estado guardado a medias", () => {
     expect(() => montar({ tipo: "dibujo" } as never)).not.toThrow();
+  });
+});
+
+describe("plantillas", () => {
+  it("hay cuatro, con ids únicos y todas ya normalizadas", () => {
+    const lista = plantillasDibujo();
+    expect(lista.map((p) => p.id)).toEqual(["decision", "pasos", "ciclo", "blanco"]);
+    for (const p of lista) {
+      expect(p.label.length).toBeGreaterThan(0);
+      expect(p.description.length).toBeGreaterThan(0);
+      expect(normalizarEscena(p.escena)).toEqual(p.escena);
+    }
+  });
+
+  it("los ids de elementos son únicos y los conectores apuntan a formas que existen", () => {
+    for (const p of plantillasDibujo()) {
+      const ids = p.escena.elementos.map((e) => e.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      const formas = new Set(p.escena.elementos.filter((e) => e.tipo === "forma").map((e) => e.id));
+      for (const e of p.escena.elementos) {
+        if (e.tipo !== "linea") continue;
+        expect(e.origen && formas.has(e.origen.elementoId)).toBe(true);
+        expect(e.destino && formas.has(e.destino.elementoId)).toBe(true);
+      }
+    }
+  });
+
+  it("pasos tiene 4 pasos y 3 flechas; ciclo 4 etapas y 4 flechas que cierran el círculo; blanco no tiene nada", () => {
+    const por = (id: string) => plantillasDibujo().find((p) => p.id === id)!.escena.elementos;
+    const cuenta = (els: ReturnType<typeof por>, tipo: string) => els.filter((e) => e.tipo === tipo).length;
+    expect([cuenta(por("pasos"), "forma"), cuenta(por("pasos"), "linea")]).toEqual([4, 3]);
+    expect([cuenta(por("ciclo"), "forma"), cuenta(por("ciclo"), "linea")]).toEqual([4, 4]);
+    expect(por("blanco")).toEqual([]);
+    const destinos = por("ciclo").flatMap((e) => (e.tipo === "linea" && e.destino ? [e.destino.elementoId] : []));
+    expect(new Set(destinos).size).toBe(4);
+  });
+
+  it("cada plantilla se dibuja en el visor con tantos elementos como tiene", () => {
+    for (const p of plantillasDibujo()) {
+      const { container } = render(<dibujoDefinition.Viewer estado={normalizeDibujoWidget({ escena: p.escena })} config={{}} />);
+      expect(container.querySelectorAll("[data-elemento-id]")).toHaveLength(p.escena.elementos.length);
+      cleanup();
+    }
+  });
+
+  it("la definición expone los mismos presets, que reemplazan solo la escena", () => {
+    expect(dibujoDefinition.presets.map((p) => p.id)).toEqual(plantillasDibujo().map((p) => p.id));
+    for (const p of dibujoDefinition.presets) expect(Object.keys(p.estadoPatch)).toEqual(["escena"]);
   });
 });

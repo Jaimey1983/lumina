@@ -9,4 +9,5 @@ export {
   escenaDeEjemplo,
   normalizeDibujoWidget,
 } from "./dibujo-defaults.js";
+export { plantillasDibujo, type PlantillaDibujo } from "./dibujo-plantillas.js";
 export { DIBUJO_TIPO, type DibujoEstado } from "./dibujo-types.js";
