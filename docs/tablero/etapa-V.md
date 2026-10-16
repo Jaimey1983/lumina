@@ -117,7 +117,7 @@ El tema de EdrawMax = `ThemeColor + ThemeEffect + ThemeText + ThemeConnector` (p
 
 #### V3.2 — Exportar el diagrama a PNG/SVG
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (V3.1 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** V3.1 `hecho`.
 - **Alcance — PUEDE tocar:** un módulo nuevo de exportación junto al bloque `diagrama`, el menú/botón en `diagrama-properties.tsx` (o el patrón que ya use `grafico-properties.tsx` con `exportarImagen`), specs. **Antes de escribir código**, re-medir cómo exporta el bloque `grafico` (`exportarImagen`, `@lumina/charts`) y **reutilizar ese contrato**. Si la solución exige una dependencia nueva (p. ej. `html-to-image`), el operador **para** y deja `bloqueado` pidiendo la decisión del dueño (DV6).
 - **Entregable:** botón «Exportar» (PNG y SVG) que genera el diagrama con tema y fondo opcional, sin los controles del lienzo. Prueba: la exportación produce un SVG con tantos nodos como el bloque. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación manual del archivo descargado.
