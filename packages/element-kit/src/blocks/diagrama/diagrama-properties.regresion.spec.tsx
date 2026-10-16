@@ -28,6 +28,14 @@ import {
 } from './diagrama-defaults.js';
 import { organizarGrafo } from './diagrama-dagre.js';
 
+// La descarga real toca el DOM/canvas del navegador: se reemplaza solo `exportarDiagrama`.
+vi.mock('./diagrama-export.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./diagrama-export.js')>()),
+  exportarDiagrama: vi.fn(async () => undefined),
+}));
+
+import { exportarDiagrama } from './diagrama-export.js';
+
 afterEach(() => {
   cleanup();
 });
@@ -372,6 +380,73 @@ describe('DiagramaProperties — sin plantillas duplicadas y panel colapsable (r
     it('el Venn no muestra la sección', () => {
       render(<DiagramaProperties block={createDefaultVennBlock({ id: 'v-d' }) as DiagramaVennBlock} applyNow={vi.fn(async () => undefined)} />);
       expect(screen.queryByText('Disposición')).toBeNull();
+    });
+  });
+
+  describe('sección «Exportar» (V3.2)', () => {
+    beforeEach(() => {
+      window.localStorage.clear();
+      vi.mocked(exportarDiagrama).mockClear();
+    });
+
+    function montar(block: DiagramaGrafoBlock = createDefaultFlujoBlock({ id: 'b-ex' }) as DiagramaGrafoBlock) {
+      render(<DiagramaProperties block={block} applyNow={vi.fn(async () => undefined)} />);
+      fireEvent.click(screen.getByText('Exportar'));
+      return block;
+    }
+
+    it('arranca cerrada; abierta ofrece PNG y SVG', () => {
+      render(<DiagramaProperties block={createDefaultFlujoBlock({ id: 'b-c' })} applyNow={vi.fn(async () => undefined)} />);
+      expect(screen.queryByRole('button', { name: 'Descargar PNG' })).toBeNull();
+      fireEvent.click(screen.getByText('Exportar'));
+      screen.getByRole('button', { name: 'Descargar PNG' });
+      screen.getByRole('button', { name: 'Descargar SVG' });
+    });
+
+    it('descarga con el tema claro y fondo por defecto', async () => {
+      const block = montar();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Descargar PNG' }));
+      });
+      expect(exportarDiagrama).toHaveBeenCalledTimes(1);
+      expect(exportarDiagrama).toHaveBeenCalledWith(block, 'png', { tema: 'claro', fondo: true });
+    });
+
+    it('respeta el tema oscuro y el fondo transparente elegidos', async () => {
+      const block = montar();
+      fireEvent.click(screen.getByRole('button', { name: 'Oscuro' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Transparente' }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Descargar SVG' }));
+      });
+      expect(exportarDiagrama).toHaveBeenCalledWith(block, 'svg', { tema: 'oscuro', fondo: false });
+    });
+
+    it('elegir tema o fondo no exporta ni cambia el bloque', () => {
+      montar();
+      fireEvent.click(screen.getByRole('button', { name: 'Oscuro' }));
+      expect(exportarDiagrama).not.toHaveBeenCalled();
+    });
+
+    it('muestra el error si la exportación falla y vuelve a habilitar los botones', async () => {
+      vi.mocked(exportarDiagrama).mockRejectedValueOnce(new Error('No se pudo generar el PNG.'));
+      montar();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Descargar PNG' }));
+      });
+      expect(screen.getByRole('alert').textContent).toBe('No se pudo generar el PNG.');
+      expect((screen.getByRole('button', { name: 'Descargar PNG' }) as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    it('sin nodos los botones están deshabilitados', () => {
+      const base = createDefaultFlujoBlock({ id: 'b-vacio' }) as DiagramaGrafoBlock;
+      montar({ ...base, nodos: [], aristas: [] });
+      expect((screen.getByRole('button', { name: 'Descargar PNG' }) as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('el Venn no muestra la sección', () => {
+      render(<DiagramaProperties block={createDefaultVennBlock({ id: 'v-ex' }) as DiagramaVennBlock} applyNow={vi.fn(async () => undefined)} />);
+      expect(screen.queryByText('Exportar')).toBeNull();
     });
   });
 });

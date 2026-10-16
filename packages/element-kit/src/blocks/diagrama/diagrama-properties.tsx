@@ -18,6 +18,7 @@ import {
   Palette,
   Filter,
   Disc,
+  Download,
   Grid,
   Sliders,
   Spline,
@@ -45,6 +46,7 @@ import {
   type DireccionLayout,
 } from './diagrama-dagre.js';
 import { NOMBRE_CONJUNTO_MAX, sanitizeEstilo } from './diagrama-defaults.js';
+import { exportarDiagrama, type FormatoExportacion, type TemaExportacion } from './diagrama-export.js';
 import { layoutCebolla, layoutEmbudo, layoutPiramide } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
@@ -210,6 +212,11 @@ export function DiagramaProperties({
 }: DiagramaPropertiesProps) {
   const [localBlock, setLocalBlock] = useState<DiagramaBlock>(block);
   const [outlineText, setOutlineText] = useState('');
+  // Opciones de exportación: solo viven en el panel, no se guardan en el bloque.
+  const [exportTema, setExportTema] = useState<TemaExportacion>('claro');
+  const [exportFondo, setExportFondo] = useState(true);
+  const [exportando, setExportando] = useState<FormatoExportacion | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -294,6 +301,20 @@ export function DiagramaProperties({
       }),
       true,
     );
+  };
+
+  // ─── Exportar (PNG / SVG) ───
+  const handleExportar = async (formato: FormatoExportacion) => {
+    if (!grafoBlock || exportando) return;
+    setExportando(formato);
+    setExportError(null);
+    try {
+      await exportarDiagrama(grafoBlock, formato, { tema: exportTema, fondo: exportFondo });
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'No se pudo exportar el diagrama.');
+    } finally {
+      setExportando(null);
+    }
   };
 
   // ─── Disposición (opciones.direccionLayout / opciones.densidad) ───
@@ -1036,6 +1057,82 @@ export function DiagramaProperties({
               <Button type="button" variant="ghost" size="sm" className="h-7 text-[11px]" onClick={() => commitEstilo({})}>
                 Restablecer estilo
               </Button>
+            )}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* Exportar el diagrama como imagen (PNG o SVG), sin los controles del lienzo */}
+      {grafoBlock && (
+        <CollapsibleSection
+          title="Exportar"
+          icon={Download}
+          defaultOpen={false}
+          storageKey="diagrama.exportar"
+          className="border-t border-border pt-3"
+        >
+          <div className="space-y-3 text-[11px]">
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Tema de la imagen</span>
+              <div className="flex items-center gap-1">
+                {([['claro', 'Claro'], ['oscuro', 'Oscuro']] as const).map(([valor, label]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    aria-pressed={exportTema === valor}
+                    onClick={() => setExportTema(valor)}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      exportTema === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Fondo</span>
+              <div className="flex items-center gap-1">
+                {([[true, 'Con fondo'], [false, 'Transparente']] as const).map(([valor, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={exportFondo === valor}
+                    onClick={() => setExportFondo(valor)}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      exportFondo === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {(['png', 'svg'] as const).map((formato) => (
+                <Button
+                  key={formato}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={grafoBlock.nodos.length === 0 || exportando !== null}
+                  onClick={() => void handleExportar(formato)}
+                  className="h-7 text-xs px-2.5"
+                >
+                  {exportando === formato ? 'Exportando…' : `Descargar ${formato.toUpperCase()}`}
+                </Button>
+              ))}
+            </div>
+            {exportError && (
+              <p role="alert" className="text-[10px] text-destructive">
+                {exportError}
+              </p>
             )}
           </div>
         </CollapsibleSection>
