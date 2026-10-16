@@ -148,6 +148,8 @@ function medirNodo(n: DiagramaNodo): Caja {
 
 // ─── Dibujo de nodos ──────────────────────────────────────────────────────────
 
+// TODO(W10): esta geometría está duplicada en `@lumina/drawing` (`packages/drawing/src/formas/catalogo.ts`);
+// borrar `formaSvg` cuando W10 apoye la exportación del diagrama en el paquete nuevo.
 function formaSvg(forma: DiagramaNodoForma, c: Caja, relleno: string, borde: string): string {
   const { x, y, ancho: w, alto: h } = c;
   const attrs = `fill="${relleno}" stroke="${borde}" stroke-width="2"`;
