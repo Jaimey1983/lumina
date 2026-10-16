@@ -5,7 +5,6 @@ import { BLOCK_FALLBACKS } from "@lumina/types/slide";
 import { elementRegistry } from "@lumina/element-kit-core";
 import { createDefaultDibujoBlock, DibujoSvg, escenaDeEjemplo, normalizeDibujoWidget } from "../../widgets/dibujo/index.js";
 import { dibujoDefinition } from "./dibujo-definition.js";
-import type { DibujoConfig, DibujoEstado } from "./dibujo-types.js";
 import { normalizarEscena } from "@lumina/drawing";
 
 import "../../index.js";
@@ -14,7 +13,8 @@ afterEach(() => cleanup());
 
 describe("registro y tipos", () => {
   it("está registrado una sola vez, con su catálogo", () => {
-    const def = elementRegistry.obtener<DibujoEstado, DibujoConfig>("dibujo");
+    // El registro global no está tipado por catálogo: se consulta por nombre.
+    const def = (elementRegistry as unknown as { obtener(tipo: string): { tipo: string; catalogo?: unknown } | undefined }).obtener("dibujo");
     expect(def).toBeDefined();
     expect(def?.tipo).toBe("dibujo");
     expect(def?.catalogo).toMatchObject({ nombre: "Dibujo", familia: "widget", grupo: "lienzo" });
