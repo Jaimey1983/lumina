@@ -89,7 +89,7 @@ El tema de EdrawMax = `ThemeColor + ThemeEffect + ThemeText + ThemeConnector` (p
 
 #### V2.3 — Aristas y Venn por tema (sin hex fijos)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (V2.1 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** V2.1 `hecho`.
 - **Alcance — PUEDE tocar:** `lumina-rf-bridge.ts` (`graphEdgeToRF`: color por defecto `#9CA3AF` y `labelStyle` `#6B7280` → tokens; defaults de trazado/grosor/patrón desde el estilo resuelto), `graph-canvas.tsx` (aristas), `diagrama-regions.ts` y `venn-svg.tsx` (los `rgba()` fijos pasan a derivarse de la paleta del bloque; nombres de conjunto «A/B/C» **editables**, D7), sus specs. Cambios en `graph-editor/` solo por `meta` opcional (DV4).
 - **Entregable:** aristas y etiquetas legibles en oscuro; el conector por defecto sigue el tema; Venn usa la paleta del bloque y permite renombrar conjuntos (campo opcional en `regiones`/`conjuntos`, default «A/B/C»). Pruebas de color por token, de nombres de conjunto, y no-regresión de Historia ramificada y Mapa Edu. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/editor-shared test` y lint de ambos.
