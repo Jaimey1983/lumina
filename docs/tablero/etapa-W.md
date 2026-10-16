@@ -47,7 +47,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W2 — Catálogo de formas: geometría, texto y puertos
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (W1 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** W1 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/drawing/src/formas/` y sus specs. **NO** toca `blocks/diagrama/` (su `formaSvg` se mantiene hasta que una ficha posterior lo reemplace).
 - **Entregable:** registro `FORMAS: Record<TipoForma, DefinicionForma>` donde cada forma declara `trazado(ancho, alto, parametros) → string` (path SVG que se adapta a cualquier tamaño, sin estirar el trazo), `rectanguloTexto(ancho, alto)` y `puertos(ancho, alto) → Punto[]` (puntos de conexión, como los `CPoints` de EdrawMax). Mínimo 20 formas: rectángulo, rectángulo redondeado (radio ajustable), elipse, círculo, rombo, triángulo, triángulo rectángulo, trapecio, paralelogramo, pentágono, hexágono, octágono, estrella de 5 puntas, cruz, flecha derecha/izquierda/doble, cilindro, nube, llave, callout. Parte de la geometría de `diagrama-export.ts` (`formaSvg`) pero generalizada. Pruebas: cada trazado es un path válido y cerrado, escala con el tamaño, sus puertos caen sobre el contorno o su bounding box, `rectanguloTexto` queda dentro de la forma. Verificación: la de W1.
