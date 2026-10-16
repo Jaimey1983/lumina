@@ -15,6 +15,7 @@ import {
   ListCollapse,
   MessageSquare,
   MousePointer2,
+  PenTool,
   QrCode,
   PanelTop,
   RotateCw,
@@ -191,6 +192,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: QrCode,
     rowClassName: 'hover:bg-slate-50/90 dark:hover:bg-slate-950/25',
     iconClassName: 'text-slate-700 dark:text-slate-300',
+  },
+  dibujo: {
+    group: 'lienzo',
+    Icon: PenTool,
+    rowClassName: 'hover:bg-sky-50/90 dark:hover:bg-sky-950/25',
+    iconClassName: 'text-sky-600 dark:text-sky-400',
   },
 };
 

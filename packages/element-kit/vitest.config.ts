@@ -25,6 +25,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@lumina/element-kit-core": elementKitCoreSrc,
+      "@lumina/drawing": path.resolve(root, "../drawing/src/index.ts"),
       "@lumina/ui": path.resolve(root, "../ui/src"),
       "@lumina/editor-shared": path.resolve(root, "../editor-shared/src"),
       "@lumina/types/slide": path.resolve(root, "../types/src/slide.types.ts"),

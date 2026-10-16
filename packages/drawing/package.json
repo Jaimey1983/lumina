@@ -1,0 +1,23 @@
+{
+  "name": "@lumina/drawing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Motor de dibujo (etapa W): modelo de escena, geometría y operaciones puras, sin React ni DOM. Se consume desde dist/ (mismo patrón que @lumina/element-kit-core).",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "tsc --noEmit && vitest run",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}
