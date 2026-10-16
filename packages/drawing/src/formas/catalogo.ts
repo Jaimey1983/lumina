@@ -91,6 +91,17 @@ const puntosCardinales = (ancho: number, alto: number): Punto[] => [
 
 const cajaCompleta = (ancho: number, alto: number): Rectangulo => ({ x: 0, y: 0, ancho, alto });
 
+/** Punto dentro de un polígono (trazado de rayos; vale también para polígonos cóncavos). */
+function puntoEnPoligono(punto: Punto, poligono: readonly Punto[]): boolean {
+  let dentro = false;
+  for (let i = 0, j = poligono.length - 1; i < poligono.length; j = i++) {
+    const a = poligono[i];
+    const b = poligono[j];
+    if (a.y > punto.y !== b.y > punto.y && punto.x < ((b.x - a.x) * (punto.y - a.y)) / (b.y - a.y) + a.x) dentro = !dentro;
+  }
+  return dentro;
+}
+
 function espejar(p: Punto, ancho: number): Punto {
   return { x: ancho - p.x, y: p.y };
 }
@@ -376,10 +387,21 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     poligono: (ancho, alto, p) => geometriaEstrella(ancho, alto, p).puntos,
     trazado: (ancho, alto, p) => trazadoPoligono(geometriaEstrella(ancho, alto, p).puntos),
     rectanguloTexto: (ancho, alto, p) => {
-      const { centro, sx, sy } = geometriaEstrella(ancho, alto, p);
-      // Cuadrado inscrito en la circunferencia inscrita del polígono interior.
-      const medio = (p.radioInterior * Math.cos(Math.PI / Math.round(p.puntas))) / Math.SQRT2;
-      return { x: centro.x - medio * sx, y: centro.y - medio * sy, ancho: 2 * medio * sx, alto: 2 * medio * sy };
+      const { puntos, centro } = geometriaEstrella(ancho, alto, p);
+      // Rectángulo centrado, 2,2 veces más ancho que alto, lo más grande que quepa dentro de la estrella.
+      const razon = 2.2;
+      const cabe = (medioAlto: number): boolean =>
+        [-1, 0, 1].every((i) =>
+          [-1, 0, 1].every((j) => (i === 0 && j === 0) || puntoEnPoligono({ x: centro.x + i * medioAlto * razon, y: centro.y + j * medioAlto }, puntos)),
+        );
+      let bajo = 0;
+      let alta = Math.min(ancho, alto) / 2;
+      for (let k = 0; k < 24; k++) {
+        const medio = (bajo + alta) / 2;
+        if (cabe(medio)) bajo = medio;
+        else alta = medio;
+      }
+      return { x: centro.x - bajo * razon, y: centro.y - bajo, ancho: 2 * bajo * razon, alto: 2 * bajo };
     },
     puertos: (ancho, alto, p) => {
       const { puntos } = geometriaEstrella(ancho, alto, p);
