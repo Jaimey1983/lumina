@@ -39,7 +39,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W1 — Paquete `@lumina/drawing`: modelo de escena y normalizador
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** paquete nuevo `packages/drawing/` (`package.json`, `tsconfig*.json`, `eslint.config.mjs`, `src/`), siguiendo el patrón de `packages/element-kit-core` (consumido desde `dist/`); `pnpm-lock.yaml` solo por el alta del paquete. **NO** toca `element-kit`, el frontend ni ningún paquete existente.
 - **Entregable:** tipos `Escena`, `Elemento` (`Forma`, `Linea`, `Texto`, `Grupo`), `Estilo` (relleno sólido/ninguno, contorno, grosor, patrón, opacidad, sombra, esquina, tipografía y alineación del texto), `Transformacion`; `normalizarEscena(entrada: unknown): Escena` (único escritor canónico, DW5: descarta lo inválido, acota números, asigna ids únicos, ordena grupos consistentes, elimina referencias a elementos inexistentes) y `escenaVacia()`. Pruebas: round-trip estable (`normalizar(normalizar(x))` igual), entradas basura (`null`, tipos erróneos, ids duplicados, ciclos de grupos, números `NaN`/infinitos), límites de tamaño y de cantidad de elementos. Verificación: `pnpm --filter @lumina/drawing build && pnpm --filter @lumina/drawing test && pnpm --filter @lumina/drawing lint`.
