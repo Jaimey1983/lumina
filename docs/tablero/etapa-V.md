@@ -97,7 +97,7 @@ El tema de EdrawMax = `ThemeColor + ThemeEffect + ThemeText + ThemeConnector` (p
 
 #### V2.4 — Panel: sección «Estilo»
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (V2.2 y V2.3 seguían `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** V2.2 y V2.3 `hecho`.
 - **Alcance — PUEDE tocar:** `diagrama-properties.tsx` (nueva `CollapsibleSection` «Estilo», `storageKey` `diagrama.estilo`, `defaultOpen` cerrada; junto a la de paleta), `diagrama-properties.regresion.spec.tsx`. Ayuda larga tras ⓘ (etapa R); secciones plegables (etapa S). **NO** reordena ni renombra las secciones existentes.
 - **Entregable:** controles de relleno (contorno / tintado / sólido), sombra, y conector (trazado, grosor, patrón) que escriben `opciones.estilo` con una sola confirmación al editar (nunca por fotograma). Prueba del panel (abre la sección, cambia el relleno, el bloque se actualiza). Verificación: la de V2.3 más comprobación visual del flujo completo.
