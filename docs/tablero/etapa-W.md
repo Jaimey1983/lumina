@@ -1,0 +1,132 @@
+# Etapa W — Editor de dibujo (lienzo libre tipo EdrawMax)
+
+> Fichas del Tablero de pasos (Regla 10). Las **reglas** viven solo en `AGENTS.md` (Regla 8); este archivo contiene únicamente fichas/historial. Se lee bajo demanda.
+
+### Etapa W — Elemento `dibujo`: formas, líneas, texto y conectores que el docente crea y edita
+
+Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes. IDs `W1–W11` (no `L.n`, `N.n`, `Q.n`, `V.n`). Redactada el 2026-10-16 a pedido del dueño, con tres decisiones suyas tomadas ese día (ver DW1–DW3).
+
+**Por qué existe:** las etapas V1–V3 arreglaron defectos y sumaron controles al bloque `diagrama`, pero el resultado sigue siendo el mismo: un conjunto fijo de plantillas (mapa mental, organigrama, flujo…) donde el docente solo cambia texto y colores. Lo que el dueño pide es lo que hace EdrawMax: **un lienzo en blanco donde el docente dibuja** —rectángulos, círculos, rombos, líneas, flechas, texto— y los **mueve, redimensiona, rota, alinea, agrupa, conecta y estiliza** a voluntad. Eso no se logra retocando `diagrama`: hace falta un **editor de escenas**. En el análisis inicial se recomendó no construir un motor (DV1 de la etapa V); esa recomendación **se revoca** para este objetivo (decisión del dueño, 2026-10-16). Sustento: `PERITAJE_EDRAWMAX_VS_DIAGRAMAS.md` (§2 modelo de objetos, §3 funcionalidad, §8 qué no copiar).
+
+**Lo que ya existe y se reutiliza (no se rehace):** geometría de 14 formas y trazado de conectores en `blocks/diagrama/diagrama-export.ts` (`formaSvg`, `polilinea`, `puntaFlecha`; V3.2); resolutores de relleno y contraste (`diagrama-temas.ts`, V2.1); `dagre` ya instalado para organizar automáticamente; saneo `sanitizeEstilo`. **Lo que no existe:** ninguna librería de dibujo en el repo; Paper.js solo edita el contorno de una máscara (`clip-group`).
+
+**Decisiones de diseño (DW1–DW10), fijadas por esta raíz; el operador no las reabre:**
+- **DW1. Motor propio sobre SVG, sin librería de dibujo** (decisión del dueño, 2026-10-16). La lógica pura (modelo, geometría, operaciones, historial) vive en un paquete nuevo `@lumina/drawing` (TypeScript sin React, probado con vitest); la interfaz React vive en `packages/element-kit/src/elements/dibujo/`. Descartadas: Konva (canvas, accesibilidad e integración peores), tldraw (licencia del SDK y modelo de datos propio), draw.io incrustado (iframe, datos propios).
+- **DW2. Alcance de la v1 = «núcleo de dibujo»** (decisión del dueño): insertar formas, líneas, flechas y texto; mover, redimensionar, rotar, duplicar, alinear, agrupar, ordenar capas; conectores que siguen a las formas; relleno, contorno, grosor, línea discontinua; deshacer/rehacer; exportar. **Fuera de la v1:** biblioteca de símbolos por materia, plumas de Bézier libres, contenedores y carriles, colaboración, importar `.vsdx`, fórmulas por forma (modelo ShapeSheet).
+- **DW3. El bloque `diagrama` convive como plantillas** (decisión del dueño). `dibujo` es un elemento nuevo e independiente; los organizadores actuales siguen existiendo y W10 permite **abrirlos en el editor nuevo** para modificarlos con libertad. No se migra ni se borra nada de `diagrama` en esta etapa.
+- **DW4. Nace como `ElementDefinition`** (Regla 2) con `tipo: 'dibujo'`, registrado solo vía `ElementRegistry.registrar()`; posición en el slide por el contrato canónico del canvas (`getBlockPos`, `.cursor/rules/lumina-canvas-editor-contracts.mdc`), sin switches propios por `block.tipo`.
+- **DW5. Modelo de escena versionado y con un único escritor canónico.** `Escena { version: 1, ancho, alto, elementos: Elemento[] }` en unidades virtuales (no píxeles de pantalla). `Elemento` = forma | línea | texto | grupo, con transformación común `{x, y, ancho, alto, rotacion}`, `z` implícito por orden del arreglo, `bloqueado`, `oculto` y `estilo`. Todo dato entra por `normalizarEscena()` (mismo patrón que `normalizeDiagramaBlock`): valores inválidos se descartan, nunca se lanza. Los colores son hex **o** token `var(--…)`; el exportador los resuelve (DV3 de la etapa V).
+- **DW6. La edición ocurre en un editor de pantalla casi completa** (decisión de diseño mía, ajustable antes de W5): el bloque se ve en el slide con el `Viewer` (solo lectura) y se edita con doble clic o con el botón «Editar dibujo» del panel de propiedades, que abre un lienzo grande con paleta de formas a la izquierda, propiedades a la derecha y barra superior. Motivo: dibujar de verdad en el rectángulo pequeño que ocupa un bloque en el slide no es viable.
+- **DW7. Historial local al editor, por diferencia.** Deshacer/rehacer (mínimo 100 niveles) guarda parches, no copias de la escena; un gesto (arrastrar, redimensionar, escribir) es **una** entrada del historial y **una** confirmación al bloque, nunca por fotograma.
+- **DW8. Accesibilidad desde el modelo.** Cada elemento puede llevar `descripcion`; el `Viewer` expone el SVG con `role="img"`, `<title>`/`<desc>` y los textos como texto real (no trazados); en el editor, Tab recorre los elementos y las flechas los mueven.
+- **DW9. Rendimiento:** fluido hasta ~500 elementos sin virtualización (v1). Si una ficha mide menos, para y lo reporta.
+- **DW10. Sin dependencias nuevas de terceros** en toda la etapa. `@lumina/drawing` es un paquete interno del workspace. Si hace falta una librería no prevista, el operador para (`bloqueado`) y pide decisión (misma regla DV6 de la etapa V).
+
+**Orden / dependencias:**
+```
+W1 ─→ W2 ─→ W3 ─→ W4 ─→ W5 ─→ W6 ─┬─→ W7 ─┐
+                                  └─→ W8 ─┼─→ W9 ─→ W10 ─→ W11
+```
+W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (panel de propiedades) tocan archivos disjuntos tras W6 y pueden ir en paralelo (Regla 10, Concurrencia). W11 es ficha raíz.
+
+**Relación con la etapa V:** `V4.1` (registro de formas), `V4.2` (redimensionar nodos) y `V4.3` (diagramas evaluables) quedan **reemplazadas** por `W2`, `W5` y `W11`; no se hacen en `diagrama`. `V1–V3` se mantienen como están (en revisión).
+
+**Fuera de alcance de toda la etapa:** migrar o borrar el bloque `diagrama`; símbolos masivos; colaboración en tiempo real; importar/exportar `.vsdx`; animaciones de entrada; edición de dibujos por el alumno (el `Viewer` es de solo lectura; la interacción del alumno entra en W11).
+
+---
+
+## Fase 1 — Cimientos (sin interfaz)
+
+#### W1 — Paquete `@lumina/drawing`: modelo de escena y normalizador
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** ninguna.
+- **Alcance — PUEDE tocar:** paquete nuevo `packages/drawing/` (`package.json`, `tsconfig*.json`, `eslint.config.mjs`, `src/`), siguiendo el patrón de `packages/element-kit-core` (consumido desde `dist/`); `pnpm-lock.yaml` solo por el alta del paquete. **NO** toca `element-kit`, el frontend ni ningún paquete existente.
+- **Entregable:** tipos `Escena`, `Elemento` (`Forma`, `Linea`, `Texto`, `Grupo`), `Estilo` (relleno sólido/ninguno, contorno, grosor, patrón, opacidad, sombra, esquina, tipografía y alineación del texto), `Transformacion`; `normalizarEscena(entrada: unknown): Escena` (único escritor canónico, DW5: descarta lo inválido, acota números, asigna ids únicos, ordena grupos consistentes, elimina referencias a elementos inexistentes) y `escenaVacia()`. Pruebas: round-trip estable (`normalizar(normalizar(x))` igual), entradas basura (`null`, tipos erróneos, ids duplicados, ciclos de grupos, números `NaN`/infinitos), límites de tamaño y de cantidad de elementos. Verificación: `pnpm --filter @lumina/drawing build && pnpm --filter @lumina/drawing test && pnpm --filter @lumina/drawing lint`.
+- **Cierre:** ninguno (paquete nuevo).
+
+#### W2 — Catálogo de formas: geometría, texto y puertos
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W1 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/drawing/src/formas/` y sus specs. **NO** toca `blocks/diagrama/` (su `formaSvg` se mantiene hasta que una ficha posterior lo reemplace).
+- **Entregable:** registro `FORMAS: Record<TipoForma, DefinicionForma>` donde cada forma declara `trazado(ancho, alto, parametros) → string` (path SVG que se adapta a cualquier tamaño, sin estirar el trazo), `rectanguloTexto(ancho, alto)` y `puertos(ancho, alto) → Punto[]` (puntos de conexión, como los `CPoints` de EdrawMax). Mínimo 20 formas: rectángulo, rectángulo redondeado (radio ajustable), elipse, círculo, rombo, triángulo, triángulo rectángulo, trapecio, paralelogramo, pentágono, hexágono, octágono, estrella de 5 puntas, cruz, flecha derecha/izquierda/doble, cilindro, nube, llave, callout. Parte de la geometría de `diagrama-export.ts` (`formaSvg`) pero generalizada. Pruebas: cada trazado es un path válido y cerrado, escala con el tamaño, sus puertos caen sobre el contorno o su bounding box, `rectanguloTexto` queda dentro de la forma. Verificación: la de W1.
+- **Cierre:** `formaSvg` de `diagrama-export.ts` queda duplicada hasta W10; se anota `TODO(W10)` ahí con el nombre exacto del archivo.
+
+#### W3 — Elemento `dibujo`: render de solo lectura y registro
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W2 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/` (nuevo: `dibujo-definition.ts`, `dibujo-types.ts`, `dibujo-render.tsx`, `register.ts`, `index.ts`, specs), el índice/registro de `element-kit` y el catálogo de inserción de la misma forma que lo hace `diagrama` (`_shared/catalogo.ts`), `packages/element-kit/package.json` solo para declarar `@lumina/drawing`. **NO** toca el editor del frontend más allá de lo que exija el registro.
+- **Entregable:** `dibujoDefinition` (`tipo: 'dibujo'`, `crearPorDefecto()` con una escena de ejemplo con 3 formas y 1 flecha, `Viewer` real que dibuja la escena en SVG con `role="img"`/`<title>`/`<desc>`, `Editor` y `Propiedades` provisionales que muestran el Viewer y el título), `catalogo` para el panel «Elementos», entrada en el union/registro **por el camino vigente** (Regla 3). `renderEscenaSvg(escena, {tema})` puro, reutilizable por exportar y por el Viewer. Pruebas: la escena de ejemplo produce tantos nodos SVG como elementos; escape de texto; tema claro/oscuro sin variables CSS en el archivo exportable; registro único (`ElementRegistry.registrar`). Verificación: `pnpm --filter @lumina/drawing test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual de insertar el elemento en un slide.
+- **Cierre:** ninguno.
+
+## Fase 2 — Edición
+
+#### W4 — Operaciones de escena e historial (lógica pura)
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W3 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/drawing/src/operaciones/`, `packages/drawing/src/historial/` y specs. **NO** toca interfaz.
+- **Entregable:** funciones puras e inmutables `agregar`, `eliminar`, `mover`, `redimensionar` (con proporción opcional y desde cualquier asa), `rotar` (con ajuste a 15°), `duplicar`, `reordenar` (traer al frente / enviar al fondo / subir / bajar), `alinear` (6 modos), `distribuir` (horizontal/vertical), `agrupar`/`desagrupar`, `bloquear`/`ocultar`, `cambiarEstilo(ids, parche)`; geometría de selección (`cajaDeSeleccion`, `elementoEn(punto)`, `elementosEn(rectangulo)`, con rotación); ajuste a cuadrícula y a guías (`ajustar(punto, escena, opciones)`); `Historial` por diferencia (`registrar`, `deshacer`, `rehacer`, tope configurable, un gesto = una entrada). Pruebas: propiedades (aplicar y deshacer devuelve la escena original; mover un grupo mueve a sus hijos; rotar y volver a rotar es identidad; agrupar/desagrupar conserva posiciones), casos límite (selección vacía, elementos bloqueados, tamaño mínimo). Verificación: la de W1.
+- **Cierre:** ninguno.
+
+#### W5 — Editor de pantalla casi completa: selección, mover, redimensionar y rotar
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W4 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/editor/` (nuevo: lienzo, asas, barra superior, atajos de teclado), `dibujo-definition.ts` (`Editor`, `Propiedades` con el botón «Editar dibujo»), specs. Reemplaza el `Editor` provisional de W3. **NO** toca el contrato del canvas del frontend ni `getBlockPos`.
+- **Entregable:** DW6. Lienzo SVG con zoom y desplazamiento; selección por clic, por caja y múltiple (Mayús); mover con arrastre y con flechas; **asas de redimensionar (8) y de rotar**; ajuste a cuadrícula y guías con aviso visual; atajos (Supr, Ctrl+Z / Ctrl+Y, Ctrl+D, Ctrl+A, Ctrl+G); un gesto = **una** confirmación al bloque (DW7); Tab recorre elementos (DW8). Pruebas: mover/redimensionar/rotar producen el parche esperado y una sola entrada de historial; Ctrl+Z deshace el último gesto; la selección múltiple se mueve junta; cerrar el editor confirma la escena. Verificación: la de W3, más comprobación visual del flujo completo.
+- **Cierre:** ninguno.
+
+#### W6 — Herramientas de creación: formas, líneas y texto
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W5 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/editor/` (paleta de formas, herramientas, edición de texto), specs. **NO** toca conectores (W7) ni el panel de propiedades (W8).
+- **Entregable:** paleta lateral con el catálogo de W2 agrupado (básicas, flechas, diagramas); insertar con clic (tamaño por defecto) o **dibujando con arrastre**; herramienta de **línea y flecha** (recta y con puntos intermedios); **texto**: doble clic en una forma para escribir dentro (usa `rectanguloTexto`) y herramienta de texto libre; edición de texto en el sitio con Escape/Enter. Pruebas: cada forma del catálogo se puede insertar; arrastrar crea el tamaño dibujado; el texto escrito queda en el modelo y en el SVG. Verificación: la de W5.
+- **Cierre:** ninguno.
+
+## Fase 3 — Conectores y estilo
+
+#### W7 — Conectores que siguen a las formas
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W6 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/drawing/src/conectores/` (enrutado puro) y `packages/element-kit/src/elements/dibujo/editor/conectores*` + specs. **NO** toca el panel de propiedades (W8; V3.2/W8 comparten estilos de línea, se coordinan por el modelo).
+- **Entregable:** una línea puede **pegarse a un puerto** de una forma (`origen`/`destino` = `{elementoId, puerto}`); al mover, redimensionar, rotar o eliminar la forma, el conector se **re-enruta solo** (recto, ortogonal con esquinas vivas o redondeadas, curvo); soltar un extremo cerca de un puerto lo pega (ajuste visible); extremos configurables (ninguno, flecha, flecha abierta, círculo, rombo); etiqueta en el conector; puntos intermedios arrastrables. Reutiliza `polilinea`/`puntaFlecha` de `diagrama-export.ts` generalizados. Pruebas: enrutado determinista por tipo y lados; mover una forma mueve el extremo; eliminar una forma desconecta (no borra) el conector; conectores entre formas rotadas. Verificación: la de W5.
+- **Cierre:** ninguno.
+
+#### W8 — Panel de propiedades de estilo
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W6 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/editor/propiedades*` y specs. **NO** toca conectores (W7).
+- **Entregable:** panel derecho con secciones plegables (etapa S) y ayudas ⓘ (etapa R): **relleno** (ninguno, sólido, degradado de 2 colores), **contorno** (color, grosor, patrón sólido/guiones/puntos), **opacidad**, **sombra**, **esquinas** (radio), **texto** (tipografía, tamaño, negrita/cursiva, alineación horizontal/vertical, color), **posición y tamaño** numéricos y **rotación**; se aplica a toda la selección (valores mixtos se muestran como tal); paleta de colores con las 10 de `diagrama-temas.ts` + selector libre + tokens del tema; **panel de capas** (ordenar, bloquear, ocultar, renombrar). Pruebas: cambiar un estilo con selección múltiple actualiza todos; un valor mixto no se pisa al abrir el panel; cada cambio es una entrada de historial. Verificación: la de W5.
+- **Cierre:** ninguno.
+
+## Fase 4 — Salida e integración
+
+#### W9 — Exportar, accesibilidad e interacción
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W7 y W8 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/` (exportar, descripción por elemento, eventos), specs. Reutiliza `renderEscenaSvg` (W3) y `svgAPng`/`descargarBlob` de `diagrama-export.ts` (se importan, no se copian).
+- **Entregable:** «Exportar» SVG y PNG (tema claro/oscuro, fondo opcional) con la escena completa; `descripcion` por elemento expuesta como `<title>`/`aria-label`; el `Viewer` emite el evento de clic sobre un elemento si el contrato de eventos del kit lo permite (`eventos` de `ElementDefinition`, etapa K) para que las reglas del docente reaccionen. Pruebas: el SVG exportado tiene tantos elementos como la escena y es XML válido; el evento de clic lleva el id del elemento. Verificación: la de W5, más comprobación manual del archivo descargado.
+- **Cierre:** ninguno.
+
+#### W10 — Abrir los organizadores de `diagrama` en el editor nuevo
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** W9 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/` (conversor y plantillas), un botón «Editar libremente» en el panel de `diagrama-properties.tsx` (única edición permitida en `blocks/diagrama/`), `diagrama-export.ts` (retirar `formaSvg` duplicada y apoyarse en `@lumina/drawing`; cierra el `TODO(W10)` de W2), specs.
+- **Entregable:** `diagramaAEscena(block)` convierte un diagrama de grafo (nodos → formas con su forma, color y texto; aristas → conectores pegados a puertos; Venn → círculos y textos) en una escena equivalente; el botón crea un bloque `dibujo` con ella (el original no se modifica ni se borra, DW3); además 6 plantillas de partida del propio editor (diagrama de flujo, mapa conceptual, línea de tiempo, comparación en dos columnas, ciclo, pirámide). Pruebas: cada plantilla de `diagrama` se convierte con el mismo número de elementos y los textos intactos; el conector sigue pegado a las formas correctas. Verificación: la de W3.
+- **Cierre:** `formaSvg` duplicada se borra en este PR.
+
+#### W11 — Dibujos evaluables (ficha raíz — se redacta al cerrar W10)
+- **Operador:** a asignar al redactarla
+- **Estado:** pendiente — **ficha raíz, sin asignar**
+- **Precondición:** W10 `hecho`.
+- **Quién la redacta:** quien cierre W10, con el dueño del tablero (Regla 10).
+- **Qué debe resolver (no se reabre el objetivo, sí el alcance):** reemplaza `V4.3`. Dibujos que el alumno completa y se puntúan vía `@lumina/scoring`: etiquetar partes (arrastrar rótulos a zonas), completar un esquema, ordenar un proceso, marcar errores. Debe definir el modelo de «respuesta correcta» por elemento o zona, el modo del alumno (arrastrar sin editar la escena), la conexión con la Etapa U (actividades) y con el motor de interacción (Etapa K), y la prueba de paridad del `Viewer` (los dibujos no evaluables no cambian).
+- **Cierre:** al redactarla.

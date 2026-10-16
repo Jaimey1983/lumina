@@ -70,6 +70,11 @@ export function graphNodeToRF(node: GraphNode): RFGraphNode {
       ...(node.meta?.forma ? { forma: String(node.meta.forma) } : {}),
       ...(node.meta?.icono ? { icono: String(node.meta.icono) } : {}),
       ...(node.meta?.imagen ? { imagen: String(node.meta.imagen) } : {}),
+      ...(typeof node.meta?.ancho === 'number' ? { ancho: node.meta.ancho } : {}),
+      ...(typeof node.meta?.alto === 'number' ? { alto: node.meta.alto } : {}),
+      ...(node.meta?.estiloVisual && typeof node.meta.estiloVisual === 'object'
+        ? { estiloVisual: node.meta.estiloVisual }
+        : {}),
       ...(node.meta?.blockId ? { blockId: String(node.meta.blockId) } : {}),
       ...(node.meta?.isRoot !== undefined ? { isRoot: Boolean(node.meta.isRoot) } : {}),
       ...(node.meta?.subtipo ? { subtipo: String(node.meta.subtipo) } : {}),
@@ -115,6 +120,9 @@ export function graphEdgeToRF(edge: GraphEdge): RFEdge {
       ...(strokeDasharray ? { strokeDasharray } : {}),
     },
     animated: Boolean(edge.meta?.animada),
+    ...(edge.meta?.flechaInicio === true
+      ? { markerStart: { type: 'arrowclosed' as const, color: strokeColor } }
+      : null),
     ...(edge.directed
       ? {
           markerEnd: {

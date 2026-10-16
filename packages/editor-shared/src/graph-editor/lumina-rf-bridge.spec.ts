@@ -40,6 +40,22 @@ describe('graphNodeToRF', () => {
     });
   });
 
+  it('copia `ancho`/`alto` numéricos de `meta` a `data` y descarta otros tipos (V1.1)', () => {
+    const rf = graphNodeToRF(node({ meta: { ancho: 220, alto: 40 } }));
+    expect(rf.data).toMatchObject({ ancho: 220, alto: 40 });
+
+    const sinTamano = graphNodeToRF(node({ meta: { ancho: '220', alto: null } }));
+    expect(sinTamano.data).not.toHaveProperty('ancho');
+    expect(sinTamano.data).not.toHaveProperty('alto');
+  });
+
+  it('copia `meta.estiloVisual` (objeto) a `data` y no otros tipos (V2.2)', () => {
+    const estiloVisual = { relleno: 'solido', rellenoCss: '#123456' };
+    expect(graphNodeToRF(node({ meta: { estiloVisual } })).data).toMatchObject({ estiloVisual });
+    expect(graphNodeToRF(node({ meta: { estiloVisual: 'solido' } })).data).not.toHaveProperty('estiloVisual');
+    expect(graphNodeToRF(node()).data).not.toHaveProperty('estiloVisual');
+  });
+
   it('no arrastra `meta` del dominio a `data` de React Flow', () => {
     const rf = graphNodeToRF(node({ meta: { tipo: 'decision', opciones: [1, 2] } }));
     expect(rf.data).not.toHaveProperty('meta');
@@ -113,6 +129,25 @@ describe('graphEdgeToRF', () => {
 
   it('sin `directed` no pone marcador de flecha', () => {
     expect(graphEdgeToRF(base).markerEnd).toBeUndefined();
+  });
+
+  it('`flechaInicio` pone punta en el origen y su ausencia no pone marcador (V1.2)', () => {
+    expect(graphEdgeToRF(base).markerStart).toBeUndefined();
+    expect(graphEdgeToRF({ ...base, meta: { flechaInicio: false } }).markerStart).toBeUndefined();
+    expect(graphEdgeToRF({ ...base, meta: { flechaInicio: true } }).markerStart).toMatchObject({
+      type: 'arrowclosed',
+    });
+  });
+
+  it('un color de tema (`var(--token)`) llega tal cual al trazo y a las puntas (V2.3)', () => {
+    const rf = graphEdgeToRF({
+      ...base,
+      directed: true,
+      meta: { color: 'var(--muted-foreground)', flechaInicio: true },
+    });
+    expect(rf.style?.stroke).toBe('var(--muted-foreground)');
+    expect(rf.markerEnd).toMatchObject({ color: 'var(--muted-foreground)' });
+    expect(rf.markerStart).toMatchObject({ color: 'var(--muted-foreground)' });
   });
 
   it('con `directed` pone punta de flecha cerrada', () => {

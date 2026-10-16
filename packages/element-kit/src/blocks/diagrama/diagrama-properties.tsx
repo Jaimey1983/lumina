@@ -18,6 +18,7 @@ import {
   Palette,
   Filter,
   Disc,
+  Download,
   Grid,
   Sliders,
   Spline,
@@ -25,19 +26,28 @@ import {
 import type {
   Block,
   DiagramaArista,
+  DiagramaAristaEstiloLinea,
   DiagramaBlock,
+  DiagramaEstilo,
   DiagramaGrafoBlock,
   DiagramaNodo,
   DiagramaNodoForma,
   DiagramaPaletaId,
+  DiagramaRelleno,
   DiagramaSubtipo,
+  DiagramaVennBlock,
 } from '@lumina/types/slide';
 import {
-  computeDagreLayout,
-  type GraphEdge,
-  type GraphNode,
-} from '@lumina/editor-shared/graph-editor';
-import { layoutCebolla, layoutEmbudo, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
+  organizarGrafo,
+  resolverDensidad,
+  resolverDireccion,
+  tieneLayoutPropio,
+  type DensidadLayout,
+  type DireccionLayout,
+} from './diagrama-dagre.js';
+import { NOMBRE_CONJUNTO_MAX, sanitizeEstilo } from './diagrama-defaults.js';
+import { exportarDiagrama, type FormatoExportacion, type TemaExportacion } from './diagrama-export.js';
+import { layoutCebolla, layoutEmbudo, layoutPiramide } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
@@ -45,6 +55,7 @@ import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { Badge } from '@lumina/ui/badge';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { cn } from '@lumina/ui/lib/utils';
 import {
   normalizeDiagramaBlock,
@@ -89,6 +100,69 @@ const FORMAS_CONFIG: Array<{ forma: DiagramaNodoForma; label: string }> = [
   { forma: 'inverted-trapezoid', label: 'Trapecio Invertido' },
   { forma: 'triangle', label: 'Triángulo' },
   { forma: 'circle', label: 'Círculo' },
+  { forma: 'rect', label: 'Rectángulo' },
+  { forma: 'ellipse', label: 'Elipse' },
+  { forma: 'hexagon', label: 'Hexágono' },
+];
+
+type TrazadoEditable = NonNullable<DiagramaArista['tipoTrazado']>;
+
+const TRAZADO_GLOBAL: Record<TrazadoEditable, string> = {
+  smoothstep: 'Curva',
+  orthogonal: 'Ortogonal',
+  bezier: 'Fluida',
+  straight: 'Recta',
+};
+
+const TRAZADO_ARISTA: Record<TrazadoEditable, string> = {
+  smoothstep: 'Curva',
+  orthogonal: 'Ángulo recto',
+  bezier: 'Bézier',
+  straight: 'Recta',
+};
+
+const TRAZADO_TITULO: Record<TrazadoEditable, string> = {
+  smoothstep: 'de esquinas redondeadas',
+  orthogonal: 'en ángulo recto',
+  bezier: 'bézier fluido',
+  straight: 'de línea recta',
+};
+
+// Opciones de la sección «Estilo». `undefined` = «Automático»: no se guarda nada
+// y el diagrama usa el aspecto propio de su subtipo.
+const RELLENO_OPCIONES: Array<{ valor: DiagramaRelleno | undefined; label: string }> = [
+  { valor: undefined, label: 'Automático' },
+  { valor: 'contorno', label: 'Contorno' },
+  { valor: 'tintado', label: 'Tintado' },
+  { valor: 'solido', label: 'Sólido' },
+];
+
+const GROSOR_OPCIONES: Array<{ valor: number | undefined; label: string }> = [
+  { valor: undefined, label: 'Auto' },
+  { valor: 1, label: 'Fino' },
+  { valor: 2.5, label: 'Medio' },
+  { valor: 4, label: 'Grueso' },
+];
+
+const PATRON_OPCIONES: Array<{ valor: DiagramaAristaEstiloLinea | undefined; label: string }> = [
+  { valor: undefined, label: 'Auto' },
+  { valor: 'solida', label: 'Sólida' },
+  { valor: 'discontinua', label: 'Guiones' },
+  { valor: 'punteada', label: 'Puntos' },
+];
+
+const DIRECCION_OPCIONES: Array<{ valor: DireccionLayout; label: string; descripcion: string }> = [
+  { valor: 'TB', label: 'Arriba → abajo', descripcion: 'Jerárquica de arriba hacia abajo' },
+  { valor: 'LR', label: 'Izq. → der.', descripcion: 'Jerárquica de izquierda a derecha' },
+  { valor: 'BT', label: 'Abajo → arriba', descripcion: 'Jerárquica de abajo hacia arriba' },
+  { valor: 'RL', label: 'Der. → izq.', descripcion: 'Jerárquica de derecha a izquierda' },
+  { valor: 'radial', label: 'Radial', descripcion: 'Distribución radial 360°' },
+];
+
+const DENSIDAD_OPCIONES: Array<{ valor: DensidadLayout; label: string }> = [
+  { valor: 'compacta', label: 'Compacta' },
+  { valor: 'normal', label: 'Normal' },
+  { valor: 'amplia', label: 'Amplia' },
 ];
 
 // `piramide`/`embudo`/`cebolla` NO están acá — `handleLoadTemplate` los
@@ -138,6 +212,11 @@ export function DiagramaProperties({
 }: DiagramaPropertiesProps) {
   const [localBlock, setLocalBlock] = useState<DiagramaBlock>(block);
   const [outlineText, setOutlineText] = useState('');
+  // Opciones de exportación: solo viven en el panel, no se guardan en el bloque.
+  const [exportTema, setExportTema] = useState<TemaExportacion>('claro');
+  const [exportFondo, setExportFondo] = useState(true);
+  const [exportando, setExportando] = useState<FormatoExportacion | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -185,14 +264,14 @@ export function DiagramaProperties({
     if (!grafoBlock) return;
     const isDirected = newSubtipo === 'flujo' || newSubtipo === 'organigrama';
     let nextNodos: DiagramaNodo[] = [...grafoBlock.nodos];
+    // `dirigida` explícita (decisión del docente por arista) se conserva; solo las
+    // que no la tienen toman el valor por defecto del subtipo destino.
     let nextAristas: DiagramaArista[] = grafoBlock.aristas.map((a) => ({
       ...a,
-      dirigida: isDirected,
+      dirigida: a.dirigida ?? isDirected,
     }));
 
-    if (newSubtipo === 'mapa_mental') {
-      nextNodos = layoutRadial(nextNodos, nextAristas);
-    } else if (newSubtipo === 'piramide') {
+    if (newSubtipo === 'piramide') {
       const { nodos: pNodes, aristas: pEdges } = layoutPiramide(nextNodos, nextAristas);
       nextNodos = pNodes;
       nextAristas = pEdges;
@@ -209,28 +288,8 @@ export function DiagramaProperties({
       nextNodos = cNodes;
       nextAristas = cEdges;
     } else {
-      // flujo / organigrama / mapa_conceptual
-      const graphNodes: GraphNode[] = nextNodos.map((n) => ({
-        id: n.id,
-        x: n.x,
-        y: n.y,
-        label: n.etiqueta,
-        body: n.cuerpo,
-        accent: (n.estilo?.color as string) ?? '#2563EB',
-      }));
-      const graphEdges: GraphEdge[] = nextAristas.map((a) => ({
-        id: a.id,
-        source: a.desdeId,
-        target: a.haciaId,
-      }));
-      const laidOut = computeDagreLayout(graphNodes, graphEdges, {
-        direction: 'TB',
-      });
-      const posMap = new Map(laidOut.map((l) => [l.id, l]));
-      nextNodos = nextNodos.map((n) => {
-        const p = posMap.get(n.id);
-        return p ? { ...n, x: p.x, y: p.y } : n;
-      });
+      // mapa_mental / flujo / organigrama / mapa_conceptual: según dirección y densidad del diagrama
+      nextNodos = organizarGrafo(nextNodos, nextAristas, newSubtipo, grafoBlock.opciones);
     }
 
     commitChange(
@@ -242,6 +301,59 @@ export function DiagramaProperties({
       }),
       true,
     );
+  };
+
+  // ─── Exportar (PNG / SVG) ───
+  const handleExportar = async (formato: FormatoExportacion) => {
+    if (!grafoBlock || exportando) return;
+    setExportando(formato);
+    setExportError(null);
+    try {
+      await exportarDiagrama(grafoBlock, formato, { tema: exportTema, fondo: exportFondo });
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'No se pudo exportar el diagrama.');
+    } finally {
+      setExportando(null);
+    }
+  };
+
+  // ─── Disposición (opciones.direccionLayout / opciones.densidad) ───
+  const direccionActual = resolverDireccion(grafoBlock?.opciones, currentSubtipo);
+  const densidadActual = resolverDensidad(grafoBlock?.opciones);
+  const disposicionPropia = tieneLayoutPropio(currentSubtipo);
+
+  const commitDisposicion = (cambio: { direccionLayout?: DireccionLayout; densidad?: DensidadLayout }) => {
+    if (!grafoBlock) return;
+    commitChange({ ...grafoBlock, opciones: { ...(grafoBlock.opciones ?? {}), ...cambio } }, true);
+  };
+
+  // ─── Estilo del diagrama (opciones.estilo) ───
+  // Una confirmación por clic: cada control es discreto, nunca se escribe por fotograma.
+  const estiloActual: DiagramaEstilo = grafoBlock?.opciones?.estilo ?? {};
+
+  const commitEstilo = (estilo: DiagramaEstilo) => {
+    if (!grafoBlock) return;
+    const opciones = { ...(grafoBlock.opciones ?? {}) };
+    delete opciones.estilo;
+    const limpio = sanitizeEstilo(estilo);
+    if (limpio) opciones.estilo = limpio;
+    commitChange(
+      { ...grafoBlock, opciones: Object.keys(opciones).length > 0 ? opciones : undefined },
+      true,
+    );
+  };
+
+  const commitConector = (cambio: NonNullable<DiagramaEstilo['conector']>) =>
+    commitEstilo({ ...estiloActual, conector: { ...estiloActual.conector, ...cambio } });
+
+  // ─── Nombres de los conjuntos (Venn) ───
+  const handleNombreConjunto = (indice: number, nombre: string) => {
+    if (grafoBlock) return;
+    const venn = localBlock as DiagramaVennBlock;
+    const nombresConjuntos = Array.from({ length: venn.conjuntos }, (_, i) =>
+      i === indice ? nombre : (venn.nombresConjuntos?.[i] ?? ''),
+    );
+    commitChange({ ...venn, nombresConjuntos });
   };
 
   // ─── Título y Accesibilidad ───
@@ -478,12 +590,6 @@ export function DiagramaProperties({
   const handleAutoLayout = () => {
     if (!grafoBlock) return;
 
-    if (currentSubtipo === 'mapa_mental') {
-      const reordered = layoutRadial(grafoBlock.nodos, grafoBlock.aristas);
-      commitChange({ ...grafoBlock, nodos: reordered }, true);
-      return;
-    }
-
     if (currentSubtipo === 'cronologia') {
       commitChange(finalizeGrafo(grafoBlock), true);
       return;
@@ -507,29 +613,7 @@ export function DiagramaProperties({
       return;
     }
 
-    const graphNodes: GraphNode[] = grafoBlock.nodos.map((n) => ({
-      id: n.id,
-      x: n.x,
-      y: n.y,
-      label: n.etiqueta,
-      body: n.cuerpo,
-      accent: (n.estilo?.color as string) ?? '#2563EB',
-    }));
-    const graphEdges: GraphEdge[] = grafoBlock.aristas.map((a) => ({
-      id: a.id,
-      source: a.desdeId,
-      target: a.haciaId,
-    }));
-
-    const laidOut = computeDagreLayout(graphNodes, graphEdges, {
-      direction: currentSubtipo === 'flujo' || currentSubtipo === 'organigrama' ? 'TB' : 'TB',
-    });
-
-    const posMap = new Map(laidOut.map((l) => [l.id, l]));
-    const nextNodos = grafoBlock.nodos.map((n) => {
-      const p = posMap.get(n.id);
-      return p ? { ...n, x: p.x, y: p.y } : n;
-    });
+    const nextNodos = organizarGrafo(grafoBlock.nodos, grafoBlock.aristas, currentSubtipo, grafoBlock.opciones);
 
     commitChange({ ...grafoBlock, nodos: nextNodos }, true);
   };
@@ -562,31 +646,8 @@ export function DiagramaProperties({
     const { nodos, aristas } = outlineToDiagrama(outlineText, currentSubtipo);
     if (nodos.length === 0) return;
 
-    // Si es mapa mental, aplicar distribución radial; si no, dagre jerárquico
-    let positionedNodes = nodos;
-    if (currentSubtipo === 'mapa_mental') {
-      positionedNodes = layoutRadial(nodos, aristas);
-    } else {
-      const graphNodes: GraphNode[] = nodos.map((n) => ({
-        id: n.id,
-        x: n.x,
-        y: n.y,
-        label: n.etiqueta,
-        body: n.cuerpo,
-        accent: (n.estilo?.color as string) ?? '#2563EB',
-      }));
-      const graphEdges: GraphEdge[] = aristas.map((a) => ({
-        id: a.id,
-        source: a.desdeId,
-        target: a.haciaId,
-      }));
-      const laidOut = computeDagreLayout(graphNodes, graphEdges, { direction: 'TB' });
-      const posMap = new Map(laidOut.map((l) => [l.id, l]));
-      positionedNodes = nodos.map((n) => {
-        const p = posMap.get(n.id);
-        return p ? { ...n, x: p.x, y: p.y } : n;
-      });
-    }
+    // Dirección y densidad del diagrama (radial para el mapa mental, salvo que se elija otra)
+    const positionedNodes = organizarGrafo(nodos, aristas, currentSubtipo, grafoBlock.opciones);
 
     commitChange(
       {
@@ -608,7 +669,9 @@ export function DiagramaProperties({
             <div>
               <div className="font-semibold text-foreground text-xs leading-tight">Auto-Organizar</div>
               <div className="text-[10px] text-muted-foreground leading-tight">
-                {currentSubtipo === 'mapa_mental' ? 'Distribución radial 360°' : 'Alineación jerárquica'}
+                {tieneLayoutPropio(currentSubtipo)
+                  ? 'Alineación jerárquica'
+                  : (DIRECCION_OPCIONES.find((d) => d.valor === direccionActual)?.descripcion ?? 'Alineación jerárquica')}
               </div>
             </div>
           </div>
@@ -622,6 +685,71 @@ export function DiagramaProperties({
             Organizar
           </Button>
         </div>
+      )}
+
+      {/* Disposición: hacia dónde crece el diagrama y cuánto se separan los nodos. Se aplica con «Organizar». */}
+      {grafoBlock && (
+        <CollapsibleSection
+          title="Disposición"
+          icon={Network}
+          defaultOpen={false}
+          storageKey="diagrama.disposicion"
+          className="border-t border-border pt-3"
+        >
+          <div className="space-y-3 text-[11px]">
+            {disposicionPropia && (
+              <p className="text-muted-foreground">Este tipo de diagrama tiene su propia disposición.</p>
+            )}
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Dirección</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {DIRECCION_OPCIONES.map(({ valor, label, descripcion }) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    disabled={disposicionPropia}
+                    title={descripcion}
+                    aria-pressed={!disposicionPropia && direccionActual === valor}
+                    onClick={() => commitDisposicion({ direccionLayout: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all disabled:opacity-50 disabled:pointer-events-none',
+                      !disposicionPropia && direccionActual === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Densidad</span>
+              <div className="flex items-center gap-1">
+                {DENSIDAD_OPCIONES.map(({ valor, label }) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    disabled={disposicionPropia || direccionActual === 'radial'}
+                    aria-pressed={!disposicionPropia && densidadActual === valor}
+                    onClick={() => commitDisposicion({ densidad: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all disabled:opacity-50 disabled:pointer-events-none',
+                      !disposicionPropia && densidadActual === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {!disposicionPropia && (
+              <p className="text-[10px] text-muted-foreground">Se aplica al pulsar «Organizar».</p>
+            )}
+          </div>
+        </CollapsibleSection>
       )}
 
       {/* Selector de Subtipo */}
@@ -747,15 +875,15 @@ export function DiagramaProperties({
                 <Spline className="h-3 w-3" /> Conexiones
               </span>
               <div className="flex items-center gap-1">
-                {(['smoothstep', 'bezier', 'straight'] as const).map((t) => (
+                {(['smoothstep', 'orthogonal', 'bezier', 'straight'] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => handleGlobalEdgeTrazado(t)}
                     className="px-1.5 py-0.5 rounded text-[10px] border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
-                    title={`Aplicar trazado ${t === 'smoothstep' ? 'curva ortogonal' : t === 'bezier' ? 'bézier fluido' : 'línea recta'} a todas las conexiones`}
+                    title={`Aplicar trazado ${TRAZADO_TITULO[t]} a todas las conexiones`}
                   >
-                    {t === 'smoothstep' ? 'Ortogonal' : t === 'bezier' ? 'Fluida' : 'Recta'}
+                    {TRAZADO_GLOBAL[t]}
                   </button>
                 ))}
               </div>
@@ -778,6 +906,234 @@ export function DiagramaProperties({
                 ))}
               </div>
             </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* Estilo del diagrama: relleno, sombra y conector por defecto (opciones.estilo) */}
+      {grafoBlock && (
+        <CollapsibleSection
+          title="Estilo"
+          icon={Sliders}
+          defaultOpen={false}
+          storageKey="diagrama.estilo"
+          badge={grafoBlock.opciones?.estilo ? 'Personalizado' : undefined}
+          className="border-t border-border pt-3"
+        >
+          <div className="space-y-3 text-[11px]">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Aspecto de las formas
+              </span>
+              <FieldHelp label="Estilo del diagrama">
+                <p>
+                  <strong>Contorno</strong>: fondo de tarjeta y borde de color. <strong>Tintado</strong>: el
+                  color de cada nodo se mezcla suave con el fondo. <strong>Sólido</strong>: fondo del color
+                  del nodo y texto con contraste.
+                </p>
+                <p>
+                  El conector es el valor por defecto: una conexión con trazado, grosor o línea propios
+                  (por ejemplo, aplicados desde «Estilo Visual Global») conserva los suyos.
+                </p>
+              </FieldHelp>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Relleno</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {RELLENO_OPCIONES.map(({ valor, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={estiloActual.relleno === valor}
+                    onClick={() => commitEstilo({ ...estiloActual, relleno: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.relleno === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Sombra</span>
+              <div className="flex items-center gap-1">
+                {([
+                  { sombra: undefined, label: 'Con sombra' },
+                  { sombra: false, label: 'Sin sombra' },
+                ] as const).map(({ sombra, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={estiloActual.sombra === sombra}
+                    onClick={() => commitEstilo({ ...estiloActual, sombra })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.sombra === sombra
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Spline className="h-3 w-3" /> Conector · trazado
+              </span>
+              <div className="flex flex-wrap items-center gap-1">
+                {([undefined, 'smoothstep', 'orthogonal', 'bezier', 'straight'] as const).map((t) => (
+                  <button
+                    key={t ?? 'auto'}
+                    type="button"
+                    aria-pressed={estiloActual.conector?.trazado === t}
+                    onClick={() => commitConector({ trazado: t })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.conector?.trazado === t
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {t ? TRAZADO_GLOBAL[t] : 'Auto'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Conector · grosor</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {GROSOR_OPCIONES.map(({ valor, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={estiloActual.conector?.grosor === valor}
+                    onClick={() => commitConector({ grosor: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.conector?.grosor === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Conector · línea</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {PATRON_OPCIONES.map(({ valor, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={estiloActual.conector?.patron === valor}
+                    onClick={() => commitConector({ patron: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.conector?.patron === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {grafoBlock.opciones?.estilo && (
+              <Button type="button" variant="ghost" size="sm" className="h-7 text-[11px]" onClick={() => commitEstilo({})}>
+                Restablecer estilo
+              </Button>
+            )}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* Exportar el diagrama como imagen (PNG o SVG), sin los controles del lienzo */}
+      {grafoBlock && (
+        <CollapsibleSection
+          title="Exportar"
+          icon={Download}
+          defaultOpen={false}
+          storageKey="diagrama.exportar"
+          className="border-t border-border pt-3"
+        >
+          <div className="space-y-3 text-[11px]">
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Tema de la imagen</span>
+              <div className="flex items-center gap-1">
+                {([['claro', 'Claro'], ['oscuro', 'Oscuro']] as const).map(([valor, label]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    aria-pressed={exportTema === valor}
+                    onClick={() => setExportTema(valor)}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      exportTema === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Fondo</span>
+              <div className="flex items-center gap-1">
+                {([[true, 'Con fondo'], [false, 'Transparente']] as const).map(([valor, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={exportFondo === valor}
+                    onClick={() => setExportFondo(valor)}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      exportFondo === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {(['png', 'svg'] as const).map((formato) => (
+                <Button
+                  key={formato}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={grafoBlock.nodos.length === 0 || exportando !== null}
+                  onClick={() => void handleExportar(formato)}
+                  className="h-7 text-xs px-2.5"
+                >
+                  {exportando === formato ? 'Exportando…' : `Descargar ${formato.toUpperCase()}`}
+                </Button>
+              ))}
+            </div>
+            {exportError && (
+              <p role="alert" className="text-[10px] text-destructive">
+                {exportError}
+              </p>
+            )}
           </div>
         </CollapsibleSection>
       )}
@@ -865,6 +1221,32 @@ export function DiagramaProperties({
           />
         </div>
       </div>
+
+      {/* Venn: nombre de cada conjunto (por defecto A, B, C) */}
+      {!grafoBlock && (
+        <CollapsibleSection title="Conjuntos" storageKey="diagrama.conjuntos">
+          <div className="space-y-1.5">
+            {Array.from({ length: (localBlock as DiagramaVennBlock).conjuntos }, (_, i) => {
+              const letra = ['A', 'B', 'C'][i];
+              return (
+                <div key={letra} className="flex items-center gap-2">
+                  <Label htmlFor={`venn-conjunto-${letra}`} className="w-16 shrink-0 text-[11px] text-muted-foreground">
+                    Conjunto {letra}
+                  </Label>
+                  <Input
+                    id={`venn-conjunto-${letra}`}
+                    value={(localBlock as DiagramaVennBlock).nombresConjuntos?.[i] ?? ''}
+                    placeholder={letra}
+                    maxLength={NOMBRE_CONJUNTO_MAX}
+                    onChange={(e) => handleNombreConjunto(i, e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </CollapsibleSection>
+      )}
 
       {/* 3. Gestión de Nodos / Elementos */}
       {grafoBlock && (
@@ -1040,7 +1422,7 @@ export function DiagramaProperties({
 
                   {/* Selector de trazado */}
                   <div className="flex items-center gap-1 pt-0.5">
-                    {(['smoothstep', 'bezier', 'straight'] as const).map((t) => (
+                    {(['smoothstep', 'orthogonal', 'bezier', 'straight'] as const).map((t) => (
                       <button
                         key={t}
                         type="button"
@@ -1052,7 +1434,7 @@ export function DiagramaProperties({
                             : 'border-border/50 text-muted-foreground hover:bg-muted/50',
                         )}
                       >
-                        {t === 'smoothstep' ? 'Curva' : t === 'bezier' ? 'Bézier' : 'Recta'}
+                        {TRAZADO_ARISTA[t]}
                       </button>
                     ))}
                   </div>

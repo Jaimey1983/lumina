@@ -97,6 +97,7 @@ export function LuminaEdge({
   targetPosition,
   style = {},
   markerEnd,
+  markerStart,
   label,
   data,
 }: EdgeProps) {
@@ -123,7 +124,7 @@ export function LuminaEdge({
       targetPosition,
     });
   } else {
-    // smoothstep / orthogonal con esquinas redondeadas
+    // smoothstep: esquinas redondeadas · orthogonal: ángulos rectos (esquinas vivas)
     [edgePath, labelX, labelY] = getSmoothStepPath({
       sourceX,
       sourceY,
@@ -131,7 +132,7 @@ export function LuminaEdge({
       targetX,
       targetY,
       targetPosition,
-      borderRadius: 8,
+      borderRadius: tipoTrazado === 'orthogonal' ? 0 : 8,
     });
   }
 
@@ -139,7 +140,7 @@ export function LuminaEdge({
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath} style={style} markerEnd={markerEnd} />
+      <BaseEdge id={id} path={edgePath} style={style} markerEnd={markerEnd} markerStart={markerStart} />
       {edgeLabel && (
         <EdgeLabelRenderer>
           <div

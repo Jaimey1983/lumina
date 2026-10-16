@@ -6,6 +6,7 @@ import {
   type BlockMarco,
   type DiagramaArista,
   type DiagramaBlock,
+  type DiagramaEstilo,
   type DiagramaGrafoBlock,
   type DiagramaNodo,
   type DiagramaOpciones,
@@ -64,6 +65,67 @@ export function layoutCronologiaLineal(nodos: DiagramaNodo[]): {
     });
   }
   return { nodos: laidOut, aristas };
+}
+
+/** Tamaño de nodo válido: número finito > 0 (redondeado); cualquier otro valor se descarta. */
+function positiveSize(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  const rounded = Math.round(value);
+  return rounded > 0 ? rounded : undefined;
+}
+
+export const NOMBRE_CONJUNTO_MAX = 24;
+
+/** Nombres de conjunto: hasta `conjuntos` textos recortados; sin ninguno, `undefined`. */
+function sanitizeNombresConjuntos(raw: unknown, conjuntos: 2 | 3): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const nombres = Array.from({ length: conjuntos }, (_, i) =>
+    typeof raw[i] === 'string' ? (raw[i] as string).trim().slice(0, NOMBRE_CONJUNTO_MAX) : '',
+  );
+  return nombres.some((n) => n.length > 0) ? nombres : undefined;
+}
+
+const RELLENOS_VALIDOS: readonly string[] = ['contorno', 'tintado', 'solido'];
+const TRAZADOS_VALIDOS: readonly string[] = ['bezier', 'smoothstep', 'straight', 'orthogonal'];
+const PATRONES_VALIDOS: readonly string[] = ['solida', 'discontinua', 'punteada'];
+const GROSOR_MIN = 0.5;
+const GROSOR_MAX = 8;
+
+/**
+ * Sanea `opciones.estilo` (V2.1): cada valor desconocido o fuera de rango se
+ * descarta (cae al default del subtipo); si no queda nada, devuelve `undefined`
+ * para que un bloque sin estilo propio no gane una clave vacía.
+ */
+export function sanitizeEstilo(raw: unknown): DiagramaEstilo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const r = raw as Record<string, unknown>;
+
+  const rawConector = r.conector && typeof r.conector === 'object' ? (r.conector as Record<string, unknown>) : undefined;
+  const conector = rawConector
+    ? {
+        ...(typeof rawConector.trazado === 'string' && TRAZADOS_VALIDOS.includes(rawConector.trazado)
+          ? { trazado: rawConector.trazado as NonNullable<DiagramaEstilo['conector']>['trazado'] }
+          : {}),
+        ...(typeof rawConector.grosor === 'number' &&
+        Number.isFinite(rawConector.grosor) &&
+        rawConector.grosor >= GROSOR_MIN &&
+        rawConector.grosor <= GROSOR_MAX
+          ? { grosor: rawConector.grosor }
+          : {}),
+        ...(typeof rawConector.patron === 'string' && PATRONES_VALIDOS.includes(rawConector.patron)
+          ? { patron: rawConector.patron as NonNullable<DiagramaEstilo['conector']>['patron'] }
+          : {}),
+      }
+    : undefined;
+
+  const estilo: DiagramaEstilo = {
+    ...(typeof r.relleno === 'string' && RELLENOS_VALIDOS.includes(r.relleno)
+      ? { relleno: r.relleno as DiagramaEstilo['relleno'] }
+      : {}),
+    ...(typeof r.sombra === 'boolean' ? { sombra: r.sombra } : {}),
+    ...(conector && Object.keys(conector).length > 0 ? { conector } : {}),
+  };
+  return Object.keys(estilo).length > 0 ? estilo : undefined;
 }
 
 function sanitizeNodos(raw: unknown): DiagramaNodo[] {
@@ -129,12 +191,17 @@ function sanitizeNodos(raw: unknown): DiagramaNodo[] {
         ? (item as { imagen: string }).imagen
         : undefined;
 
+    const ancho = positiveSize((item as { ancho?: unknown }).ancho);
+    const alto = positiveSize((item as { alto?: unknown }).alto);
+
     cleaned.push({
       id,
       etiqueta,
       ...(cuerpo ? { cuerpo } : {}),
       x,
       y,
+      ...(ancho !== undefined ? { ancho } : {}),
+      ...(alto !== undefined ? { alto } : {}),
       ...(forma ? { forma } : {}),
       ...(icono ? { icono } : {}),
       ...(imagen ? { imagen } : {}),
@@ -271,6 +338,47 @@ function sanitizeVennElementos(
 /**
  * Normaliza un bloque `DiagramaBlock` garantizando contratos canónicos v1.
  */
+/** Sanea `opciones` (grafo y Venn comparten el mismo contrato; cada valor inválido se descarta). */
+export function sanitizeOpciones(input: unknown): DiagramaOpciones | undefined {
+  const rawOpciones =
+    input && typeof input === 'object' ? (input as Record<string, unknown>) : undefined;
+  return rawOpciones
+    ? {
+        ...(typeof rawOpciones.paleta === 'string' &&
+        [
+          'editorial',
+          'tecnologico',
+          'menta',
+          'pizarra',
+          'vibrante',
+          'calido',
+          'oceano',
+          'aurora',
+          'monocromatico',
+          'pastel',
+        ].includes(rawOpciones.paleta)
+          ? { paleta: rawOpciones.paleta as DiagramaPaletaId }
+          : {}),
+        ...(typeof rawOpciones.fondo === 'string' &&
+        (rawOpciones.fondo === 'puntos' || rawOpciones.fondo === 'cuadricula' || rawOpciones.fondo === 'vacio')
+          ? { fondo: rawOpciones.fondo }
+          : {}),
+        ...(typeof rawOpciones.direccionLayout === 'string' &&
+        ['TB', 'LR', 'BT', 'RL', 'radial'].includes(rawOpciones.direccionLayout)
+          ? { direccionLayout: rawOpciones.direccionLayout as DiagramaOpciones['direccionLayout'] }
+          : {}),
+        ...(typeof rawOpciones.densidad === 'string' &&
+        (rawOpciones.densidad === 'compacta' || rawOpciones.densidad === 'normal' || rawOpciones.densidad === 'amplia')
+          ? { densidad: rawOpciones.densidad }
+          : {}),
+        ...(() => {
+          const estilo = sanitizeEstilo(rawOpciones.estilo);
+          return estilo ? { estilo } : {};
+        })(),
+      }
+    : undefined;
+}
+
 export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
   const fb = BLOCK_FALLBACKS.diagrama;
   const raw = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
@@ -302,6 +410,8 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
     const allowed = validRegionIds(conjuntos);
     const regiones = regionesForConjuntos(conjuntos);
     const elementos = sanitizeVennElementos(raw.elementos, allowed);
+    const nombresConjuntos = sanitizeNombresConjuntos(raw.nombresConjuntos, conjuntos);
+    const opcionesVenn = sanitizeOpciones(raw.opciones);
 
     return {
       id,
@@ -317,8 +427,10 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
       alto,
       zIndex,
       conjuntos,
+      ...(nombresConjuntos ? { nombresConjuntos } : {}),
       regiones,
       elementos,
+      ...(opcionesVenn && Object.keys(opcionesVenn).length > 0 ? { opciones: opcionesVenn } : {}),
     };
   }
 
@@ -333,45 +445,7 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
   const aristas = sanitizeAristas(raw.aristas, validNodeIds);
 
   // Sanitizar opciones aditivas del diagrama
-  const rawOpciones = raw.opciones && typeof raw.opciones === 'object' ? (raw.opciones as Record<string, unknown>) : undefined;
-  const opciones: DiagramaOpciones | undefined = rawOpciones
-    ? {
-        ...(typeof rawOpciones.tema === 'string' &&
-        (rawOpciones.tema === 'auto' || rawOpciones.tema === 'claro' || rawOpciones.tema === 'oscuro')
-          ? { tema: rawOpciones.tema }
-          : {}),
-        ...(typeof rawOpciones.paleta === 'string' &&
-        [
-          'editorial',
-          'tecnologico',
-          'menta',
-          'pizarra',
-          'vibrante',
-          'calido',
-          'oceano',
-          'aurora',
-          'monocromatico',
-          'pastel',
-        ].includes(rawOpciones.paleta)
-          ? { paleta: rawOpciones.paleta as DiagramaPaletaId }
-          : {}),
-        ...(typeof rawOpciones.fondo === 'string' &&
-        (rawOpciones.fondo === 'puntos' || rawOpciones.fondo === 'cuadricula' || rawOpciones.fondo === 'vacio')
-          ? { fondo: rawOpciones.fondo }
-          : {}),
-        ...(typeof rawOpciones.direccionLayout === 'string' &&
-        ['TB', 'LR', 'BT', 'RL', 'radial'].includes(rawOpciones.direccionLayout)
-          ? { direccionLayout: rawOpciones.direccionLayout as DiagramaOpciones['direccionLayout'] }
-          : {}),
-        ...(typeof rawOpciones.densidad === 'string' &&
-        (rawOpciones.densidad === 'compacta' || rawOpciones.densidad === 'normal' || rawOpciones.densidad === 'amplia')
-          ? { densidad: rawOpciones.densidad }
-          : {}),
-        ...(typeof rawOpciones.animacionEntrada === 'boolean'
-          ? { animacionEntrada: rawOpciones.animacionEntrada }
-          : {}),
-      }
-    : undefined;
+  const opciones = sanitizeOpciones(raw.opciones);
 
   // Cronología: writer canónico de la invariante lineal. Ignora `raw.aristas`
   // (la cadena es autogenerada) y fija `layout: 'lineal'`.
