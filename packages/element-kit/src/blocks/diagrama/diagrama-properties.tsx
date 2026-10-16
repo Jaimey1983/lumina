@@ -576,32 +576,6 @@ export function DiagramaProperties({
 
   return (
     <div className="space-y-5 text-xs">
-      {/* Venn: nombre de cada conjunto (por defecto A, B, C) */}
-      {!grafoBlock && (
-        <CollapsibleSection title="Conjuntos" storageKey="diagrama.conjuntos">
-          <div className="space-y-1.5">
-            {Array.from({ length: (localBlock as DiagramaVennBlock).conjuntos }, (_, i) => {
-              const letra = ['A', 'B', 'C'][i];
-              return (
-                <div key={letra} className="flex items-center gap-2">
-                  <Label htmlFor={`venn-conjunto-${letra}`} className="w-16 shrink-0 text-[11px] text-muted-foreground">
-                    Conjunto {letra}
-                  </Label>
-                  <Input
-                    id={`venn-conjunto-${letra}`}
-                    value={(localBlock as DiagramaVennBlock).nombresConjuntos?.[i] ?? ''}
-                    placeholder={letra}
-                    maxLength={NOMBRE_CONJUNTO_MAX}
-                    onChange={(e) => handleNombreConjunto(i, e.target.value)}
-                    className="h-7 text-xs"
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </CollapsibleSection>
-      )}
-
       {/* Auto-Organizar con Layout Inteligente */}
       {grafoBlock && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 flex items-center justify-between shadow-2xs">
@@ -867,6 +841,32 @@ export function DiagramaProperties({
           />
         </div>
       </div>
+
+      {/* Venn: nombre de cada conjunto (por defecto A, B, C) */}
+      {!grafoBlock && (
+        <CollapsibleSection title="Conjuntos" storageKey="diagrama.conjuntos">
+          <div className="space-y-1.5">
+            {Array.from({ length: (localBlock as DiagramaVennBlock).conjuntos }, (_, i) => {
+              const letra = ['A', 'B', 'C'][i];
+              return (
+                <div key={letra} className="flex items-center gap-2">
+                  <Label htmlFor={`venn-conjunto-${letra}`} className="w-16 shrink-0 text-[11px] text-muted-foreground">
+                    Conjunto {letra}
+                  </Label>
+                  <Input
+                    id={`venn-conjunto-${letra}`}
+                    value={(localBlock as DiagramaVennBlock).nombresConjuntos?.[i] ?? ''}
+                    placeholder={letra}
+                    maxLength={NOMBRE_CONJUNTO_MAX}
+                    onChange={(e) => handleNombreConjunto(i, e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </CollapsibleSection>
+      )}
 
       {/* 3. Gestión de Nodos / Elementos */}
       {grafoBlock && (
