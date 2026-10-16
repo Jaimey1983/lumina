@@ -120,7 +120,11 @@ describe('DiagramaProperties — sin plantillas duplicadas y panel colapsable (r
       const base = createDefaultMapaMentalBlock({ id: 'b-sin' }) as DiagramaGrafoBlock;
       const sinDecision: DiagramaGrafoBlock = {
         ...base,
-        aristas: base.aristas.map(({ dirigida: _d, ...resto }) => resto),
+        aristas: base.aristas.map((a) => {
+          const sinDecision = { ...a };
+          delete sinDecision.dirigida;
+          return sinDecision;
+        }),
       };
       const applyNow = vi.fn(async () => undefined);
       render(<DiagramaProperties block={sinDecision} applyNow={applyNow} />);
