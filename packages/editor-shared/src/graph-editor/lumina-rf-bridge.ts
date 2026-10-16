@@ -72,6 +72,9 @@ export function graphNodeToRF(node: GraphNode): RFGraphNode {
       ...(node.meta?.imagen ? { imagen: String(node.meta.imagen) } : {}),
       ...(typeof node.meta?.ancho === 'number' ? { ancho: node.meta.ancho } : {}),
       ...(typeof node.meta?.alto === 'number' ? { alto: node.meta.alto } : {}),
+      ...(node.meta?.estiloVisual && typeof node.meta.estiloVisual === 'object'
+        ? { estiloVisual: node.meta.estiloVisual }
+        : {}),
       ...(node.meta?.blockId ? { blockId: String(node.meta.blockId) } : {}),
       ...(node.meta?.isRoot !== undefined ? { isRoot: Boolean(node.meta.isRoot) } : {}),
       ...(node.meta?.subtipo ? { subtipo: String(node.meta.subtipo) } : {}),

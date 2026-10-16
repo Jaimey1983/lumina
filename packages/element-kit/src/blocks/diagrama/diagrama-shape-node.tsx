@@ -2,10 +2,24 @@
 
 import React, { useEffect, useState } from 'react';
 import { Handle, Position, NodeToolbar, type NodeProps } from '@lumina/editor-shared/graph-editor';
-import type { DiagramaNodoForma } from '@lumina/types/slide';
+import type { DiagramaNodoForma, DiagramaRelleno } from '@lumina/types/slide';
 import { cn } from '@lumina/ui/lib/utils';
 import { Edit2, Plus, Trash2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+
+/**
+ * Estilo explícito del diagrama que llega al nodo (V2.2). Solo existe cuando el
+ * bloque define `opciones.estilo.relleno` o `sombra: false`; sin él, el nodo se
+ * dibuja exactamente como siempre.
+ */
+export interface EstiloVisualNodo {
+  relleno?: DiagramaRelleno;
+  /** Fondo CSS del nodo (de `resolverEstiloNodo`). */
+  rellenoCss?: string;
+  /** Texto con contraste; solo se aplica sobre `solido`. */
+  colorTexto?: string;
+  sinSombra?: boolean;
+}
 
 export interface DiagramaShapeNodeData {
   label?: string;
@@ -19,6 +33,7 @@ export interface DiagramaShapeNodeData {
   isRoot?: boolean;
   subtipo?: string;
   blockId?: string;
+  estiloVisual?: EstiloVisualNodo;
   [key: string]: unknown;
 }
 
@@ -46,9 +61,11 @@ function DynamicIcon({ name, className }: { name?: string; className?: string })
   return React.createElement(IconComponent, { className });
 }
 
-export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
+function DiagramaShapeNodeBody({ id, data, selected }: NodeProps) {
   const nodeData = data as DiagramaShapeNodeData;
   const accent = nodeData.accent ?? 'var(--primary, #2563EB)';
+  const nodoBg = nodeData.estiloVisual?.rellenoCss;
+  const sinSombra = nodeData.estiloVisual?.sinSombra === true;
   const forma = nodeData.forma ?? (nodeData.isRoot ? 'root' : nodeData.subtipo === 'mapa_mental' ? 'chip' : 'rounded');
 
   // Ancho guardado en el bloque (V1.1): si existe, manda sobre los min/max de la forma.
@@ -215,7 +232,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       <div
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
-          'relative rounded-xl px-4 py-2.5 shadow-md border-2 bg-card text-card-foreground transition-all min-w-[150px] max-w-[220px]',
+          'relative rounded-xl px-4 py-2.5 shadow-md border-2 bg-[var(--nodo-bg,var(--card))] text-card-foreground transition-all min-w-[150px] max-w-[220px]',
           (selected || nodeData.highlighted) && 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg',
         )}
         style={{ borderColor: accent, ...customSizeStyle }}
@@ -249,7 +266,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       <div
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
-          'relative rounded-full px-3 py-1.5 shadow-2xs border bg-card text-card-foreground transition-all flex items-center gap-1.5 min-w-[100px] max-w-[180px]',
+          'relative rounded-full px-3 py-1.5 shadow-2xs border bg-[var(--nodo-bg,var(--card))] text-card-foreground transition-all flex items-center gap-1.5 min-w-[100px] max-w-[180px]',
           selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
         )}
         style={{ borderColor: accent, borderLeftWidth: 4, ...customSizeStyle }}
@@ -287,13 +304,14 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         <svg
           viewBox="0 0 120 90"
           className={cn(
-            'absolute inset-0 w-full h-full drop-shadow-2xs',
+            'absolute inset-0 w-full h-full',
+            !sinSombra && 'drop-shadow-2xs',
             selected && 'filter drop-shadow-[0_0_4px_var(--primary)]',
           )}
         >
           <polygon
             points="60,2 118,45 60,88 2,45"
-            className="fill-card stroke-2"
+            className="fill-[var(--nodo-bg,var(--card))] stroke-2"
             style={{ stroke: accent }}
           />
         </svg>
@@ -321,7 +339,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       <div
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
-          'relative rounded-full px-4 py-1.5 shadow-xs border-2 bg-card text-card-foreground transition-all flex items-center justify-center gap-1.5 min-w-[110px]',
+          'relative rounded-full px-4 py-1.5 shadow-xs border-2 bg-[var(--nodo-bg,var(--card))] text-card-foreground transition-all flex items-center justify-center gap-1.5 min-w-[110px]',
           selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
         )}
         style={{ borderColor: accent }}
@@ -346,7 +364,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       <div
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
-          'relative rounded border-2 bg-card text-card-foreground shadow-xs transition-all min-w-[130px] p-2.5 -skew-x-12',
+          'relative rounded border-2 bg-[var(--nodo-bg,var(--card))] text-card-foreground shadow-xs transition-all min-w-[130px] p-2.5 -skew-x-12',
           selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
         )}
         style={{ borderColor: accent }}
@@ -377,7 +395,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       <div
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
-          'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all min-w-[150px] p-2 flex items-center gap-2.5',
+          'relative rounded-lg border-2 bg-[var(--nodo-bg,var(--card))] text-card-foreground shadow-xs transition-all min-w-[150px] p-2 flex items-center gap-2.5',
           selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
         )}
         style={{ borderColor: accent }}
@@ -424,14 +442,14 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       <div
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
-          'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
+          'relative rounded-lg border-2 bg-[var(--nodo-bg,var(--card))] text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
           selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
         )}
         style={{
           borderColor: accent,
           width: `${customWidth}px`,
           clipPath: 'polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)',
-          backgroundColor: `color-mix(in srgb, ${accent} 12%, var(--card, white))`,
+          backgroundColor: nodoBg ?? `color-mix(in srgb, ${accent} 12%, var(--card, white))`,
         }}
       >
         {toolbar}
@@ -461,14 +479,14 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       <div
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
-          'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
+          'relative rounded-lg border-2 bg-[var(--nodo-bg,var(--card))] text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
           selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
         )}
         style={{
           borderColor: accent,
           width: `${customWidth}px`,
           clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)',
-          backgroundColor: `color-mix(in srgb, ${accent} 18%, var(--card, white))`,
+          backgroundColor: nodoBg ?? `color-mix(in srgb, ${accent} 18%, var(--card, white))`,
         }}
       >
         {toolbar}
@@ -498,14 +516,14 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       <div
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
-          'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
+          'relative rounded-lg border-2 bg-[var(--nodo-bg,var(--card))] text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
           selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
         )}
         style={{
           borderColor: accent,
           width: `${customWidth}px`,
           clipPath: 'polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%)',
-          backgroundColor: `color-mix(in srgb, ${accent} 12%, var(--card, white))`,
+          backgroundColor: nodoBg ?? `color-mix(in srgb, ${accent} 12%, var(--card, white))`,
         }}
       >
         {toolbar}
@@ -542,7 +560,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
           borderColor: accent,
           width: `${customWidth}px`,
           height: `${customWidth}px`,
-          backgroundColor: `color-mix(in srgb, ${accent} 8%, var(--card, white))`,
+          backgroundColor: nodoBg ?? `color-mix(in srgb, ${accent} 8%, var(--card, white))`,
         }}
       >
         {toolbar}
@@ -579,11 +597,12 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
           viewBox="0 0 140 90"
           preserveAspectRatio="none"
           className={cn(
-            'absolute inset-0 w-full h-full drop-shadow-2xs',
+            'absolute inset-0 w-full h-full',
+            !sinSombra && 'drop-shadow-2xs',
             selected && 'filter drop-shadow-[0_0_4px_var(--primary)]',
           )}
         >
-          <ellipse cx="70" cy="45" rx="68" ry="43" className="fill-card stroke-2" style={{ stroke: accent }} />
+          <ellipse cx="70" cy="45" rx="68" ry="43" className="fill-[var(--nodo-bg,var(--card))] stroke-2" style={{ stroke: accent }} />
         </svg>
         <div className="relative z-10 flex flex-col items-center justify-center p-2 text-center" style={{ maxWidth: '70%' }}>
           {isEditing ? (
@@ -617,11 +636,12 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
           viewBox="0 0 140 90"
           preserveAspectRatio="none"
           className={cn(
-            'absolute inset-0 w-full h-full drop-shadow-2xs',
+            'absolute inset-0 w-full h-full',
+            !sinSombra && 'drop-shadow-2xs',
             selected && 'filter drop-shadow-[0_0_4px_var(--primary)]',
           )}
         >
-          <polygon points="22,2 118,2 138,45 118,88 22,88 2,45" className="fill-card stroke-2" style={{ stroke: accent }} />
+          <polygon points="22,2 118,2 138,45 118,88 22,88 2,45" className="fill-[var(--nodo-bg,var(--card))] stroke-2" style={{ stroke: accent }} />
         </svg>
         <div className="relative z-10 flex flex-col items-center justify-center p-2 text-center" style={{ maxWidth: '72%' }}>
           {isEditing ? (
@@ -646,7 +666,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
     <div
       onDoubleClick={() => setIsEditing(true)}
       className={cn(
-        'relative border-2 bg-card text-card-foreground shadow-xs transition-shadow min-w-[130px] max-w-[200px] p-2',
+        'relative border-2 bg-[var(--nodo-bg,var(--card))] text-card-foreground shadow-xs transition-shadow min-w-[130px] max-w-[200px] p-2',
         forma === 'rect' ? 'rounded-none' : 'rounded-lg',
         selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
@@ -669,6 +689,32 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
           {nodeData.body}
         </span>
       )}
+    </div>
+  );
+}
+
+/** Variables CSS del estilo explícito; los nodos las leen con `var(--nodo-bg, var(--card))` y `--foreground`. */
+export function varsEstiloVisual(vis: EstiloVisualNodo | undefined): React.CSSProperties | undefined {
+  if (!vis) return undefined;
+  const vars: Record<string, string> = {};
+  if (vis.rellenoCss) vars['--nodo-bg'] = vis.rellenoCss;
+  if (vis.relleno === 'solido' && vis.colorTexto) {
+    vars['--foreground'] = vis.colorTexto;
+    vars['--card-foreground'] = vis.colorTexto;
+    vars['--muted-foreground'] = `color-mix(in srgb, ${vis.colorTexto} 78%, transparent)`;
+  }
+  return Object.keys(vars).length > 0 ? (vars as React.CSSProperties) : undefined;
+}
+
+export function DiagramaShapeNode(props: NodeProps) {
+  const vis = (props.data as DiagramaShapeNodeData).estiloVisual;
+  const body = <DiagramaShapeNodeBody {...props} />;
+  const vars = varsEstiloVisual(vis);
+  if (!vars && !vis?.sinSombra) return body;
+  // `contents`: el contenedor no genera caja, solo hereda variables y quita sombras.
+  return (
+    <div className={cn('contents', vis?.sinSombra && '[&_*]:!shadow-none')} style={vars}>
+      {body}
     </div>
   );
 }

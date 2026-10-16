@@ -445,4 +445,41 @@ describe('cronología pedagógica (layout lineal restringido)', () => {
       }
     });
   });
+
+  describe('estiloVisual en el puente (V2.2)', () => {
+    function modelo(opciones?: unknown) {
+      const block = normalizeDiagramaBlock({
+        id: 'b-vis',
+        tipo: 'diagrama',
+        subtipo: 'flujo',
+        nodos: [{ id: 'a', etiqueta: 'A', x: 0, y: 0, estilo: { color: '#1E3A8A' } }],
+        aristas: [],
+        ...(opciones ? { opciones } : {}),
+      }) as DiagramaGrafoBlock;
+      return diagramaToGraphModel(block);
+    }
+
+    it('sin `opciones.estilo` el nodo no recibe estiloVisual (aspecto de siempre)', () => {
+      expect(modelo().nodes[0].meta).not.toHaveProperty('estiloVisual');
+      expect(modelo({ paleta: 'menta' }).nodes[0].meta).not.toHaveProperty('estiloVisual');
+      // El conector no es asunto del nodo (V2.3).
+      expect(modelo({ estilo: { conector: { grosor: 3 } } }).nodes[0].meta).not.toHaveProperty('estiloVisual');
+    });
+
+    it('con `relleno` explícito viaja el fondo resuelto con el acento del nodo', () => {
+      const vis = modelo({ estilo: { relleno: 'solido' } }).nodes[0].meta?.estiloVisual;
+      expect(vis).toEqual({ relleno: 'solido', rellenoCss: '#1E3A8A', colorTexto: '#ffffff' });
+    });
+
+    it('`sombra: false` viaja sola, sin pisar el fondo de la forma', () => {
+      expect(modelo({ estilo: { sombra: false } }).nodes[0].meta?.estiloVisual).toEqual({ sinSombra: true });
+    });
+
+    it('relleno y sombra juntos', () => {
+      expect(modelo({ estilo: { relleno: 'tintado', sombra: false } }).nodes[0].meta?.estiloVisual).toMatchObject({
+        relleno: 'tintado',
+        sinSombra: true,
+      });
+    });
+  });
 });

@@ -49,6 +49,13 @@ describe('graphNodeToRF', () => {
     expect(sinTamano.data).not.toHaveProperty('alto');
   });
 
+  it('copia `meta.estiloVisual` (objeto) a `data` y no otros tipos (V2.2)', () => {
+    const estiloVisual = { relleno: 'solido', rellenoCss: '#123456' };
+    expect(graphNodeToRF(node({ meta: { estiloVisual } })).data).toMatchObject({ estiloVisual });
+    expect(graphNodeToRF(node({ meta: { estiloVisual: 'solido' } })).data).not.toHaveProperty('estiloVisual');
+    expect(graphNodeToRF(node()).data).not.toHaveProperty('estiloVisual');
+  });
+
   it('no arrastra `meta` del dominio a `data` de React Flow', () => {
     const rf = graphNodeToRF(node({ meta: { tipo: 'decision', opciones: [1, 2] } }));
     expect(rf.data).not.toHaveProperty('meta');

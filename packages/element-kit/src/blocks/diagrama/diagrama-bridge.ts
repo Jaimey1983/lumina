@@ -3,11 +3,15 @@
 
 import type { DiagramaArista, DiagramaGrafoBlock, DiagramaNodo } from '@lumina/types/slide';
 import type { GraphEdge, GraphModel, GraphNode } from '@lumina/editor-shared/graph-editor';
+import { resolverEstiloDiagrama, resolverEstiloNodo } from './diagrama-temas.js';
+import type { EstiloVisualNodo } from './diagrama-shape-node.js';
 
 /**
  * Convierte un bloque DiagramaGrafoBlock al modelo agnóstico GraphModel de graph-core.
  */
 export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
+  const estiloExplicito = block.opciones?.estilo;
+  const estiloResuelto = resolverEstiloDiagrama(block.opciones, block.subtipo);
   const nodes: GraphNode[] = block.nodos.map((n, idx) => {
     const isRoot = idx === 0 || n.estilo?.destacado === true;
     const accent =
@@ -16,6 +20,18 @@ export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
         : isRoot
           ? '#2563EB' // Azul principal para raíz
           : '#0D9488'; // Teal para ramas
+
+    // Solo con estilo explícito: sin él, cada forma conserva su aspecto propio.
+    let estiloVisual: EstiloVisualNodo | undefined;
+    if (estiloExplicito?.relleno || estiloExplicito?.sombra === false) {
+      const nodo = resolverEstiloNodo(estiloResuelto, accent);
+      estiloVisual = {
+        ...(estiloExplicito.relleno
+          ? { relleno: nodo.relleno, rellenoCss: nodo.rellenoCss, colorTexto: nodo.colorTexto }
+          : {}),
+        ...(estiloExplicito.sombra === false ? { sinSombra: true } : {}),
+      };
+    }
 
     return {
       id: n.id,
@@ -35,6 +51,7 @@ export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
         alto: n.alto,
         subtipo: block.subtipo,
         isRoot,
+        ...(estiloVisual ? { estiloVisual } : {}),
         nodeType: 'diagramaShapeNode',
       },
     };
