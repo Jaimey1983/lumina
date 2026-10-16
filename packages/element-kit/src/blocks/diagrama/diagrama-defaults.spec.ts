@@ -20,6 +20,7 @@ import {
 } from './diagrama-defaults.js';
 import {
   applyGraphModelToDiagrama,
+  COLOR_ARISTA_TEMA,
   diagramaToGraphModel,
 } from './diagrama-bridge.js';
 import { graphNodeToRF } from '@lumina/editor-shared/graph-editor';
@@ -480,6 +481,108 @@ describe('cronología pedagógica (layout lineal restringido)', () => {
         relleno: 'tintado',
         sinSombra: true,
       });
+    });
+  });
+
+  describe('aristas por tema (V2.3)', () => {
+    function bloqueConAristas(opciones?: unknown): DiagramaGrafoBlock {
+      return normalizeDiagramaBlock({
+        id: 'b-ar',
+        tipo: 'diagrama',
+        subtipo: 'flujo',
+        nodos: [
+          { id: 'a', etiqueta: 'A', x: 0, y: 0 },
+          { id: 'b', etiqueta: 'B', x: 150, y: 0 },
+          { id: 'c', etiqueta: 'C', x: 300, y: 0 },
+        ],
+        aristas: [
+          { id: 'e1', desdeId: 'a', haciaId: 'b' },
+          { id: 'e2', desdeId: 'b', haciaId: 'c', color: '#DC2626', grosor: 4, tipoTrazado: 'straight', estiloLinea: 'punteada' },
+        ],
+        ...(opciones ? { opciones } : {}),
+      }) as DiagramaGrafoBlock;
+    }
+
+    it('sin color propio la arista usa el color del tema (no un hex fijo) y respeta el que tenga', () => {
+      const { edges } = diagramaToGraphModel(bloqueConAristas());
+      expect(edges[0].meta?.color).toBe(COLOR_ARISTA_TEMA);
+      expect(COLOR_ARISTA_TEMA).toMatch(/^var\(--[a-z-]+\)$/); // sin espacios: forma parte del id del marcador
+      expect(edges[1].meta?.color).toBe('#DC2626');
+    });
+
+    it('el conector del estilo del diagrama es el default; lo que declara la arista gana', () => {
+      const { edges } = diagramaToGraphModel(
+        bloqueConAristas({ estilo: { conector: { trazado: 'orthogonal', grosor: 3, patron: 'discontinua' } } }),
+      );
+      expect(edges[0].meta).toMatchObject({ tipoTrazado: 'orthogonal', grosor: 3, estiloLinea: 'discontinua' });
+      expect(edges[1].meta).toMatchObject({ tipoTrazado: 'straight', grosor: 4, estiloLinea: 'punteada' });
+    });
+
+    it('sin estilo, trazado/grosor/patrón por defecto son los de siempre', () => {
+      const { edges } = diagramaToGraphModel(bloqueConAristas());
+      expect(edges[0].meta).toMatchObject({ tipoTrazado: 'smoothstep', grosor: 1.5, estiloLinea: 'solida' });
+    });
+
+    it('al volver del lienzo no se "hornean" los valores resueltos en el bloque (ida y vuelta)', () => {
+      const block = bloqueConAristas({ estilo: { conector: { grosor: 3 } } });
+      const next = applyGraphModelToDiagrama(block, diagramaToGraphModel(block));
+      for (const [i, a] of next.aristas.entries()) {
+        expect(a.color).toBe(block.aristas[i].color);
+        expect(a.grosor).toBe(block.aristas[i].grosor);
+        expect(a.tipoTrazado).toBe(block.aristas[i].tipoTrazado);
+        expect(a.estiloLinea).toBe(block.aristas[i].estiloLinea);
+      }
+      expect(next.aristas[0].color).toBeUndefined();
+      expect(next.aristas[0].grosor).toBeUndefined();
+    });
+
+    it('una arista nueva (sin original) toma lo que traiga `meta`, salvo el color-de-tema', () => {
+      const block = bloqueConAristas();
+      const model = diagramaToGraphModel(block);
+      const conNueva = {
+        ...model,
+        edges: [
+          ...model.edges,
+          { id: 'nueva', source: 'a', target: 'c', meta: { color: COLOR_ARISTA_TEMA, grosor: 2 } },
+          { id: 'nueva2', source: 'a', target: 'c', meta: { color: '#16A34A' } },
+        ],
+      };
+      const next = applyGraphModelToDiagrama(block, conNueva);
+      expect(next.aristas.find((a) => a.id === 'nueva')).toMatchObject({ grosor: 2 });
+      expect(next.aristas.find((a) => a.id === 'nueva')?.color).toBeUndefined();
+      expect(next.aristas.find((a) => a.id === 'nueva2')?.color).toBe('#16A34A');
+    });
+  });
+
+  describe('Venn: nombres de conjunto y paleta (V2.3)', () => {
+    const base = { id: 'v', tipo: 'diagrama', subtipo: 'venn', elementos: [] };
+
+    it('sin nombres ni opciones el bloque no gana claves nuevas', () => {
+      const v = normalizeDiagramaBlock({ ...base, conjuntos: 2 }) as DiagramaVennBlock;
+      expect(v).not.toHaveProperty('nombresConjuntos');
+      expect(v).not.toHaveProperty('opciones');
+    });
+
+    it('conserva los nombres recortados a los conjuntos que hay y a 24 caracteres', () => {
+      const v = normalizeDiagramaBlock({
+        ...base,
+        conjuntos: 2,
+        nombresConjuntos: ['  Mamíferos  ', 'x'.repeat(40), 'sobra'],
+      }) as DiagramaVennBlock;
+      expect(v.nombresConjuntos).toEqual(['Mamíferos', 'x'.repeat(24)]);
+    });
+
+    it('descarta nombres inválidos; si no queda ninguno, omite el campo', () => {
+      const v = normalizeDiagramaBlock({ ...base, conjuntos: 3, nombresConjuntos: [1, null, '   '] }) as DiagramaVennBlock;
+      expect(v).not.toHaveProperty('nombresConjuntos');
+      const parcial = normalizeDiagramaBlock({ ...base, conjuntos: 3, nombresConjuntos: [null, 'B'] }) as DiagramaVennBlock;
+      expect(parcial.nombresConjuntos).toEqual(['', 'B', '']);
+      expect((normalizeDiagramaBlock({ ...base, conjuntos: 3, nombresConjuntos: 'A' }) as DiagramaVennBlock)).not.toHaveProperty('nombresConjuntos');
+    });
+
+    it('conserva una paleta válida y descarta una inválida', () => {
+      expect((normalizeDiagramaBlock({ ...base, conjuntos: 2, opciones: { paleta: 'menta' } }) as DiagramaVennBlock).opciones).toEqual({ paleta: 'menta' });
+      expect(normalizeDiagramaBlock({ ...base, conjuntos: 2, opciones: { paleta: 'neon' } })).not.toHaveProperty('opciones');
     });
   });
 });

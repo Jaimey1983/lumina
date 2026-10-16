@@ -21,21 +21,20 @@ export interface VennCircle {
   cx: number;
   cy: number;
   r: number;
-  fill: string;
 }
 
 /** viewBox 0 0 100 100 */
 export function vennCircles(conjuntos: 2 | 3): VennCircle[] {
   if (conjuntos === 2) {
     return [
-      { id: 'A', cx: 38, cy: 48, r: 28, fill: 'rgba(37, 99, 235, 0.22)' },
-      { id: 'B', cx: 62, cy: 48, r: 28, fill: 'rgba(16, 185, 129, 0.22)' },
+      { id: 'A', cx: 38, cy: 48, r: 28 },
+      { id: 'B', cx: 62, cy: 48, r: 28 },
     ];
   }
   return [
-    { id: 'A', cx: 38, cy: 38, r: 26, fill: 'rgba(37, 99, 235, 0.2)' },
-    { id: 'B', cx: 62, cy: 38, r: 26, fill: 'rgba(16, 185, 129, 0.2)' },
-    { id: 'C', cx: 50, cy: 62, r: 26, fill: 'rgba(245, 158, 11, 0.22)' },
+    { id: 'A', cx: 38, cy: 38, r: 26 },
+    { id: 'B', cx: 62, cy: 38, r: 26 },
+    { id: 'C', cx: 50, cy: 62, r: 26 },
   ];
 }
 

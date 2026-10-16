@@ -31,8 +31,10 @@ import type {
   DiagramaNodoForma,
   DiagramaPaletaId,
   DiagramaSubtipo,
+  DiagramaVennBlock,
 } from '@lumina/types/slide';
 import { aplicarDagre } from './diagrama-dagre.js';
+import { NOMBRE_CONJUNTO_MAX } from './diagrama-defaults.js';
 import { layoutCebolla, layoutEmbudo, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
@@ -246,6 +248,16 @@ export function DiagramaProperties({
       }),
       true,
     );
+  };
+
+  // ─── Nombres de los conjuntos (Venn) ───
+  const handleNombreConjunto = (indice: number, nombre: string) => {
+    if (grafoBlock) return;
+    const venn = localBlock as DiagramaVennBlock;
+    const nombresConjuntos = Array.from({ length: venn.conjuntos }, (_, i) =>
+      i === indice ? nombre : (venn.nombresConjuntos?.[i] ?? ''),
+    );
+    commitChange({ ...venn, nombresConjuntos });
   };
 
   // ─── Título y Accesibilidad ───
@@ -564,6 +576,32 @@ export function DiagramaProperties({
 
   return (
     <div className="space-y-5 text-xs">
+      {/* Venn: nombre de cada conjunto (por defecto A, B, C) */}
+      {!grafoBlock && (
+        <CollapsibleSection title="Conjuntos" storageKey="diagrama.conjuntos">
+          <div className="space-y-1.5">
+            {Array.from({ length: (localBlock as DiagramaVennBlock).conjuntos }, (_, i) => {
+              const letra = ['A', 'B', 'C'][i];
+              return (
+                <div key={letra} className="flex items-center gap-2">
+                  <Label htmlFor={`venn-conjunto-${letra}`} className="w-16 shrink-0 text-[11px] text-muted-foreground">
+                    Conjunto {letra}
+                  </Label>
+                  <Input
+                    id={`venn-conjunto-${letra}`}
+                    value={(localBlock as DiagramaVennBlock).nombresConjuntos?.[i] ?? ''}
+                    placeholder={letra}
+                    maxLength={NOMBRE_CONJUNTO_MAX}
+                    onChange={(e) => handleNombreConjunto(i, e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </CollapsibleSection>
+      )}
+
       {/* Auto-Organizar con Layout Inteligente */}
       {grafoBlock && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 flex items-center justify-between shadow-2xs">

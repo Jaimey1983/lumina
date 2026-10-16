@@ -74,6 +74,17 @@ function positiveSize(value: unknown): number | undefined {
   return rounded > 0 ? rounded : undefined;
 }
 
+export const NOMBRE_CONJUNTO_MAX = 24;
+
+/** Nombres de conjunto: hasta `conjuntos` textos recortados; sin ninguno, `undefined`. */
+function sanitizeNombresConjuntos(raw: unknown, conjuntos: 2 | 3): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const nombres = Array.from({ length: conjuntos }, (_, i) =>
+    typeof raw[i] === 'string' ? (raw[i] as string).trim().slice(0, NOMBRE_CONJUNTO_MAX) : '',
+  );
+  return nombres.some((n) => n.length > 0) ? nombres : undefined;
+}
+
 const RELLENOS_VALIDOS: readonly string[] = ['contorno', 'tintado', 'solido'];
 const TRAZADOS_VALIDOS: readonly string[] = ['bezier', 'smoothstep', 'straight', 'orthogonal'];
 const PATRONES_VALIDOS: readonly string[] = ['solida', 'discontinua', 'punteada'];
@@ -327,70 +338,11 @@ function sanitizeVennElementos(
 /**
  * Normaliza un bloque `DiagramaBlock` garantizando contratos canónicos v1.
  */
-export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
-  const fb = BLOCK_FALLBACKS.diagrama;
-  const raw = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
-
-  const id =
-    typeof raw.id === 'string' && raw.id.trim().length > 0
-      ? raw.id
-      : `diagrama-${Date.now()}`;
-
-  const x = typeof raw.x === 'number' && Number.isFinite(raw.x) ? raw.x : fb.x;
-  const y = typeof raw.y === 'number' && Number.isFinite(raw.y) ? raw.y : fb.y;
-  const ancho = typeof raw.ancho === 'number' && Number.isFinite(raw.ancho) ? raw.ancho : fb.ancho;
-  const alto = typeof raw.alto === 'number' && Number.isFinite(raw.alto) ? raw.alto : fb.alto;
-  const zIndex = typeof raw.zIndex === 'number' && Number.isFinite(raw.zIndex) ? raw.zIndex : undefined;
-
-  const defaultTitulo =
-    raw.subtipo === 'venn'
-      ? 'Diagrama de Venn'
-      : raw.subtipo === 'cronologia'
-        ? 'Cronología'
-        : 'Mapa Mental';
-  const titulo = typeof raw.titulo === 'string' ? raw.titulo : defaultTitulo;
-  const descripcionAccesible =
-    typeof raw.descripcionAccesible === 'string' ? raw.descripcionAccesible : undefined;
-
-  // Subtipo Venn
-  if (raw.subtipo === 'venn') {
-    const conjuntos: 2 | 3 = raw.conjuntos === 3 ? 3 : 2;
-    const allowed = validRegionIds(conjuntos);
-    const regiones = regionesForConjuntos(conjuntos);
-    const elementos = sanitizeVennElementos(raw.elementos, allowed);
-
-    return {
-      id,
-      tipo: 'diagrama',
-      subtipo: 'venn',
-      modo: 'contenido',
-      soloLecturaEnViewer: true,
-      titulo,
-      descripcionAccesible,
-      x,
-      y,
-      ancho,
-      alto,
-      zIndex,
-      conjuntos,
-      regiones,
-      elementos,
-    };
-  }
-
-  // Subtipo Grafo (mapa_mental, organigrama, flujo, etc.)
-  const rawSubtipo = typeof raw.subtipo === 'string' ? raw.subtipo : 'mapa_mental';
-  const subtipo: Exclude<DiagramaSubtipo, 'venn'> = VALID_GRAFO_SUBTIPOS.includes(rawSubtipo)
-    ? (rawSubtipo as Exclude<DiagramaSubtipo, 'venn'>)
-    : 'mapa_mental';
-
-  const nodos = sanitizeNodos(raw.nodos);
-  const validNodeIds = new Set(nodos.map((n) => n.id));
-  const aristas = sanitizeAristas(raw.aristas, validNodeIds);
-
-  // Sanitizar opciones aditivas del diagrama
-  const rawOpciones = raw.opciones && typeof raw.opciones === 'object' ? (raw.opciones as Record<string, unknown>) : undefined;
-  const opciones: DiagramaOpciones | undefined = rawOpciones
+/** Sanea `opciones` (grafo y Venn comparten el mismo contrato; cada valor inválido se descarta). */
+export function sanitizeOpciones(input: unknown): DiagramaOpciones | undefined {
+  const rawOpciones =
+    input && typeof input === 'object' ? (input as Record<string, unknown>) : undefined;
+  return rawOpciones
     ? {
         ...(typeof rawOpciones.tema === 'string' &&
         (rawOpciones.tema === 'auto' || rawOpciones.tema === 'claro' || rawOpciones.tema === 'oscuro')
@@ -432,6 +384,75 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
         })(),
       }
     : undefined;
+}
+
+export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const raw = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
+
+  const id =
+    typeof raw.id === 'string' && raw.id.trim().length > 0
+      ? raw.id
+      : `diagrama-${Date.now()}`;
+
+  const x = typeof raw.x === 'number' && Number.isFinite(raw.x) ? raw.x : fb.x;
+  const y = typeof raw.y === 'number' && Number.isFinite(raw.y) ? raw.y : fb.y;
+  const ancho = typeof raw.ancho === 'number' && Number.isFinite(raw.ancho) ? raw.ancho : fb.ancho;
+  const alto = typeof raw.alto === 'number' && Number.isFinite(raw.alto) ? raw.alto : fb.alto;
+  const zIndex = typeof raw.zIndex === 'number' && Number.isFinite(raw.zIndex) ? raw.zIndex : undefined;
+
+  const defaultTitulo =
+    raw.subtipo === 'venn'
+      ? 'Diagrama de Venn'
+      : raw.subtipo === 'cronologia'
+        ? 'Cronología'
+        : 'Mapa Mental';
+  const titulo = typeof raw.titulo === 'string' ? raw.titulo : defaultTitulo;
+  const descripcionAccesible =
+    typeof raw.descripcionAccesible === 'string' ? raw.descripcionAccesible : undefined;
+
+  // Subtipo Venn
+  if (raw.subtipo === 'venn') {
+    const conjuntos: 2 | 3 = raw.conjuntos === 3 ? 3 : 2;
+    const allowed = validRegionIds(conjuntos);
+    const regiones = regionesForConjuntos(conjuntos);
+    const elementos = sanitizeVennElementos(raw.elementos, allowed);
+    const nombresConjuntos = sanitizeNombresConjuntos(raw.nombresConjuntos, conjuntos);
+    const opcionesVenn = sanitizeOpciones(raw.opciones);
+
+    return {
+      id,
+      tipo: 'diagrama',
+      subtipo: 'venn',
+      modo: 'contenido',
+      soloLecturaEnViewer: true,
+      titulo,
+      descripcionAccesible,
+      x,
+      y,
+      ancho,
+      alto,
+      zIndex,
+      conjuntos,
+      ...(nombresConjuntos ? { nombresConjuntos } : {}),
+      regiones,
+      elementos,
+      ...(opcionesVenn && Object.keys(opcionesVenn).length > 0 ? { opciones: opcionesVenn } : {}),
+    };
+  }
+
+  // Subtipo Grafo (mapa_mental, organigrama, flujo, etc.)
+  const rawSubtipo = typeof raw.subtipo === 'string' ? raw.subtipo : 'mapa_mental';
+  const subtipo: Exclude<DiagramaSubtipo, 'venn'> = VALID_GRAFO_SUBTIPOS.includes(rawSubtipo)
+    ? (rawSubtipo as Exclude<DiagramaSubtipo, 'venn'>)
+    : 'mapa_mental';
+
+  const nodos = sanitizeNodos(raw.nodos);
+  const validNodeIds = new Set(nodos.map((n) => n.id));
+  const aristas = sanitizeAristas(raw.aristas, validNodeIds);
+
+  // Sanitizar opciones aditivas del diagrama
+  const opciones = sanitizeOpciones(raw.opciones);
 
   // Cronología: writer canónico de la invariante lineal. Ignora `raw.aristas`
   // (la cadena es autogenerada) y fija `layout: 'lineal'`.

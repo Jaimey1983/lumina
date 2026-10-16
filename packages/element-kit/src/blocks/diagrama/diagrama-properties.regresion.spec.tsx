@@ -16,11 +16,15 @@
 //    defecto (refleja el estado actual del bloque), Paleta cerrada (uso
 //    ocasional, como Plantillas).
 
-import { render, cleanup, screen, fireEvent } from '@testing-library/react';
+import { render, cleanup, screen, fireEvent, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiagramaProperties } from './diagrama-properties.js';
-import type { DiagramaBlock, DiagramaGrafoBlock } from '@lumina/types/slide';
-import { createDefaultFlujoBlock, createDefaultMapaMentalBlock } from './diagrama-defaults.js';
+import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@lumina/types/slide';
+import {
+  createDefaultFlujoBlock,
+  createDefaultMapaMentalBlock,
+  createDefaultVennBlock,
+} from './diagrama-defaults.js';
 
 afterEach(() => {
   cleanup();
@@ -132,6 +136,50 @@ describe('DiagramaProperties — sin plantillas duplicadas y panel colapsable (r
       clicTipo('Flujo');
       const enFlujo = ultimoBloque(applyNow, sinDecision);
       expect(enFlujo.aristas.every((a) => a.dirigida === true)).toBe(true);
+    });
+  });
+
+  describe('nombres de conjunto en Venn (V2.3)', () => {
+    beforeEach(() => {
+      window.localStorage.clear();
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('muestra una entrada por conjunto con la letra como placeholder y guarda el nombre (con debounce)', () => {
+      const block = createDefaultVennBlock({ id: 'v-ui' }) as DiagramaVennBlock;
+      const applyNow = vi.fn(async (fn: unknown) => {
+        void fn;
+      });
+      render(<DiagramaProperties block={block} applyNow={applyNow} />);
+
+      const a = screen.getByLabelText('Conjunto A') as HTMLInputElement;
+      expect(a.placeholder).toBe('A');
+      expect(screen.getByLabelText('Conjunto B')).toBeTruthy();
+      expect(screen.queryByLabelText('Conjunto C')).toBeNull();
+
+      fireEvent.change(a, { target: { value: 'Mamíferos' } });
+      expect((screen.getByLabelText('Conjunto A') as HTMLInputElement).value).toBe('Mamíferos');
+      expect(applyNow).not.toHaveBeenCalled();
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+      expect(applyNow).toHaveBeenCalledTimes(1);
+      const fn = applyNow.mock.calls[0][0] as (b: DiagramaBlock) => DiagramaBlock;
+      expect((fn(block) as DiagramaVennBlock).nombresConjuntos).toEqual(['Mamíferos', '']);
+    });
+
+    it('con 3 conjuntos aparece también el C', () => {
+      const block = createDefaultVennBlock({ id: 'v-3', conjuntos: 3 }) as DiagramaVennBlock;
+      render(<DiagramaProperties block={block} applyNow={vi.fn(async () => undefined)} />);
+      expect(screen.getByLabelText('Conjunto C')).toBeTruthy();
+    });
+
+    it('un diagrama de grafo no muestra la sección', () => {
+      render(<DiagramaProperties block={createDefaultMapaMentalBlock()} applyNow={vi.fn(async () => undefined)} />);
+      expect(screen.queryByLabelText('Conjunto A')).toBeNull();
     });
   });
 });

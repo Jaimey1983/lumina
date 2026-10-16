@@ -1886,8 +1886,12 @@ export interface DiagramaVennBlock {
   alto?: number;
   zIndex?: number;
   conjuntos: 2 | 3;
+  /** Nombre de cada conjunto (A, B, C); vacío o ausente = la letra. Máx. 24 caracteres. */
+  nombresConjuntos?: string[];
   regiones: DiagramaVennRegion[];
   elementos: DiagramaVennElemento[];
+  /** Solo `paleta` tiene efecto en Venn: colorea los círculos. */
+  opciones?: DiagramaOpciones;
 }
 
 export type DiagramaBlock = DiagramaGrafoBlock | DiagramaVennBlock;

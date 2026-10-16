@@ -139,6 +139,17 @@ describe('graphEdgeToRF', () => {
     });
   });
 
+  it('un color de tema (`var(--token)`) llega tal cual al trazo y a las puntas (V2.3)', () => {
+    const rf = graphEdgeToRF({
+      ...base,
+      directed: true,
+      meta: { color: 'var(--muted-foreground)', flechaInicio: true },
+    });
+    expect(rf.style?.stroke).toBe('var(--muted-foreground)');
+    expect(rf.markerEnd).toMatchObject({ color: 'var(--muted-foreground)' });
+    expect(rf.markerStart).toMatchObject({ color: 'var(--muted-foreground)' });
+  });
+
   it('con `directed` pone punta de flecha cerrada', () => {
     expect(graphEdgeToRF({ ...base, directed: true }).markerEnd).toMatchObject({
       type: 'arrowclosed',

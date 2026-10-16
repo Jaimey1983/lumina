@@ -6,6 +6,7 @@ import type { DiagramaVennBlock, DiagramaVennElemento } from '@lumina/types/slid
 import { cn } from '@lumina/ui/lib/utils';
 
 import { regionCentroid, vennCircles } from './diagrama-regions.js';
+import { coloresVenn } from './diagrama-temas.js';
 
 interface VennSvgProps {
   block: DiagramaVennBlock;
@@ -26,6 +27,7 @@ export function VennSvg({
   trayRef,
 }: VennSvgProps) {
   const circles = vennCircles(block.conjuntos);
+  const colores = coloresVenn(block.opciones?.paleta);
   const byRegion = useMemo(() => {
     const map = new Map<string | null, DiagramaVennElemento[]>();
     for (const el of block.elementos) {
@@ -49,19 +51,19 @@ export function VennSvg({
           role="img"
           aria-hidden
         >
-          {circles.map((c) => (
+          {circles.map((c, i) => (
             <circle
               key={c.id}
               cx={c.cx}
               cy={c.cy}
               r={c.r}
-              fill={c.fill}
-              stroke="currentColor"
-              strokeOpacity={0.35}
+              fill={`color-mix(in srgb, ${colores[i]} 22%, transparent)`}
+              stroke={colores[i]}
+              strokeOpacity={0.6}
               strokeWidth={0.6}
             />
           ))}
-          {circles.map((c) => (
+          {circles.map((c, i) => (
             <text
               key={`label-${c.id}`}
               x={c.id === 'A' ? c.cx - 16 : c.id === 'B' ? c.cx + 16 : c.cx}
@@ -71,7 +73,7 @@ export function VennSvg({
               fontSize={4.2}
               fontWeight={600}
             >
-              {c.id}
+              {nombreConjunto(block, i)}
             </text>
           ))}
         </svg>
@@ -130,6 +132,11 @@ export function VennSvg({
       </div>
     </div>
   );
+}
+
+/** Nombre visible del conjunto `i`: el que puso el docente o, si no, la letra. */
+export function nombreConjunto(block: Pick<DiagramaVennBlock, 'nombresConjuntos'>, i: number): string {
+  return block.nombresConjuntos?.[i]?.trim() || ['A', 'B', 'C'][i];
 }
 
 function Chip({

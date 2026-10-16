@@ -268,3 +268,18 @@ export function resolverEstiloArista(arista: DiagramaArista, estilo: EstiloDiagr
     patron: arista.estiloLinea ?? estilo.conector.patron,
   };
 }
+
+// ─── Venn (V2.3) ──────────────────────────────────────────────────────────────
+
+/** Paleta que usa Venn cuando el bloque no define `opciones.paleta`. */
+export const PALETA_VENN_DEFECTO: DiagramaPaletaId = 'tecnologico';
+
+/**
+ * Color de cada círculo de Venn: el acento de la paleta y dos de sus colores
+ * (posiciones 2 y 5). Con la paleta por defecto da azul, verde y ámbar: los
+ * mismos tonos que Venn tenía fijos antes de V2.3.
+ */
+export function coloresVenn(paletaId: DiagramaPaletaId | undefined): [string, string, string] {
+  const paleta = PALETAS_DIAGRAMA[paletaId ?? PALETA_VENN_DEFECTO] ?? PALETAS_DIAGRAMA[PALETA_VENN_DEFECTO];
+  return [paleta.acentoPrincipal, paleta.colores[2], paleta.colores[5]];
+}

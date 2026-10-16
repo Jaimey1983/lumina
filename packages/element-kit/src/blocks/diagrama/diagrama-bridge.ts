@@ -3,12 +3,15 @@
 
 import type { DiagramaArista, DiagramaGrafoBlock, DiagramaNodo } from '@lumina/types/slide';
 import type { GraphEdge, GraphModel, GraphNode } from '@lumina/editor-shared/graph-editor';
-import { resolverEstiloDiagrama, resolverEstiloNodo } from './diagrama-temas.js';
+import { resolverEstiloArista, resolverEstiloDiagrama, resolverEstiloNodo } from './diagrama-temas.js';
 import type { EstiloVisualNodo } from './diagrama-shape-node.js';
 
 /**
  * Convierte un bloque DiagramaGrafoBlock al modelo agnóstico GraphModel de graph-core.
  */
+/** Color de arista cuando ni la arista ni el estilo definen uno: sigue el tema (claro/oscuro). */
+export const COLOR_ARISTA_TEMA = 'var(--muted-foreground)';
+
 export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
   const estiloExplicito = block.opciones?.estilo;
   const estiloResuelto = resolverEstiloDiagrama(block.opciones, block.subtipo);
@@ -92,6 +95,8 @@ export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
       }
     }
 
+    const conector = resolverEstiloArista(a, estiloResuelto);
+
     return {
       id: a.id,
       source: a.desdeId,
@@ -107,22 +112,21 @@ export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
       meta: {
         sourceHandle,
         targetHandle,
-        tipoTrazado:
-          a.tipoTrazado ??
-          (block.subtipo === 'flujo' || block.subtipo === 'organigrama'
-            ? 'smoothstep'
-            : block.subtipo === 'cronologia'
-              ? 'straight'
-              : 'bezier'),
-        estiloLinea: a.estiloLinea ?? 'solida',
-        color: a.color,
-        grosor: a.grosor,
+        tipoTrazado: conector.trazado,
+        estiloLinea: conector.patron,
+        color: a.color ?? COLOR_ARISTA_TEMA,
+        grosor: conector.grosor,
         flechaInicio: a.flechaInicio,
       },
     };
   });
 
   return { nodes, edges };
+}
+
+/** Una arista nueva no debe heredar el color-de-tema como si fuera una elección. */
+function nuevoColor(color: unknown): string | undefined {
+  return typeof color === 'string' && color !== COLOR_ARISTA_TEMA ? color : undefined;
 }
 
 /**
@@ -168,11 +172,23 @@ export function applyGraphModelToDiagrama(
             (block.subtipo === 'flujo' ||
               block.subtipo === 'organigrama' ||
               block.subtipo === 'mapa_conceptual'),
-      tipoTrazado: (e.meta?.tipoTrazado as DiagramaArista['tipoTrazado']) ?? original?.tipoTrazado,
-      estiloLinea: (e.meta?.estiloLinea as DiagramaArista['estiloLinea']) ?? original?.estiloLinea,
-      color: (e.meta?.color as string | undefined) ?? original?.color,
-      grosor: (e.meta?.grosor as number | undefined) ?? original?.grosor,
-      flechaInicio: (e.meta?.flechaInicio as boolean | undefined) ?? original?.flechaInicio,
+      // Una arista que ya existía conserva lo que el bloque declara: los valores de `meta`
+      // son los ya resueltos (estilo del diagrama, subtipo, tema) y volcarlos aquí los fijaría.
+      ...(original
+        ? {
+            tipoTrazado: original.tipoTrazado,
+            estiloLinea: original.estiloLinea,
+            color: original.color,
+            grosor: original.grosor,
+            flechaInicio: original.flechaInicio,
+          }
+        : {
+            tipoTrazado: e.meta?.tipoTrazado as DiagramaArista['tipoTrazado'],
+            estiloLinea: e.meta?.estiloLinea as DiagramaArista['estiloLinea'],
+            color: nuevoColor(e.meta?.color),
+            grosor: e.meta?.grosor as number | undefined,
+            flechaInicio: e.meta?.flechaInicio as boolean | undefined,
+          })
     };
   });
 
