@@ -66,7 +66,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W4 — Operaciones de escena e historial (lógica pura)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** W3 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/drawing/src/operaciones/`, `packages/drawing/src/historial/` y specs. **NO** toca interfaz.
 - **Entregable:** funciones puras e inmutables `agregar`, `eliminar`, `mover`, `redimensionar` (con proporción opcional y desde cualquier asa), `rotar` (con ajuste a 15°), `duplicar`, `reordenar` (traer al frente / enviar al fondo / subir / bajar), `alinear` (6 modos), `distribuir` (horizontal/vertical), `agrupar`/`desagrupar`, `bloquear`/`ocultar`, `cambiarEstilo(ids, parche)`; geometría de selección (`cajaDeSeleccion`, `elementoEn(punto)`, `elementosEn(rectangulo)`, con rotación); ajuste a cuadrícula y a guías (`ajustar(punto, escena, opciones)`); `Historial` por diferencia (`registrar`, `deshacer`, `rehacer`, tope configurable, un gesto = una entrada). Pruebas: propiedades (aplicar y deshacer devuelve la escena original; mover un grupo mueve a sus hijos; rotar y volver a rotar es identidad; agrupar/desagrupar conserva posiciones), casos límite (selección vacía, elementos bloqueados, tamaño mínimo). Verificación: la de W1.
