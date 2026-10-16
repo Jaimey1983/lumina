@@ -1832,12 +1832,10 @@ export interface DiagramaEstilo {
 }
 
 export interface DiagramaOpciones {
-  tema?: 'auto' | 'claro' | 'oscuro';
   paleta?: DiagramaPaletaId;
   fondo?: 'puntos' | 'cuadricula' | 'vacio';
   direccionLayout?: 'TB' | 'LR' | 'BT' | 'RL' | 'radial';
   densidad?: 'compacta' | 'normal' | 'amplia';
-  animacionEntrada?: boolean;
   estilo?: DiagramaEstilo;
 }
 

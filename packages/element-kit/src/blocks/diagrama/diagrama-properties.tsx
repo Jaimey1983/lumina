@@ -36,9 +36,16 @@ import type {
   DiagramaSubtipo,
   DiagramaVennBlock,
 } from '@lumina/types/slide';
-import { aplicarDagre } from './diagrama-dagre.js';
+import {
+  organizarGrafo,
+  resolverDensidad,
+  resolverDireccion,
+  tieneLayoutPropio,
+  type DensidadLayout,
+  type DireccionLayout,
+} from './diagrama-dagre.js';
 import { NOMBRE_CONJUNTO_MAX, sanitizeEstilo } from './diagrama-defaults.js';
-import { layoutCebolla, layoutEmbudo, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
+import { layoutCebolla, layoutEmbudo, layoutPiramide } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
@@ -142,6 +149,20 @@ const PATRON_OPCIONES: Array<{ valor: DiagramaAristaEstiloLinea | undefined; lab
   { valor: 'punteada', label: 'Puntos' },
 ];
 
+const DIRECCION_OPCIONES: Array<{ valor: DireccionLayout; label: string; descripcion: string }> = [
+  { valor: 'TB', label: 'Arriba → abajo', descripcion: 'Jerárquica de arriba hacia abajo' },
+  { valor: 'LR', label: 'Izq. → der.', descripcion: 'Jerárquica de izquierda a derecha' },
+  { valor: 'BT', label: 'Abajo → arriba', descripcion: 'Jerárquica de abajo hacia arriba' },
+  { valor: 'RL', label: 'Der. → izq.', descripcion: 'Jerárquica de derecha a izquierda' },
+  { valor: 'radial', label: 'Radial', descripcion: 'Distribución radial 360°' },
+];
+
+const DENSIDAD_OPCIONES: Array<{ valor: DensidadLayout; label: string }> = [
+  { valor: 'compacta', label: 'Compacta' },
+  { valor: 'normal', label: 'Normal' },
+  { valor: 'amplia', label: 'Amplia' },
+];
+
 // `piramide`/`embudo`/`cebolla` NO están acá — `handleLoadTemplate` los
 // resuelve con exactamente los mismos `createDefault*Block` que ya
 // disparan los botones base de "Tipo de Diagrama" (mismo contenido, mismo
@@ -243,9 +264,7 @@ export function DiagramaProperties({
       dirigida: a.dirigida ?? isDirected,
     }));
 
-    if (newSubtipo === 'mapa_mental') {
-      nextNodos = layoutRadial(nextNodos, nextAristas);
-    } else if (newSubtipo === 'piramide') {
+    if (newSubtipo === 'piramide') {
       const { nodos: pNodes, aristas: pEdges } = layoutPiramide(nextNodos, nextAristas);
       nextNodos = pNodes;
       nextAristas = pEdges;
@@ -262,8 +281,8 @@ export function DiagramaProperties({
       nextNodos = cNodes;
       nextAristas = cEdges;
     } else {
-      // flujo / organigrama / mapa_conceptual
-      nextNodos = aplicarDagre(nextNodos, nextAristas);
+      // mapa_mental / flujo / organigrama / mapa_conceptual: según dirección y densidad del diagrama
+      nextNodos = organizarGrafo(nextNodos, nextAristas, newSubtipo, grafoBlock.opciones);
     }
 
     commitChange(
@@ -275,6 +294,16 @@ export function DiagramaProperties({
       }),
       true,
     );
+  };
+
+  // ─── Disposición (opciones.direccionLayout / opciones.densidad) ───
+  const direccionActual = resolverDireccion(grafoBlock?.opciones, currentSubtipo);
+  const densidadActual = resolverDensidad(grafoBlock?.opciones);
+  const disposicionPropia = tieneLayoutPropio(currentSubtipo);
+
+  const commitDisposicion = (cambio: { direccionLayout?: DireccionLayout; densidad?: DensidadLayout }) => {
+    if (!grafoBlock) return;
+    commitChange({ ...grafoBlock, opciones: { ...(grafoBlock.opciones ?? {}), ...cambio } }, true);
   };
 
   // ─── Estilo del diagrama (opciones.estilo) ───
@@ -540,12 +569,6 @@ export function DiagramaProperties({
   const handleAutoLayout = () => {
     if (!grafoBlock) return;
 
-    if (currentSubtipo === 'mapa_mental') {
-      const reordered = layoutRadial(grafoBlock.nodos, grafoBlock.aristas);
-      commitChange({ ...grafoBlock, nodos: reordered }, true);
-      return;
-    }
-
     if (currentSubtipo === 'cronologia') {
       commitChange(finalizeGrafo(grafoBlock), true);
       return;
@@ -569,7 +592,7 @@ export function DiagramaProperties({
       return;
     }
 
-    const nextNodos = aplicarDagre(grafoBlock.nodos, grafoBlock.aristas);
+    const nextNodos = organizarGrafo(grafoBlock.nodos, grafoBlock.aristas, currentSubtipo, grafoBlock.opciones);
 
     commitChange({ ...grafoBlock, nodos: nextNodos }, true);
   };
@@ -602,13 +625,8 @@ export function DiagramaProperties({
     const { nodos, aristas } = outlineToDiagrama(outlineText, currentSubtipo);
     if (nodos.length === 0) return;
 
-    // Si es mapa mental, aplicar distribución radial; si no, dagre jerárquico
-    let positionedNodes = nodos;
-    if (currentSubtipo === 'mapa_mental') {
-      positionedNodes = layoutRadial(nodos, aristas);
-    } else {
-      positionedNodes = aplicarDagre(nodos, aristas);
-    }
+    // Dirección y densidad del diagrama (radial para el mapa mental, salvo que se elija otra)
+    const positionedNodes = organizarGrafo(nodos, aristas, currentSubtipo, grafoBlock.opciones);
 
     commitChange(
       {
@@ -630,7 +648,9 @@ export function DiagramaProperties({
             <div>
               <div className="font-semibold text-foreground text-xs leading-tight">Auto-Organizar</div>
               <div className="text-[10px] text-muted-foreground leading-tight">
-                {currentSubtipo === 'mapa_mental' ? 'Distribución radial 360°' : 'Alineación jerárquica'}
+                {tieneLayoutPropio(currentSubtipo)
+                  ? 'Alineación jerárquica'
+                  : (DIRECCION_OPCIONES.find((d) => d.valor === direccionActual)?.descripcion ?? 'Alineación jerárquica')}
               </div>
             </div>
           </div>
@@ -644,6 +664,71 @@ export function DiagramaProperties({
             Organizar
           </Button>
         </div>
+      )}
+
+      {/* Disposición: hacia dónde crece el diagrama y cuánto se separan los nodos. Se aplica con «Organizar». */}
+      {grafoBlock && (
+        <CollapsibleSection
+          title="Disposición"
+          icon={Network}
+          defaultOpen={false}
+          storageKey="diagrama.disposicion"
+          className="border-t border-border pt-3"
+        >
+          <div className="space-y-3 text-[11px]">
+            {disposicionPropia && (
+              <p className="text-muted-foreground">Este tipo de diagrama tiene su propia disposición.</p>
+            )}
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Dirección</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {DIRECCION_OPCIONES.map(({ valor, label, descripcion }) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    disabled={disposicionPropia}
+                    title={descripcion}
+                    aria-pressed={!disposicionPropia && direccionActual === valor}
+                    onClick={() => commitDisposicion({ direccionLayout: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all disabled:opacity-50 disabled:pointer-events-none',
+                      !disposicionPropia && direccionActual === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Densidad</span>
+              <div className="flex items-center gap-1">
+                {DENSIDAD_OPCIONES.map(({ valor, label }) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    disabled={disposicionPropia || direccionActual === 'radial'}
+                    aria-pressed={!disposicionPropia && densidadActual === valor}
+                    onClick={() => commitDisposicion({ densidad: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all disabled:opacity-50 disabled:pointer-events-none',
+                      !disposicionPropia && densidadActual === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {!disposicionPropia && (
+              <p className="text-[10px] text-muted-foreground">Se aplica al pulsar «Organizar».</p>
+            )}
+          </div>
+        </CollapsibleSection>
       )}
 
       {/* Selector de Subtipo */}

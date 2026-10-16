@@ -585,4 +585,18 @@ describe('cronología pedagógica (layout lineal restringido)', () => {
       expect(normalizeDiagramaBlock({ ...base, conjuntos: 2, opciones: { paleta: 'neon' } })).not.toHaveProperty('opciones');
     });
   });
+
+  describe('opciones sin efecto retiradas (V3.1)', () => {
+    it('`tema` y `animacionEntrada` ya no se guardan; las demás opciones sí', () => {
+      const block = normalizeDiagramaBlock({
+        id: 'b-op',
+        tipo: 'diagrama',
+        subtipo: 'flujo',
+        nodos: [{ id: 'a', etiqueta: 'A', x: 0, y: 0 }],
+        aristas: [],
+        opciones: { tema: 'oscuro', animacionEntrada: true, direccionLayout: 'LR', densidad: 'amplia', paleta: 'menta' },
+      }) as DiagramaGrafoBlock;
+      expect(block.opciones).toEqual({ paleta: 'menta', direccionLayout: 'LR', densidad: 'amplia' });
+    });
+  });
 });

@@ -23,8 +23,10 @@ import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@lumi
 import {
   createDefaultFlujoBlock,
   createDefaultMapaMentalBlock,
+  createDefaultPiramideBlock,
   createDefaultVennBlock,
 } from './diagrama-defaults.js';
+import { organizarGrafo } from './diagrama-dagre.js';
 
 afterEach(() => {
   cleanup();
@@ -301,6 +303,75 @@ describe('DiagramaProperties — sin plantillas duplicadas y panel colapsable (r
         />,
       );
       expect(screen.queryByText('Estilo')).toBeNull();
+    });
+  });
+
+  describe('sección «Disposición» (V3.1)', () => {
+    beforeEach(() => {
+      window.localStorage.clear();
+    });
+
+    function montar(block: DiagramaGrafoBlock) {
+      const applyNow = vi.fn(async (fn: unknown) => {
+        void fn;
+      });
+      render(<DiagramaProperties block={block} applyNow={applyNow} />);
+      fireEvent.click(screen.getByText('Disposición'));
+      return applyNow;
+    }
+    function ultimo(applyNow: ReturnType<typeof vi.fn>, base: DiagramaBlock): DiagramaGrafoBlock {
+      const fn = applyNow.mock.calls.at(-1)?.[0] as (b: DiagramaBlock) => DiagramaBlock;
+      return fn(base) as DiagramaGrafoBlock;
+    }
+
+    it('arranca cerrada y marca la dirección efectiva: TB en flujo, radial en mapa mental', () => {
+      render(<DiagramaProperties block={createDefaultFlujoBlock({ id: 'f' })} applyNow={vi.fn(async () => undefined)} />);
+      expect(screen.queryByText('Se aplica al pulsar «Organizar».')).toBeNull();
+      fireEvent.click(screen.getByText('Disposición'));
+      expect(screen.getByRole('button', { name: 'Arriba → abajo' }).getAttribute('aria-pressed')).toBe('true');
+      cleanup();
+      window.localStorage.clear();
+      render(<DiagramaProperties block={createDefaultMapaMentalBlock({ id: 'm' })} applyNow={vi.fn(async () => undefined)} />);
+      fireEvent.click(screen.getByText('Disposición'));
+      expect(screen.getByRole('button', { name: 'Radial' }).getAttribute('aria-pressed')).toBe('true');
+      expect((screen.getByRole('button', { name: 'Amplia' }) as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('elegir dirección y densidad guarda las opciones de inmediato, sin mover los nodos', () => {
+      const base = createDefaultFlujoBlock({ id: 'f2' }) as DiagramaGrafoBlock;
+      const applyNow = montar(base);
+      fireEvent.click(screen.getByRole('button', { name: 'Izq. → der.' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Amplia' }));
+      expect(applyNow).toHaveBeenCalledTimes(2);
+      const out = ultimo(applyNow, base);
+      expect(out.opciones).toMatchObject({ direccionLayout: 'LR', densidad: 'amplia' });
+      expect(out.nodos).toEqual(base.nodos);
+    });
+
+    it('«Organizar» aplica la dirección y la densidad elegidas', () => {
+      const base = createDefaultFlujoBlock({ id: 'f3' }) as DiagramaGrafoBlock;
+      const applyNow = montar(base);
+      fireEvent.click(screen.getByRole('button', { name: 'Izq. → der.' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Compacta' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+      const out = ultimo(applyNow, base);
+      expect(out.nodos).toEqual(
+        organizarGrafo(base.nodos, base.aristas, 'flujo', { direccionLayout: 'LR', densidad: 'compacta' }),
+      );
+      expect(out.nodos).not.toEqual(organizarGrafo(base.nodos, base.aristas, 'flujo', undefined));
+    });
+
+    it('un tipo con disposición propia deshabilita la dirección y lo explica', () => {
+      montar(createDefaultPiramideBlock({ id: 'p' }) as DiagramaGrafoBlock);
+      screen.getByText('Este tipo de diagrama tiene su propia disposición.');
+      for (const nombre of ['Arriba → abajo', 'Izq. → der.', 'Radial', 'Normal']) {
+        expect((screen.getByRole('button', { name: nombre }) as HTMLButtonElement).disabled).toBe(true);
+      }
+    });
+
+    it('el Venn no muestra la sección', () => {
+      render(<DiagramaProperties block={createDefaultVennBlock({ id: 'v-d' }) as DiagramaVennBlock} applyNow={vi.fn(async () => undefined)} />);
+      expect(screen.queryByText('Disposición')).toBeNull();
     });
   });
 });

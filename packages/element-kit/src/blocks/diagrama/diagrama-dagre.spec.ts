@@ -6,7 +6,16 @@ import {
 } from '@lumina/editor-shared/graph-editor';
 import type { DiagramaArista, DiagramaGrafoBlock, DiagramaNodo } from '@lumina/types/slide';
 
-import { aplicarDagre } from './diagrama-dagre.js';
+import {
+  aplicarDagre,
+  organizarGrafo,
+  resolverDensidad,
+  resolverDireccion,
+  SEPARACION_POR_DENSIDAD,
+  SUBTIPOS_LAYOUT_PROPIO,
+  tieneLayoutPropio,
+} from './diagrama-dagre.js';
+import { layoutRadial } from './layout-pedagogico.js';
 import {
   createDefaultFlujoBlock,
   createDefaultMapaConceptualBlock,
@@ -70,5 +79,73 @@ describe('aplicarDagre (V1.3)', () => {
     const tb = aplicarDagre(block.nodos, block.aristas);
     const lr = aplicarDagre(block.nodos, block.aristas, { direction: 'LR' });
     expect(lr).not.toEqual(tb);
+  });
+});
+
+describe('dirección y densidad del layout (V3.1)', () => {
+  // Cadena a → b → c → d con posiciones de partida cualesquiera.
+  const nodos: DiagramaNodo[] = ['a', 'b', 'c', 'd'].map((id, i) => ({ id, etiqueta: id, x: i * 7, y: i * 3 }));
+  const aristas: DiagramaArista[] = [
+    { id: 'ab', desdeId: 'a', haciaId: 'b' },
+    { id: 'bc', desdeId: 'b', haciaId: 'c' },
+    { id: 'cd', desdeId: 'c', haciaId: 'd' },
+  ];
+  const pos = (out: DiagramaNodo[], id: string) => out.find((n) => n.id === id)!;
+
+  function organizar(direccionLayout?: 'TB' | 'LR' | 'BT' | 'RL' | 'radial', densidad?: 'compacta' | 'normal' | 'amplia') {
+    return organizarGrafo(nodos, aristas, 'flujo', {
+      ...(direccionLayout ? { direccionLayout } : {}),
+      ...(densidad ? { densidad } : {}),
+    });
+  }
+
+  it('resuelve la dirección: la elegida, o radial en mapa mental y TB en el resto', () => {
+    expect(resolverDireccion(undefined, 'mapa_mental')).toBe('radial');
+    expect(resolverDireccion(undefined, 'flujo')).toBe('TB');
+    expect(resolverDireccion({ direccionLayout: 'LR' }, 'mapa_mental')).toBe('LR');
+    expect(resolverDensidad(undefined)).toBe('normal');
+    expect(resolverDensidad({ densidad: 'amplia' })).toBe('amplia');
+  });
+
+  it('TB crece en vertical y LR en horizontal: los ejes se intercambian', () => {
+    const tb = organizar('TB');
+    const lr = organizar('LR');
+    // TB: cada paso baja (y crece) y x no cambia; LR: cada paso avanza (x crece) y y no cambia.
+    expect(pos(tb, 'd').y).toBeGreaterThan(pos(tb, 'a').y);
+    expect(pos(tb, 'd').x).toBe(pos(tb, 'a').x);
+    expect(pos(lr, 'd').x).toBeGreaterThan(pos(lr, 'a').x);
+    expect(pos(lr, 'd').y).toBe(pos(lr, 'a').y);
+  });
+
+  it('BT y RL invierten el sentido de TB y LR', () => {
+    const bt = organizar('BT');
+    const rl = organizar('RL');
+    expect(pos(bt, 'd').y).toBeLessThan(pos(bt, 'a').y);
+    expect(pos(rl, 'd').x).toBeLessThan(pos(rl, 'a').x);
+  });
+
+  it('sin opciones el resultado es el de siempre (TB, densidad normal)', () => {
+    expect(organizar()).toEqual(aplicarDagre(nodos, aristas));
+    expect(SEPARACION_POR_DENSIDAD.normal).toEqual({ rankSep: 60, nodeSep: 40 });
+  });
+
+  it('la densidad separa más o menos los rangos', () => {
+    const paso = (out: DiagramaNodo[]) => pos(out, 'b').y - pos(out, 'a').y;
+    expect(paso(organizar('TB', 'compacta'))).toBeLessThan(paso(organizar('TB', 'normal')));
+    expect(paso(organizar('TB', 'amplia'))).toBeGreaterThan(paso(organizar('TB', 'normal')));
+  });
+
+  it('radial delega en layoutRadial', () => {
+    expect(organizar('radial')).toEqual(layoutRadial(nodos, aristas));
+  });
+
+  it('el mapa mental sin opciones sigue siendo radial', () => {
+    expect(organizarGrafo(nodos, aristas, 'mapa_mental', undefined)).toEqual(layoutRadial(nodos, aristas));
+  });
+
+  it('pirámide, embudo, cebolla y cronología tienen disposición propia; el resto no', () => {
+    expect([...SUBTIPOS_LAYOUT_PROPIO].sort()).toEqual(['cebolla', 'cronologia', 'embudo', 'piramide']);
+    for (const s of ['piramide', 'embudo', 'cebolla', 'cronologia'] as const) expect(tieneLayoutPropio(s)).toBe(true);
+    for (const s of ['flujo', 'organigrama', 'mapa_conceptual', 'mapa_mental'] as const) expect(tieneLayoutPropio(s)).toBe(false);
   });
 });

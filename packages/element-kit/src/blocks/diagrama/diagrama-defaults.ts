@@ -344,10 +344,6 @@ export function sanitizeOpciones(input: unknown): DiagramaOpciones | undefined {
     input && typeof input === 'object' ? (input as Record<string, unknown>) : undefined;
   return rawOpciones
     ? {
-        ...(typeof rawOpciones.tema === 'string' &&
-        (rawOpciones.tema === 'auto' || rawOpciones.tema === 'claro' || rawOpciones.tema === 'oscuro')
-          ? { tema: rawOpciones.tema }
-          : {}),
         ...(typeof rawOpciones.paleta === 'string' &&
         [
           'editorial',
@@ -374,9 +370,6 @@ export function sanitizeOpciones(input: unknown): DiagramaOpciones | undefined {
         ...(typeof rawOpciones.densidad === 'string' &&
         (rawOpciones.densidad === 'compacta' || rawOpciones.densidad === 'normal' || rawOpciones.densidad === 'amplia')
           ? { densidad: rawOpciones.densidad }
-          : {}),
-        ...(typeof rawOpciones.animacionEntrada === 'boolean'
-          ? { animacionEntrada: rawOpciones.animacionEntrada }
           : {}),
         ...(() => {
           const estilo = sanitizeEstilo(rawOpciones.estilo);
