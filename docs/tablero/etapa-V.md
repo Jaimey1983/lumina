@@ -109,7 +109,7 @@ El tema de EdrawMax = `ThemeColor + ThemeEffect + ThemeText + ThemeConnector` (p
 
 #### V3.1 — `direccionLayout` y `densidad` activos (D2)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] (V2.4 seguía `en revisión`; se arrancó por pedido expreso del dueño)
 - **Precondición:** V2.4 `hecho`.
 - **Alcance — PUEDE tocar:** `diagrama-properties.tsx` (selector TB/LR/BT/RL/radial + densidad en la sección de disposición), `aplicarDagre` (V1.3: leer `direccionLayout` y mapear `densidad` → `rankSep`/`nodeSep`), `diagrama-editor.tsx` si hace falta reencuadrar, specs. **NO** toca los layouts pedagógicos (`layout-pedagogico.ts`).
 - **Entregable:** «Organizar» respeta la dirección y la densidad elegidas; `radial` delega en `layoutRadial`; subtipos con layout propio (cuadrantes, pirámide, ciclo…) **ignoran** la dirección y el panel la deshabilita para ellos. Pruebas: mismo bloque con `TB` vs `LR` produce ejes intercambiados. `tema` y `animacionEntrada` (también muertas, D2): se **implementan o se quitan** del tipo y del normalizador en este PR — la ficha obliga a elegir, no a dejarlas guardadas sin efecto. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`.
