@@ -25,16 +25,19 @@ import {
 import type {
   Block,
   DiagramaArista,
+  DiagramaAristaEstiloLinea,
   DiagramaBlock,
+  DiagramaEstilo,
   DiagramaGrafoBlock,
   DiagramaNodo,
   DiagramaNodoForma,
   DiagramaPaletaId,
+  DiagramaRelleno,
   DiagramaSubtipo,
   DiagramaVennBlock,
 } from '@lumina/types/slide';
 import { aplicarDagre } from './diagrama-dagre.js';
-import { NOMBRE_CONJUNTO_MAX } from './diagrama-defaults.js';
+import { NOMBRE_CONJUNTO_MAX, sanitizeEstilo } from './diagrama-defaults.js';
 import { layoutCebolla, layoutEmbudo, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
@@ -43,6 +46,7 @@ import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { Badge } from '@lumina/ui/badge';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { cn } from '@lumina/ui/lib/utils';
 import {
   normalizeDiagramaBlock,
@@ -114,6 +118,29 @@ const TRAZADO_TITULO: Record<TrazadoEditable, string> = {
   bezier: 'bézier fluido',
   straight: 'de línea recta',
 };
+
+// Opciones de la sección «Estilo». `undefined` = «Automático»: no se guarda nada
+// y el diagrama usa el aspecto propio de su subtipo.
+const RELLENO_OPCIONES: Array<{ valor: DiagramaRelleno | undefined; label: string }> = [
+  { valor: undefined, label: 'Automático' },
+  { valor: 'contorno', label: 'Contorno' },
+  { valor: 'tintado', label: 'Tintado' },
+  { valor: 'solido', label: 'Sólido' },
+];
+
+const GROSOR_OPCIONES: Array<{ valor: number | undefined; label: string }> = [
+  { valor: undefined, label: 'Auto' },
+  { valor: 1, label: 'Fino' },
+  { valor: 2.5, label: 'Medio' },
+  { valor: 4, label: 'Grueso' },
+];
+
+const PATRON_OPCIONES: Array<{ valor: DiagramaAristaEstiloLinea | undefined; label: string }> = [
+  { valor: undefined, label: 'Auto' },
+  { valor: 'solida', label: 'Sólida' },
+  { valor: 'discontinua', label: 'Guiones' },
+  { valor: 'punteada', label: 'Puntos' },
+];
 
 // `piramide`/`embudo`/`cebolla` NO están acá — `handleLoadTemplate` los
 // resuelve con exactamente los mismos `createDefault*Block` que ya
@@ -249,6 +276,25 @@ export function DiagramaProperties({
       true,
     );
   };
+
+  // ─── Estilo del diagrama (opciones.estilo) ───
+  // Una confirmación por clic: cada control es discreto, nunca se escribe por fotograma.
+  const estiloActual: DiagramaEstilo = grafoBlock?.opciones?.estilo ?? {};
+
+  const commitEstilo = (estilo: DiagramaEstilo) => {
+    if (!grafoBlock) return;
+    const opciones = { ...(grafoBlock.opciones ?? {}) };
+    delete opciones.estilo;
+    const limpio = sanitizeEstilo(estilo);
+    if (limpio) opciones.estilo = limpio;
+    commitChange(
+      { ...grafoBlock, opciones: Object.keys(opciones).length > 0 ? opciones : undefined },
+      true,
+    );
+  };
+
+  const commitConector = (cambio: NonNullable<DiagramaEstilo['conector']>) =>
+    commitEstilo({ ...estiloActual, conector: { ...estiloActual.conector, ...cambio } });
 
   // ─── Nombres de los conjuntos (Venn) ───
   const handleNombreConjunto = (indice: number, nombre: string) => {
@@ -754,6 +800,158 @@ export function DiagramaProperties({
                 ))}
               </div>
             </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* Estilo del diagrama: relleno, sombra y conector por defecto (opciones.estilo) */}
+      {grafoBlock && (
+        <CollapsibleSection
+          title="Estilo"
+          icon={Sliders}
+          defaultOpen={false}
+          storageKey="diagrama.estilo"
+          badge={grafoBlock.opciones?.estilo ? 'Personalizado' : undefined}
+          className="border-t border-border pt-3"
+        >
+          <div className="space-y-3 text-[11px]">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Aspecto de las formas
+              </span>
+              <FieldHelp label="Estilo del diagrama">
+                <p>
+                  <strong>Contorno</strong>: fondo de tarjeta y borde de color. <strong>Tintado</strong>: el
+                  color de cada nodo se mezcla suave con el fondo. <strong>Sólido</strong>: fondo del color
+                  del nodo y texto con contraste.
+                </p>
+                <p>
+                  El conector es el valor por defecto: una conexión con trazado, grosor o línea propios
+                  (por ejemplo, aplicados desde «Estilo Visual Global») conserva los suyos.
+                </p>
+              </FieldHelp>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Relleno</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {RELLENO_OPCIONES.map(({ valor, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={estiloActual.relleno === valor}
+                    onClick={() => commitEstilo({ ...estiloActual, relleno: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.relleno === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Sombra</span>
+              <div className="flex items-center gap-1">
+                {([
+                  { sombra: undefined, label: 'Con sombra' },
+                  { sombra: false, label: 'Sin sombra' },
+                ] as const).map(({ sombra, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={estiloActual.sombra === sombra}
+                    onClick={() => commitEstilo({ ...estiloActual, sombra })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.sombra === sombra
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Spline className="h-3 w-3" /> Conector · trazado
+              </span>
+              <div className="flex flex-wrap items-center gap-1">
+                {([undefined, 'smoothstep', 'orthogonal', 'bezier', 'straight'] as const).map((t) => (
+                  <button
+                    key={t ?? 'auto'}
+                    type="button"
+                    aria-pressed={estiloActual.conector?.trazado === t}
+                    onClick={() => commitConector({ trazado: t })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.conector?.trazado === t
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {t ? TRAZADO_GLOBAL[t] : 'Auto'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Conector · grosor</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {GROSOR_OPCIONES.map(({ valor, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={estiloActual.conector?.grosor === valor}
+                    onClick={() => commitConector({ grosor: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.conector?.grosor === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Conector · línea</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {PATRON_OPCIONES.map(({ valor, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={estiloActual.conector?.patron === valor}
+                    onClick={() => commitConector({ patron: valor })}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all',
+                      estiloActual.conector?.patron === valor
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {grafoBlock.opciones?.estilo && (
+              <Button type="button" variant="ghost" size="sm" className="h-7 text-[11px]" onClick={() => commitEstilo({})}>
+                Restablecer estilo
+              </Button>
+            )}
           </div>
         </CollapsibleSection>
       )}

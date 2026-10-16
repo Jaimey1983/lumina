@@ -16,7 +16,7 @@
 //    defecto (refleja el estado actual del bloque), Paleta cerrada (uso
 //    ocasional, como Plantillas).
 
-import { render, cleanup, screen, fireEvent, act } from '@testing-library/react';
+import { render, cleanup, screen, fireEvent, act, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiagramaProperties } from './diagrama-properties.js';
 import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@lumina/types/slide';
@@ -180,6 +180,127 @@ describe('DiagramaProperties — sin plantillas duplicadas y panel colapsable (r
     it('un diagrama de grafo no muestra la sección', () => {
       render(<DiagramaProperties block={createDefaultMapaMentalBlock()} applyNow={vi.fn(async () => undefined)} />);
       expect(screen.queryByLabelText('Conjunto A')).toBeNull();
+    });
+  });
+
+  describe('sección «Estilo» (V2.4)', () => {
+    beforeEach(() => {
+      window.localStorage.clear();
+    });
+
+    function montar(block: DiagramaGrafoBlock = createDefaultFlujoBlock({ id: 'b-est' }) as DiagramaGrafoBlock) {
+      const applyNow = vi.fn(async (fn: unknown) => {
+        void fn;
+      });
+      const utils = render(<DiagramaProperties block={block} applyNow={applyNow} />);
+      return { applyNow, block, ...utils };
+    }
+
+    function abrir() {
+      fireEvent.click(screen.getByText('Estilo'));
+    }
+
+    /** Último bloque que el panel pidió guardar, aplicado sobre `base`. */
+    function ultimo(applyNow: ReturnType<typeof vi.fn>, base: DiagramaBlock): DiagramaGrafoBlock {
+      const fn = applyNow.mock.calls.at(-1)?.[0] as (b: DiagramaBlock) => DiagramaBlock;
+      return fn(base) as DiagramaGrafoBlock;
+    }
+
+    it('arranca cerrada, entre «Paleta de Colores» y «Plantillas Pedagógicas», y no reordena las demás', () => {
+      montar();
+      expect(screen.queryByText('Aspecto de las formas')).toBeNull();
+      const titulos = ['Tipo de Diagrama', 'Paleta de Colores', 'Estilo', 'Plantillas Pedagógicas'].map((t) =>
+        screen.getByText(t),
+      );
+      for (let i = 0; i < titulos.length - 1; i++) {
+        expect(titulos[i].compareDocumentPosition(titulos[i + 1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      }
+      abrir();
+      screen.getByText('Aspecto de las formas');
+    });
+
+    it('elegir un relleno guarda opciones.estilo con una sola confirmación inmediata', () => {
+      const { applyNow, block } = montar();
+      abrir();
+      fireEvent.click(screen.getByRole('button', { name: 'Sólido' }));
+      expect(applyNow).toHaveBeenCalledTimes(1);
+      expect(ultimo(applyNow, block).opciones?.estilo).toEqual({ relleno: 'solido' });
+    });
+
+    it('los controles se combinan: relleno + sombra + conector', () => {
+      const { applyNow, block } = montar();
+      abrir();
+      fireEvent.click(screen.getByRole('button', { name: 'Tintado' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Sin sombra' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Ortogonal' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Grueso' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Guiones' }));
+      expect(applyNow).toHaveBeenCalledTimes(5);
+      expect(ultimo(applyNow, block).opciones?.estilo).toEqual({
+        relleno: 'tintado',
+        sombra: false,
+        conector: { trazado: 'orthogonal', grosor: 4, patron: 'discontinua' },
+      });
+    });
+
+    it('«Automático» y «Con sombra» quitan el valor; sin nada, opciones.estilo desaparece y el resto de opciones se conserva', () => {
+      const base = createDefaultFlujoBlock({ id: 'b-aut' }) as DiagramaGrafoBlock;
+      const conPaleta: DiagramaGrafoBlock = { ...base, opciones: { paleta: 'menta' } };
+      const { applyNow } = montar(conPaleta);
+      abrir();
+      fireEvent.click(screen.getByRole('button', { name: 'Contorno' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Sin sombra' }));
+      expect(ultimo(applyNow, conPaleta).opciones).toEqual({ paleta: 'menta', estilo: { relleno: 'contorno', sombra: false } });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Automático' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Con sombra' }));
+      const final = ultimo(applyNow, conPaleta);
+      expect(final.opciones).toEqual({ paleta: 'menta' });
+      expect(final.opciones).not.toHaveProperty('estilo');
+    });
+
+    it('el conector admite «Auto» por campo sin tocar los otros', () => {
+      const { applyNow, block } = montar();
+      abrir();
+      fireEvent.click(screen.getByRole('button', { name: 'Fino' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Puntos' }));
+      const fila = screen.getByText('Conector · grosor').parentElement as HTMLElement;
+      fireEvent.click(within(fila).getByRole('button', { name: 'Auto' }));
+      expect(ultimo(applyNow, block).opciones?.estilo).toEqual({ conector: { patron: 'punteada' } });
+    });
+
+    it('marca el botón activo (aria-pressed) y muestra «Personalizado» solo con estilo', () => {
+      const base = createDefaultFlujoBlock({ id: 'b-pr' }) as DiagramaGrafoBlock;
+      montar(base);
+      expect(screen.queryByText('Personalizado')).toBeNull();
+      cleanup();
+      const conEstilo: DiagramaGrafoBlock = { ...base, opciones: { estilo: { relleno: 'tintado' } } };
+      render(<DiagramaProperties block={conEstilo} applyNow={vi.fn(async () => undefined)} />);
+      screen.getByText('Personalizado');
+      abrir();
+      expect(screen.getByRole('button', { name: 'Tintado' }).getAttribute('aria-pressed')).toBe('true');
+      expect(screen.getByRole('button', { name: 'Sólido' }).getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('«Restablecer estilo» solo aparece con estilo y lo borra entero', () => {
+      const base = createDefaultFlujoBlock({ id: 'b-rs' }) as DiagramaGrafoBlock;
+      const { applyNow } = montar(base);
+      abrir();
+      expect(screen.queryByRole('button', { name: 'Restablecer estilo' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Sólido' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Restablecer estilo' }));
+      expect(ultimo(applyNow, base).opciones?.estilo).toBeUndefined();
+      expect(screen.queryByRole('button', { name: 'Restablecer estilo' })).toBeNull();
+    });
+
+    it('el panel de un Venn no muestra la sección', () => {
+      render(
+        <DiagramaProperties
+          block={createDefaultVennBlock({ id: 'v-sin' }) as DiagramaVennBlock}
+          applyNow={vi.fn(async () => undefined)}
+        />,
+      );
+      expect(screen.queryByText('Estilo')).toBeNull();
     });
   });
 });
