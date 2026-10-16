@@ -11,15 +11,18 @@ import {
 describe('widget-panel-catalog', () => {
   it('incluye todos los widgets del registro, sin duplicados', () => {
     const types = WIDGET_PANEL_ITEMS.map((item) => item.type);
-    expect(types).toEqual(WIDGET_TIPOS);
-    expect(new Set(types).size).toBe(WIDGET_TIPOS.length);
+    // `dibujo` está registrado pero oculto del panel (etapa W, DW11).
+    const esperados = WIDGET_TIPOS.filter((t) => t !== 'dibujo');
+    expect(types).toEqual(esperados);
+    expect(new Set(types).size).toBe(esperados.length);
   });
 
   it('agrupa los widgets en lienzo, overlay y control', () => {
     const grouped = WIDGET_PANEL_GROUP_ORDER.flatMap((group) =>
       getWidgetPanelItemsByGroup(group).map((item) => item.type),
     );
-    expect(grouped).toHaveLength(WIDGET_TIPOS.length);
+    expect(grouped).toHaveLength(WIDGET_TIPOS.length - 1);
+    expect(grouped).not.toContain('dibujo');
     expect(getWidgetPanelItemsByGroup('lienzo').map((item) => item.type)).toEqual([
       'flip-cards',
       'tabs',
@@ -37,7 +40,6 @@ describe('widget-panel-catalog', () => {
       'stepper',
       'sello',
       'qr-sesion',
-      'dibujo',
     ]);
     expect(getWidgetPanelItemsByGroup('overlay').map((item) => item.type)).toEqual(['popup']);
     expect(getWidgetPanelItem('boton')?.group).toBe('control');

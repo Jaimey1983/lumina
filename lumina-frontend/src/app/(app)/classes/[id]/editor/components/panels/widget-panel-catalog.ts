@@ -201,7 +201,16 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
   },
 };
 
-export const WIDGET_PANEL_ITEMS: WidgetPanelItem[] = WIDGET_TIPOS.map((type) => ({
+/**
+ * Tipos registrados que no se ofrecen en el panel. `dibujo` es andamiaje de la
+ * etapa W (el editor de dibujo vive dentro del bloque `diagrama`, DW11); se
+ * retira del todo en W10.
+ */
+const TIPOS_OCULTOS_DEL_PANEL: readonly WidgetTipo[] = ['dibujo'];
+
+export const WIDGET_PANEL_ITEMS: WidgetPanelItem[] = WIDGET_TIPOS.filter(
+  (type) => !TIPOS_OCULTOS_DEL_PANEL.includes(type),
+).map((type) => ({
   type,
   label: widgetLabel(type),
   ...WIDGET_PANEL_META[type],
