@@ -27,6 +27,8 @@ V1.1 ─→ V1.2 ─→ V1.3 ─→ V1.4 ─→ V2.1 ─→ V2.2 ─┐
 ```
 V1.1–V1.4 tocan archivos que se solapan (`diagrama-defaults.ts`, `lumina-rf-bridge.ts`, `diagrama-shape-node.tsx`, `diagrama-properties.tsx`): **van en serie** (Regla 10, Concurrencia). V2.2 y V2.3 tocan archivos disjuntos tras V2.1 y pueden ir en paralelo. V3.2 y V4.1 pueden ir en paralelo tras V3.1 si sus conjuntos de archivos siguen disjuntos al re-medir.
 
+**Actualización 2026-10-16:** V4.1, V4.2 y V4.3 quedan **reemplazadas por la etapa W** (`docs/tablero/etapa-W.md`); el dueño pidió un editor de dibujo libre en lugar de seguir ampliando el bloque `diagrama`. V1–V3 se mantienen.
+
 **Fuera de alcance (pendiente para una etapa posterior):** contenedores y carriles (swimlane), multi-selección + alinear/distribuir + `snapToGrid`, más de 4 puntos de conexión por forma, saltos de línea en cruces, datos tipados por nodo (organigrama con foto/cargo), generar diagramas con IA (reutiliza Etapa J), tooltip/expansión del texto truncado (`D8`), `window` events de teclado (`D5`), Venn de 4 conjuntos, import `.vsdx`, cualquier copia de geometrías, plantillas o temas de EdrawMax (material propietario: el peritaje sirve para entender el modelo, no para copiar).
 
 ---
@@ -129,7 +131,7 @@ El tema de EdrawMax = `ThemeColor + ThemeEffect + ThemeText + ThemeConnector` (p
 
 #### V4.1 — Registro de formas (`ShapeDefinition` ligera)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** reemplazada por `W2` (decisión del dueño, 2026-10-16: el objetivo pasó a ser un editor de dibujo libre, etapa W). No se hace en `diagrama`.
 - **Precondición:** V3.1 `hecho`.
 - **Alcance — PUEDE tocar:** `diagrama-shape-node.tsx` (las ramas `if (forma === …)` pasan a una tabla), un archivo nuevo `diagrama-formas.ts` (registro `forma → { path(w,h), rectTexto(w,h) }`), `diagrama-properties.tsx` (`FORMAS_CONFIG` se deriva del registro), specs de paridad. **NO** agrega fórmulas, manijas ni geometría paramétrica (DV1): una forma = función `(w,h) → path SVG` + rectángulo de texto.
 - **Entregable:** las 11+ formas viven en el registro; `DiagramaShapeNode` queda como un renderizador genérico. **Prueba de paridad (DV5):** para cada forma y varios `(w,h)`, el `path` y el rectángulo de texto coinciden con los del render viejo (misma entrada → misma salida visible). Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual de las 17 plantillas.
@@ -137,7 +139,7 @@ El tema de EdrawMax = `ThemeColor + ThemeEffect + ThemeText + ThemeConnector` (p
 
 #### V4.2 — Redimensionar nodos con `NodeResizer`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** reemplazada por `W5` (decisión del dueño, 2026-10-16: el objetivo pasó a ser un editor de dibujo libre, etapa W). No se hace en `diagrama`.
 - **Precondición:** V4.1 `hecho` (y V1.1: persiste `ancho`/`alto`).
 - **Alcance — PUEDE tocar:** `diagrama-shape-node.tsx`/`diagrama-formas.ts`, `diagrama-editor.tsx` (confirmar con debounce ~300 ms o al soltar), `diagrama-bridge.ts`, specs. Cambios en `graph-editor/` solo por `meta` opcional (DV4).
 - **Entregable:** con el bloque seleccionado, los nodos muestran asas de tamaño; el tamaño se guarda en `ancho`/`alto` (mínimos y máximos acotados) y las formas se redibujan con `path(w,h)`. Un solo `commit` por gesto, nunca por fotograma. Pruebas: round-trip del tamaño; el viewer del alumno respeta el tamaño guardado. Verificación: la de V4.1 más prueba manual.
@@ -145,7 +147,7 @@ El tema de EdrawMax = `ThemeColor + ThemeEffect + ThemeText + ThemeConnector` (p
 
 #### V4.3 — Diagramas evaluables (ficha raíz — se redacta al cerrar V4.2)
 - **Operador:** a asignar al redactarla
-- **Estado:** pendiente — **ficha raíz, sin asignar**
+- **Estado:** reemplazada por `W11` (decisión del dueño, 2026-10-16: el objetivo pasó a ser un editor de dibujo libre, etapa W). No se hace en `diagrama`.
 - **Precondición:** V4.2 `hecho`.
 - **Quién la redacta:** quien cierre V4.2, con el dueño del tablero (Regla 10: las fichas se redactan con el estado real del código).
 - **Qué debe resolver (no se reabre el objetivo, sí el alcance):** la ventaja que EdrawMax no tiene (peritaje P-Lumina): diagramas que el alumno completa y se puntúan vía `@lumina/scoring`. Candidatos a decidir al redactar: Venn (ya guarda `regionId`), etiquetar partes de pirámide/cebolla/ciclo, completar un flujo. Debe definir: qué subtipos entran en la primera tanda, el modelo de «respuesta correcta» por nodo/región, cómo se conecta con la Etapa U y con el motor de interacción (Etapa K), y la prueba de paridad del viewer actual (los diagramas no evaluables no cambian).
