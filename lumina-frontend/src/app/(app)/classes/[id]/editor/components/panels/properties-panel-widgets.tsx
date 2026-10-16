@@ -128,6 +128,7 @@ const TITULO_PANEL_SOLO_REGISTRY: Record<WidgetTipoSoloRegistry, string> = {
   stepper: 'Stepper',
   sello: 'Sello de logro',
   'qr-sesion': 'QR de sesión',
+  dibujo: 'Dibujo',
 };
 
 export interface WidgetPropertiesCtx {

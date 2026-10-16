@@ -121,6 +121,7 @@ jobs:
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/interactions build
       - run: pnpm --filter @lumina/element-kit-core build
+      - run: pnpm --filter @lumina/drawing build
       - run: pnpm --filter @lumina/element-kit build
       - run: pnpm --filter lumina-frontend lint
       - run: pnpm --filter lumina-frontend test:unit

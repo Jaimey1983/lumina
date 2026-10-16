@@ -41,6 +41,7 @@ import { normalizeTimelineWidget } from '@lumina/element-kit/widgets/timeline/ti
 import { normalizeCalloutWidget } from '@lumina/element-kit/widgets/callout/callout-defaults';
 import { normalizeGaleriaWidget } from '@lumina/element-kit/widgets/galeria/galeria-defaults';
 import { normalizeStepperWidget } from '@lumina/element-kit/widgets/stepper/stepper-defaults';
+import { normalizeDibujoWidget } from '@lumina/element-kit/widgets/dibujo/dibujo-defaults';
 import { normalizeSelloWidget } from '@lumina/element-kit/widgets/sello/sello-defaults';
 import { normalizeQrSesionWidget } from '@lumina/element-kit/widgets/qr-sesion/qr-sesion-defaults';
 import { esWidgetSoloRegistry, type WidgetTipoSoloRegistry } from '@lumina/types/widget';
@@ -256,6 +257,7 @@ const NORMALIZAR_SOLO_REGISTRY: Record<WidgetTipoSoloRegistry, (bloque: never) =
   stepper: normalizeStepperWidget,
   sello: normalizeSelloWidget,
   'qr-sesion': normalizeQrSesionWidget,
+  dibujo: normalizeDibujoWidget,
 };
 
 function normalizeBlock(block: Block): Block {
