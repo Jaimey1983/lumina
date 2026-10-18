@@ -32,9 +32,12 @@ export function renderActividadProperties({
   onApplySlide,
   motorSections,
 }: ActividadPropertiesCtx): ReactElement | null {
+  // Los editores con guardado diferido pueden emitir al desmontarse, cuando la selección ya cambió:
+  // `applyNow` apunta al bloque seleccionado en ese momento, así que se ata la escritura al bloque
+  // que se editaba y un envío tardío nunca pisa a otro.
   const onChangeActividad = (updated: ActivityBlock['actividad']) => {
     void applyNow((b) => {
-      if (b.tipo !== 'actividad') return b;
+      if (b.tipo !== 'actividad' || b.id !== block.id) return b;
       return { ...b, actividad: updated };
     });
   };
@@ -85,6 +88,9 @@ export function renderActividadProperties({
       return panelActividad(
         def.catalogo?.nombre ?? 'Propiedades',
         <def.Propiedades
+          // Un panel por bloque: sin la clave, al pasar a otra actividad del mismo tipo el editor
+          // conserva el borrador local de la anterior (su `editorSyncKey` es fijo).
+          key={block.id}
           estado={act}
           config={{}}
           onConfigChange={() => {}}
