@@ -15,6 +15,7 @@ export const TIPOS_FORMA = [
   'triangulo',
   'triangulo-rectangulo',
   'trapecio',
+  'trapecio-invertido',
   'paralelogramo',
   'pentagono',
   'hexagono',

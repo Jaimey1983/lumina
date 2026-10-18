@@ -6,6 +6,7 @@ import {
   type BlockMarco,
   type DiagramaArista,
   type DiagramaBlock,
+  type DiagramaEscena,
   type DiagramaEstilo,
   type DiagramaGrafoBlock,
   type DiagramaNodo,
@@ -15,6 +16,7 @@ import {
   type DiagramaVennBlock,
   type DiagramaVennElemento,
 } from '@lumina/types/slide';
+import { normalizarEscena } from '@lumina/drawing';
 import { regionesForConjuntos, validRegionIds } from './diagrama-regions.js';
 
 export const VALID_GRAFO_SUBTIPOS: readonly string[] = [
@@ -379,6 +381,15 @@ export function sanitizeOpciones(input: unknown): DiagramaOpciones | undefined {
     : undefined;
 }
 
+/**
+ * Dibujo libre del diagrama: se conserva (ya normalizado por `@lumina/drawing`) solo si el dato
+ * guardado es un objeto; cualquier otra cosa se descarta y el diagrama vuelve a verse como siempre.
+ */
+function sanitizeEscena(raw: unknown): DiagramaEscena | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  return normalizarEscena(raw) as unknown as DiagramaEscena;
+}
+
 export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
   const fb = BLOCK_FALLBACKS.diagrama;
   const raw = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
@@ -403,6 +414,7 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
   const titulo = typeof raw.titulo === 'string' ? raw.titulo : defaultTitulo;
   const descripcionAccesible =
     typeof raw.descripcionAccesible === 'string' ? raw.descripcionAccesible : undefined;
+  const escena = sanitizeEscena(raw.escena);
 
   // Subtipo Venn
   if (raw.subtipo === 'venn') {
@@ -431,6 +443,7 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
       regiones,
       elementos,
       ...(opcionesVenn && Object.keys(opcionesVenn).length > 0 ? { opciones: opcionesVenn } : {}),
+      ...(escena ? { escena } : {}),
     };
   }
 
@@ -468,6 +481,7 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
       aristas: linear.aristas,
       layout: 'lineal',
       ...(opciones ? { opciones } : {}),
+      ...(escena ? { escena } : {}),
     };
   }
 
@@ -493,6 +507,7 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
     aristas,
     layout,
     ...(opciones ? { opciones } : {}),
+    ...(escena ? { escena } : {}),
   };
 }
 

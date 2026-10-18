@@ -22,12 +22,15 @@ import {
   Grid,
   Sliders,
   Spline,
+  PenTool,
+  Undo2,
 } from 'lucide-react';
 import type {
   Block,
   DiagramaArista,
   DiagramaAristaEstiloLinea,
   DiagramaBlock,
+  DiagramaEscena,
   DiagramaEstilo,
   DiagramaGrafoBlock,
   DiagramaNodo,
@@ -46,7 +49,7 @@ import {
   type DireccionLayout,
 } from './diagrama-dagre.js';
 import { NOMBRE_CONJUNTO_MAX, sanitizeEstilo } from './diagrama-defaults.js';
-import { exportarDiagrama, type FormatoExportacion, type TemaExportacion } from './diagrama-export.js';
+import { descargarBlob, exportarDiagrama, nombreArchivo, svgAPng, type FormatoExportacion, type TemaExportacion } from './diagrama-export.js';
 import { layoutCebolla, layoutEmbudo, layoutPiramide } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
@@ -70,6 +73,9 @@ import {
   createDefaultEmpatiaBlock,
 } from './diagrama-defaults.js';
 import { PALETAS_DIAGRAMA, aplicarPaletaADiagrama } from './diagrama-temas.js';
+import { escenaASvg, normalizarEscena, type Escena } from '@lumina/drawing';
+import { EditorLibreModal } from '../../elements/dibujo/editor/editor-libre-modal.js';
+import { diagramaAEscena } from './diagrama-escena.js';
 
 interface DiagramaPropertiesProps {
   block: DiagramaBlock;
@@ -206,10 +212,11 @@ function finalizeGrafo(block: DiagramaGrafoBlock): DiagramaGrafoBlock {
     : block;
 }
 
-export function DiagramaProperties({
+function DiagramaPropertiesClasico({
   block,
   applyNow,
-}: DiagramaPropertiesProps) {
+  onEditarLibre,
+}: DiagramaPropertiesProps & { onEditarLibre: () => void }) {
   const [localBlock, setLocalBlock] = useState<DiagramaBlock>(block);
   const [outlineText, setOutlineText] = useState('');
   // Opciones de exportación: solo viven en el panel, no se guardan en el bloque.
@@ -661,6 +668,22 @@ export function DiagramaProperties({
 
   return (
     <div className="space-y-5 text-xs">
+      {/* Edición libre: convierte el diagrama en un dibujo que se puede cambiar por completo. */}
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 space-y-2 shadow-2xs" data-diagrama-edicion-libre="">
+        <div className="flex items-start gap-2">
+          <PenTool className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+          <div>
+            <div className="font-semibold text-foreground text-xs leading-tight">Edición libre</div>
+            <div className="text-[10px] text-muted-foreground leading-snug">
+              Mueve, cambia de forma, gira, agrupa y alinea las figuras como en un editor de dibujo. El diagrama original se conserva hasta que hagas un cambio.
+            </div>
+          </div>
+        </div>
+        <Button type="button" size="sm" variant="primary" onClick={onEditarLibre} className="h-7 w-full text-xs">
+          Editar libremente
+        </Button>
+      </div>
+
       {/* Auto-Organizar con Layout Inteligente */}
       {grafoBlock && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 flex items-center justify-between shadow-2xs">
@@ -1445,5 +1468,185 @@ export function DiagramaProperties({
         </CollapsibleSection>
       )}
     </div>
+  );
+}
+
+
+// ─── Diagrama editado como dibujo libre (W5b) ─────────────────────────────────
+
+/** Panel de un diagrama que ya es un dibujo libre: lo clásico (nodos, paletas, disposición) ya no se aplica. */
+function DiagramaPropertiesEscena({
+  block,
+  applyNow,
+  onEditar,
+}: {
+  block: DiagramaBlock;
+  applyNow: DiagramaPropertiesProps['applyNow'];
+  onEditar: () => void;
+}) {
+  const [titulo, setTitulo] = useState(block.titulo ?? '');
+  const [descripcion, setDescripcion] = useState(block.descripcionAccesible ?? '');
+  const [confirmando, setConfirmando] = useState(false);
+  const [exportando, setExportando] = useState<FormatoExportacion | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const temporizador = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!temporizador.current) {
+      setTitulo(block.titulo ?? '');
+      setDescripcion(block.descripcionAccesible ?? '');
+    }
+  }, [block.titulo, block.descripcionAccesible]);
+
+  useEffect(
+    () => () => {
+      if (temporizador.current) clearTimeout(temporizador.current);
+    },
+    [],
+  );
+
+  const aplicar = (cambio: Partial<Pick<DiagramaBlock, 'titulo' | 'descripcionAccesible'>>) => {
+    if (temporizador.current) clearTimeout(temporizador.current);
+    temporizador.current = setTimeout(() => {
+      temporizador.current = null;
+      void applyNow((b) => (b.tipo === 'diagrama' && (b as DiagramaBlock).id === block.id ? ({ ...b, ...cambio } as Block) : b));
+    }, 300);
+  };
+
+  const volverAlOriginal = () => {
+    setConfirmando(false);
+    void applyNow((b) => {
+      if (b.tipo !== 'diagrama' || (b as DiagramaBlock).id !== block.id) return b;
+      const { escena: _descartada, ...resto } = b as DiagramaBlock;
+      return resto as Block;
+    });
+  };
+
+  const exportar = async (formato: FormatoExportacion) => {
+    if (exportando) return;
+    setExportando(formato);
+    setExportError(null);
+    try {
+      const escena: Escena = { ...normalizarEscena(block.escena), fondo: normalizarEscena(block.escena).fondo ?? '#FFFFFF' };
+      const { svg, ancho, alto } = escenaASvg(escena, { modo: 'claro', titulo: titulo || 'Diagrama' });
+      const blob = formato === 'svg' ? new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }) : await svgAPng(svg, ancho, alto);
+      descargarBlob(blob, nombreArchivo({ titulo }, formato));
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'No se pudo exportar el dibujo.');
+    } finally {
+      setExportando(null);
+    }
+  };
+
+  return (
+    <div className="space-y-5 text-xs" data-diagrama-panel-escena="">
+      <div className="space-y-2">
+        <Button type="button" size="sm" variant="primary" onClick={onEditar} className="h-8 w-full text-xs">
+          <PenTool /> Editar dibujo
+        </Button>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          Este diagrama se edita como dibujo libre. También puedes abrir el editor con doble clic sobre él.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="diagrama-escena-titulo" className="text-xs">
+            Título
+          </Label>
+          <Input
+            id="diagrama-escena-titulo"
+            value={titulo}
+            maxLength={120}
+            onChange={(e) => {
+              setTitulo(e.target.value);
+              aplicar({ titulo: e.target.value });
+            }}
+            className="h-8 text-xs"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="diagrama-escena-descripcion" className="text-xs">
+            Descripción para lectores de pantalla
+          </Label>
+          <Textarea
+            id="diagrama-escena-descripcion"
+            value={descripcion}
+            maxLength={500}
+            rows={3}
+            placeholder="Cuenta con palabras qué muestra el dibujo."
+            onChange={(e) => {
+              setDescripcion(e.target.value);
+              aplicar({ descripcionAccesible: e.target.value });
+            }}
+            className="resize-none text-xs"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2 border-t border-border pt-3">
+        <div className="font-semibold text-foreground">Descargar</div>
+        <div className="flex gap-2">
+          <Button type="button" size="sm" variant="outline" disabled={exportando !== null} onClick={() => void exportar('svg')} className="h-7 flex-1 text-xs">
+            <Download /> SVG
+          </Button>
+          <Button type="button" size="sm" variant="outline" disabled={exportando !== null} onClick={() => void exportar('png')} className="h-7 flex-1 text-xs">
+            <Download /> PNG
+          </Button>
+        </div>
+        {exportError ? <p className="text-[10px] text-destructive">{exportError}</p> : null}
+      </div>
+
+      <div className="space-y-2 border-t border-border pt-3">
+        {confirmando ? (
+          <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-2">
+            <p className="text-[11px] text-foreground leading-snug">Se pierden los cambios hechos en el dibujo y vuelve el diagrama original. ¿Seguro?</p>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="destructive" onClick={volverAlOriginal} className="h-7 flex-1 text-xs">
+                Sí, volver
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setConfirmando(false)} className="h-7 flex-1 text-xs">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button type="button" size="sm" variant="ghost" onClick={() => setConfirmando(true)} className="h-7 w-full text-xs text-muted-foreground">
+            <Undo2 /> Volver al diagrama original
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Panel de propiedades de Diagramas. El editor libre se monta aquí (y no dentro de cada panel) para
+ * que siga abierto cuando el primer cambio convierte el diagrama en dibujo y el panel se reemplaza.
+ */
+export function DiagramaProperties(props: DiagramaPropertiesProps) {
+  const { block, applyNow } = props;
+  const [escenaAbierta, setEscenaAbierta] = useState<Escena | null>(null);
+
+  const abrir = () => setEscenaAbierta(block.escena ? normalizarEscena(block.escena) : diagramaAEscena(block));
+  const guardar = (escena: Escena) => {
+    void applyNow((b) => (b.tipo === 'diagrama' && (b as DiagramaBlock).id === block.id ? ({ ...b, escena: escena as unknown as DiagramaEscena } as Block) : b));
+  };
+
+  return (
+    <>
+      {block.escena ? (
+        <DiagramaPropertiesEscena block={block} applyNow={applyNow} onEditar={abrir} />
+      ) : (
+        <DiagramaPropertiesClasico {...props} onEditarLibre={abrir} />
+      )}
+      <EditorLibreModal
+        abierto={escenaAbierta !== null}
+        escena={escenaAbierta ?? normalizarEscena({})}
+        {...(block.titulo ? { titulo: block.titulo } : {})}
+        onCambio={guardar}
+        onCerrar={() => setEscenaAbierta(null)}
+      />
+    </>
   );
 }

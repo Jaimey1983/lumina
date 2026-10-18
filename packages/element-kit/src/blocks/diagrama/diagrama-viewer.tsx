@@ -6,6 +6,8 @@ import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@lumi
 import { diagramaToGraphModel } from './diagrama-bridge.js';
 import { VennSvg } from './venn-svg.js';
 import { DIAGRAMA_NODE_TYPES } from './diagrama-shape-node.js';
+import { normalizarEscena } from '@lumina/drawing';
+import { DibujoSvg } from '../../widgets/dibujo/dibujo-render.js';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@lumina/ui/lib/utils';
 
@@ -44,6 +46,9 @@ export function DiagramaViewer({
     return diagramaToGraphModel(grafoBlock);
   }, [grafoBlock]);
 
+  // Un diagrama editado como dibujo libre se ve con su escena; los nodos y aristas quedan guardados como el original.
+  const escena = useMemo(() => (block.escena ? normalizarEscena(block.escena) : null), [block.escena]);
+
   return (
     <figure
       role="region"
@@ -66,7 +71,9 @@ export function DiagramaViewer({
       )}
 
       <div className="relative min-h-0 flex-1 w-full overflow-hidden rounded-md">
-        {isVenn && vennBlock ? (
+        {escena ? (
+          <DibujoSvg escena={escena} titulo={titulo || 'Diagrama'} />
+        ) : isVenn && vennBlock ? (
           <VennSvg block={vennBlock} />
         ) : isGrafo && grafoBlock && grafoBlock.nodos.length > 0 ? (
           <GraphCanvas

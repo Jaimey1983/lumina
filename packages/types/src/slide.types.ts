@@ -1839,6 +1839,12 @@ export interface DiagramaOpciones {
   estilo?: DiagramaEstilo;
 }
 
+/**
+ * Dibujo libre del diagrama (etapa W, `@lumina/drawing`). Aquí es opaco: el paquete de tipos no
+ * depende del motor de dibujo; `normalizeDiagramaBlock` lo valida con `normalizarEscena`.
+ */
+export type DiagramaEscena = Record<string, unknown>;
+
 export interface DiagramaGrafoBlock {
   id: string;
   tipo: 'diagrama';
@@ -1856,6 +1862,11 @@ export interface DiagramaGrafoBlock {
   aristas: DiagramaArista[];
   layout?: 'libre' | 'jerarquico' | 'lineal';
   opciones?: DiagramaOpciones;
+  /**
+   * Si existe, el diagrama se ve y se edita como dibujo libre (formas, líneas y texto que el docente
+   * mueve y cambia a voluntad); `nodos` y `aristas` se conservan como el diagrama original.
+   */
+  escena?: DiagramaEscena;
 }
 
 export interface DiagramaVennRegion {
@@ -1890,6 +1901,8 @@ export interface DiagramaVennBlock {
   elementos: DiagramaVennElemento[];
   /** Solo `paleta` tiene efecto en Venn: colorea los círculos. */
   opciones?: DiagramaOpciones;
+  /** Dibujo libre del diagrama (ver `DiagramaGrafoBlock.escena`). */
+  escena?: DiagramaEscena;
 }
 
 export type DiagramaBlock = DiagramaGrafoBlock | DiagramaVennBlock;

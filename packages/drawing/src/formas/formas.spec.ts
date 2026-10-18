@@ -155,10 +155,27 @@ describe.each(TIPOS_FORMA)('forma %s', (forma) => {
 
 const POLIGONALES = TIPOS_FORMA.filter((t) => poligonoForma(t, 100, 100) !== undefined && t !== 'rectangulo');
 
+describe('trapecio invertido', () => {
+  it('es el espejo vertical del trapecio (base ancha arriba)', () => {
+    const t = poligonoForma('trapecio', 100, 50, { parametros: { inclinacion: 0.2 } }) ?? [];
+    const i = poligonoForma('trapecio-invertido', 100, 50, { parametros: { inclinacion: 0.2 } }) ?? [];
+    expect(i).toHaveLength(4);
+    const espejo = t.map((p) => ({ x: p.x, y: 50 - p.y })).sort((a, b) => a.y - b.y || a.x - b.x);
+    expect([...i].sort((a, b) => a.y - b.y || a.x - b.x)).toEqual(espejo);
+    // Arriba mide todo el ancho; abajo, lo que deja la inclinación.
+    expect(i[0]).toEqual({ x: 0, y: 0 });
+    expect(i[1]).toEqual({ x: 100, y: 0 });
+  });
+
+  it('su zona de texto es la misma franja central y los puertos tocan el contorno', () => {
+    expect(rectanguloTexto('trapecio-invertido', 100, 50, { parametros: { inclinacion: 0.2 } })).toEqual(rectanguloTexto('trapecio', 100, 50, { parametros: { inclinacion: 0.2 } }));
+  });
+});
+
 describe('formas poligonales', () => {
   it('son todas las que no tienen curvas', () => {
     expect([...POLIGONALES].sort()).toEqual(
-      ['rombo', 'triangulo', 'triangulo-rectangulo', 'trapecio', 'paralelogramo', 'pentagono', 'hexagono', 'octogono', 'estrella', 'cruz', 'flecha-derecha', 'flecha-izquierda', 'flecha-doble'].sort(),
+      ['rombo', 'triangulo', 'triangulo-rectangulo', 'trapecio', 'trapecio-invertido', 'paralelogramo', 'pentagono', 'hexagono', 'octogono', 'estrella', 'cruz', 'flecha-derecha', 'flecha-izquierda', 'flecha-doble'].sort(),
     );
   });
 

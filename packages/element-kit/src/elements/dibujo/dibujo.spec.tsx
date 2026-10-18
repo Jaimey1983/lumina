@@ -223,6 +223,22 @@ describe("Editor", () => {
     expect(seleccionar).toHaveBeenCalledTimes(1);
   });
 
+  it("con doble clic abre el editor; los cambios llegan por onChange", () => {
+    const onChange = vi.fn();
+    const estado = createDefaultDibujoBlock();
+    const { container } = render(<Editor estado={estado} config={{}} onChange={onChange} />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.doubleClick(container.querySelector("[data-dibujo]") as Element);
+    const lienzo = screen.getByRole("application", { name: "Lienzo de dibujo" });
+    fireEvent.keyDown(lienzo, { key: "Tab" });
+    fireEvent.keyDown(lienzo, { key: "ArrowRight", shiftKey: true });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0]?.[0]).toMatchObject({ tipo: "dibujo", titulo: estado.titulo });
+    fireEvent.keyDown(lienzo, { key: "Escape" }); // quita la selección
+    fireEvent.keyDown(lienzo, { key: "Escape" }); // cierra
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it("funciona sin el callback de selección", () => {
     const { container } = render(<Editor estado={createDefaultDibujoBlock()} config={{}} onChange={() => undefined} />);
     expect(() => fireEvent.click(container.querySelector("[data-dibujo]") as Element)).not.toThrow();
@@ -282,9 +298,25 @@ describe("Propiedades", () => {
     expect(screen.getByRole("button", { name: /Ciclo/ }).getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("avisa con franqueza que la edición llega después", () => {
+  it("«Editar dibujo» abre el editor a pantalla casi completa y lo cierra con «Listo»", () => {
     montar();
-    expect(document.body.textContent).toContain("Las herramientas para crear y editar formas");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Editar dibujo/ }));
+    expect(screen.getByRole("dialog", { name: /Editor de dibujo/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Listo/ }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("lo que se hace en el editor llega al bloque como un estado completo (título y descripción intactos)", () => {
+    const estado = normalizeDibujoWidget({ ...createDefaultDibujoBlock(), titulo: "Mío", descripcionAccesible: "Describe" });
+    const onChange = montar(estado);
+    fireEvent.click(screen.getByRole("button", { name: /Editar dibujo/ }));
+    const lienzo = screen.getByRole("application", { name: "Lienzo de dibujo" });
+    fireEvent.keyDown(lienzo, { key: "a", ctrlKey: true });
+    fireEvent.keyDown(lienzo, { key: "Delete" });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ tipo: "dibujo", titulo: "Mío", descripcionAccesible: "Describe" }));
+    expect(onChange.mock.calls[0]?.[0].escena.elementos).toHaveLength(0);
   });
 
   it("tolera un estado guardado a medias", () => {

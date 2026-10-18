@@ -7,6 +7,7 @@
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.spec.tsx",
+    "src/**/util-pruebas.ts",
     "src/vitest-setup.ts"
   ]
 }

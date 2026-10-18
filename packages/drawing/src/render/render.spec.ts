@@ -302,7 +302,7 @@ describe('escenaANodos', () => {
     expect(t({ nombre: 'Decisión', descripcion: 'Rombo de decisión' })).toEqual(['Rombo de decisión']);
   });
 
-  it('dibuja las 21 formas sin error', () => {
+  it('dibuja todas las formas del catálogo sin error', () => {
     const e = escena(TIPOS_FORMA.map((f, i) => forma(`f${i}`, { forma: f, texto: f })));
     expect(escenaANodos(e).nodos).toHaveLength(TIPOS_FORMA.length);
   });
