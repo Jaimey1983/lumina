@@ -2,8 +2,8 @@ import { DibujoEditor as WidgetEditor, DibujoProperties as WidgetProperties, Dib
 import type { ElementEditorProps, ElementPropsPanelProps, ElementViewerProps } from "@lumina/element-kit-core";
 import type { DibujoConfig, DibujoEstado } from "./dibujo-types.js";
 
-export function DibujoEditor({ estado, config }: ElementEditorProps<DibujoEstado, DibujoConfig>) {
-  return <WidgetEditor estado={estado} onEnsureBlockSelected={config.onEnsureBlockSelected} />;
+export function DibujoEditor({ estado, config, onChange }: ElementEditorProps<DibujoEstado, DibujoConfig>) {
+  return <WidgetEditor estado={estado} onChange={onChange} onEnsureBlockSelected={config.onEnsureBlockSelected} />;
 }
 
 export function DibujoViewer({ estado, config }: ElementViewerProps<DibujoEstado, DibujoConfig>) {

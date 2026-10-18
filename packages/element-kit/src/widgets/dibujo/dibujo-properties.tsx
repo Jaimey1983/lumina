@@ -1,9 +1,14 @@
-import type { ReactElement } from "react";
+"use client";
+
+import { useState, type ReactElement } from "react";
 import { PresetGallery, aplicarPreset } from "@lumina/editor-shared/preset-gallery";
 import { WidgetSectionTitle } from "@lumina/editor-shared/widget-properties-panel";
+import { Button } from "@lumina/ui/button";
 import { Input } from "@lumina/ui/input";
 import { Label } from "@lumina/ui/label";
 import { Textarea } from "@lumina/ui/textarea";
+import { PenTool } from "lucide-react";
+import { EditorLibreModal } from "../../elements/dibujo/editor/editor-libre-modal.js";
 import { presetsDelWidget } from "../widget-presets.js";
 import { DIBUJO_DESCRIPCION_MAX, DIBUJO_TITULO_MAX, normalizeDibujoWidget } from "./dibujo-defaults.js";
 import type { DibujoEstado } from "./dibujo-types.js";
@@ -16,6 +21,7 @@ export interface DibujoPropertiesProps {
 export function DibujoProperties({ estado: crudo, onChange }: DibujoPropertiesProps): ReactElement {
   const estado = normalizeDibujoWidget(crudo);
   const elementos = estado.escena.elementos.length;
+  const [editando, setEditando] = useState(false);
 
   return (
     <div className="flex flex-col gap-5">
@@ -63,10 +69,21 @@ export function DibujoProperties({ estado: crudo, onChange }: DibujoPropertiesPr
         <p className="text-[11px] text-muted-foreground" data-dibujo-resumen="">
           {elementos === 0 ? "El lienzo está vacío." : `${elementos} ${elementos === 1 ? "elemento" : "elementos"} en el lienzo.`}
         </p>
+        <Button type="button" size="sm" className="w-full" onClick={() => setEditando(true)} data-dibujo-editar="">
+          <PenTool /> Editar dibujo
+        </Button>
         <p className="text-[11px] text-muted-foreground">
-          Elige una plantilla para empezar. Las herramientas para crear y editar formas, líneas y texto se agregan en los siguientes pasos de la etapa.
+          Abre el lienzo a pantalla casi completa: elige, mueve, redimensiona y gira formas. Las herramientas para crear formas, líneas y texto llegan en el siguiente paso de la etapa.
         </p>
       </div>
+
+      <EditorLibreModal
+        abierto={editando}
+        escena={estado.escena}
+        {...(estado.titulo !== undefined ? { titulo: estado.titulo } : {})}
+        onCambio={(escena) => onChange(normalizeDibujoWidget({ ...estado, escena }))}
+        onCerrar={() => setEditando(false)}
+      />
     </div>
   );
 }

@@ -26,6 +26,21 @@ function aElemento(nodo: NodoSvg, clave: string): ReactNode {
   return createElement(nodo.tag, propsDeNodo(nodo.attrs, clave), ...contenido);
 }
 
+export interface NodosSvgProps {
+  escena: Escena;
+  modo?: ModoColor;
+}
+
+/**
+ * Los elementos de la escena como contenido de un `<svg>` ya existente (sin el `<svg>` en sí):
+ * lo usa el editor, que pone su propio zoom y capas encima. Mismo árbol que `DibujoSvg`.
+ */
+export function NodosSvg({ escena, modo = "css" }: NodosSvgProps): ReactElement {
+  const prefijo = useId().replace(/[^A-Za-z0-9_-]/g, "");
+  const { nodos } = useMemo(() => escenaANodos(escena, { modo, prefijoIds: `dibujo${prefijo}` }), [escena, modo, prefijo]);
+  return <>{nodos.map((n, i) => aElemento(n, String(i)))}</>;
+}
+
 export interface DibujoSvgProps {
   escena: Escena;
   titulo?: string;
