@@ -1,42 +1,9 @@
 'use client';
 
-import type {
-  ActivityBlock,
-  Block,
-  ClasificarActivity,
-  MemoriaActivity,
-  PuzzleImagenActivity,
-  SopaLetrasActivity,
-  CrucigramaActivity,
-  AbrirCajaActivity,
-  AnagramaActivity,
-  AhorcadoActivity,
-  PuzzlePalabrasActivity,
-  MatchPairs,
-  GlobosActivity,
-  TopoActivity,
-  HistoriaRamificadaActivity,
-  Slide,
-} from '@lumina/types/slide';
-import { ClasificarProperties } from '@lumina/element-kit/activities/clasificar/clasificar-properties';
-import { MemoriaProperties } from '@lumina/element-kit/activities/memoria/memoria-properties';
-import {
-  PuzzleImagenProperties,
-} from '@lumina/element-kit/activities/puzzle-imagen/puzzle-imagen-properties';
-import { SopaLetrasProperties } from '@lumina/element-kit/activities/sopa-letras/sopa-letras-properties';
-import { CrucigramaProperties } from '@lumina/element-kit/activities/crucigrama/crucigrama-properties';
-import { AbrirCajaProperties } from '@lumina/element-kit/activities/abrir-caja/abrir-caja-properties';
-import { AnagramaProperties } from '@lumina/element-kit/activities/anagrama/anagrama-properties';
-import { AhorcadoProperties } from '@lumina/element-kit/activities/ahorcado/ahorcado-properties';
-import {
-  PuzzlePalabrasProperties,
-} from '@lumina/element-kit/activities/puzzle-palabras/puzzle-palabras-properties';
-import { EmparejarProperties } from '@lumina/element-kit/activities/emparejar/emparejar-properties';
-import { GlobosProperties } from '@lumina/element-kit/activities/globos/globos-properties';
-import { TopoProperties } from '@lumina/element-kit/activities/topo/topo-properties';
+import type { ActivityBlock, Block, Slide } from '@lumina/types/slide';
+import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import { RuletaProperties } from '@lumina/element-kit/widgets/ruleta/ruleta-properties';
 import { normalizeRuletaBlock } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
-import { HistoriaRamificadaProperties } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-properties';
 import {
   WidgetPropertiesPanelShell,
   WidgetPropertiesPanelStack,
@@ -65,9 +32,12 @@ export function renderActividadProperties({
   onApplySlide,
   motorSections,
 }: ActividadPropertiesCtx): ReactElement | null {
+  // Los editores con guardado diferido pueden emitir al desmontarse, cuando la selección ya cambió:
+  // `applyNow` apunta al bloque seleccionado en ese momento, así que se ata la escritura al bloque
+  // que se editaba y un envío tardío nunca pisa a otro.
   const onChangeActividad = (updated: ActivityBlock['actividad']) => {
     void applyNow((b) => {
-      if (b.tipo !== 'actividad') return b;
+      if (b.tipo !== 'actividad' || b.id !== block.id) return b;
       return { ...b, actividad: updated };
     });
   };
@@ -96,90 +66,6 @@ export function renderActividadProperties({
     const actBlock = block as ActivityBlock;
     const act = actBlock.actividad;
 
-    if (act.tipo === 'emparejar') {
-      return panelActividad(
-        'Emparejar',
-        <EmparejarProperties actividad={act as MatchPairs} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'clasificar') {
-      return panelActividad(
-        'Clasificar',
-        <ClasificarProperties actividad={act as ClasificarActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'memoria') {
-      return panelActividad(
-        'Memoria',
-        <MemoriaProperties actividad={act as MemoriaActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'puzzle_imagen') {
-      return panelActividad(
-        'Puzzle de imagen',
-        <PuzzleImagenProperties actividad={act as PuzzleImagenActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'sopa_letras') {
-      return panelActividad(
-        'Sopa de letras',
-        <SopaLetrasProperties actividad={act as SopaLetrasActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'crucigrama') {
-      return panelActividad(
-        'Crucigrama',
-        <CrucigramaProperties actividad={act as CrucigramaActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'abrir_caja') {
-      return panelActividad(
-        'Abrir caja',
-        <AbrirCajaProperties actividad={act as AbrirCajaActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'anagrama') {
-      return panelActividad(
-        'Anagrama',
-        <AnagramaProperties actividad={act as AnagramaActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'ahorcado') {
-      return panelActividad(
-        'Ahorcado',
-        <AhorcadoProperties actividad={act as AhorcadoActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'puzzle_palabras') {
-      return panelActividad(
-        'Puzzle de palabras',
-        <PuzzlePalabrasProperties actividad={act as PuzzlePalabrasActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'globos') {
-      return panelActividad(
-        'Globos',
-        <GlobosProperties actividad={act as GlobosActivity} onChange={onChangeActividad} />,
-      );
-    }
-
-    if (act.tipo === 'topo') {
-      return panelActividad(
-        'Golpea al topo',
-        <TopoProperties actividad={act as TopoActivity} onChange={onChangeActividad} />,
-      );
-    }
-
     if (act.tipo === 'ruleta') {
       return (
         <WidgetPropertiesPanelShell title="Ruleta">
@@ -194,10 +80,22 @@ export function renderActividadProperties({
       );
     }
 
-    if (act.tipo === 'historia_ramificada') {
+    // Despacho genérico: toda actividad registrada aporta su propio `Propiedades` (editor de
+    // contenido + estilos + ajustes comunes). Sin lista fija: una actividad nueva no puede quedar
+    // sin panel por olvido.
+    const def = elementRegistry.obtener<ActivityBlock['actividad'], Record<string, unknown>>(act.tipo);
+    if (def?.Propiedades) {
       return panelActividad(
-        'Historia Ramificada',
-        <HistoriaRamificadaProperties actividad={act as HistoriaRamificadaActivity} onChange={onChangeActividad} />,
+        def.catalogo?.nombre ?? 'Propiedades',
+        <def.Propiedades
+          // Un panel por bloque: sin la clave, al pasar a otra actividad del mismo tipo el editor
+          // conserva el borrador local de la anterior (su `editorSyncKey` es fijo).
+          key={block.id}
+          estado={act}
+          config={{}}
+          onConfigChange={() => {}}
+          onChange={onChangeActividad}
+        />,
       );
     }
 
@@ -206,7 +104,7 @@ export function renderActividadProperties({
         <PropertiesHeader title="Propiedades" />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <p className="p-4 text-sm text-muted-foreground">
-            Las actividades se configuran en el panel lateral derecho.
+            Esta actividad no tiene opciones de configuración.
           </p>
           {motorSections}
         </div>
