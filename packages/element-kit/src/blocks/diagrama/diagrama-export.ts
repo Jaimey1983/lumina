@@ -64,7 +64,7 @@ function hexARgb(color: string): [number, number, number] | undefined {
 }
 
 /** Mezcla `color` sobre `base` con `peso` (0–1); si alguno no es hex, devuelve `base`. */
-function mezclar(color: string, base: string, peso: number): string {
+export function mezclar(color: string, base: string, peso: number): string {
   const a = hexARgb(color);
   const b = hexARgb(base);
   if (!a || !b) return base;
@@ -72,7 +72,7 @@ function mezclar(color: string, base: string, peso: number): string {
   return `#${[0, 1, 2].map((i) => canal(i).toString(16).padStart(2, '0')).join('')}`;
 }
 
-function textoSobre(fondo: string, claro: string, oscuro: string): string {
+export function textoSobre(fondo: string, claro: string, oscuro: string): string {
   const rgb = hexARgb(fondo);
   if (!rgb) return claro;
   return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000 > 150 ? oscuro : claro;
@@ -102,7 +102,7 @@ export function envolverTexto(texto: string, maxChars: number, maxLineas: number
 
 // ─── Medidas de los nodos ─────────────────────────────────────────────────────
 
-interface Caja {
+export interface Caja {
   x: number;
   y: number;
   ancho: number;
@@ -111,7 +111,7 @@ interface Caja {
 
 const limitar = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
-function medirNodo(n: DiagramaNodo): Caja {
+export function medirNodo(n: DiagramaNodo): Caja {
   const forma: DiagramaNodoForma = n.forma ?? 'rounded';
   const conCuerpo = Boolean(n.cuerpo);
   const porTexto = (min: number, max: number) => limitar(n.etiqueta.length * 6.6 + 36, min, max);

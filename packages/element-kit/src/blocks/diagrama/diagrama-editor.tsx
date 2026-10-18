@@ -10,6 +10,9 @@ import { VennSvg } from './venn-svg.js';
 import { DIAGRAMA_NODE_TYPES } from './diagrama-shape-node.js';
 import { layoutCebolla, layoutEmbudo, layoutPiramide } from './layout-pedagogico.js';
 import type { GraphConnectAttempt, GraphNodePositionPatch } from '@lumina/editor-shared/graph-editor';
+import { normalizarEscena } from '@lumina/drawing';
+import { EditorLibreModal } from '../../elements/dibujo/editor/editor-libre-modal.js';
+import { DibujoSvg } from '../../widgets/dibujo/dibujo-render.js';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@lumina/ui/lib/utils';
 
@@ -33,7 +36,7 @@ interface DiagramaEditorProps {
   className?: string;
 }
 
-export function DiagramaEditor({
+function DiagramaEditorClasico({
   block,
   isSelected = false,
   onEnsureBlockSelected,
@@ -481,4 +484,59 @@ export function DiagramaEditor({
       )}
     </div>
   );
+}
+
+/**
+ * Diagrama editado como dibujo libre: se ve con su escena y, con doble clic, se abre el editor de
+ * pantalla casi completa. Cada gesto confirmado guarda la escena en el bloque.
+ */
+function DiagramaEditorEscena({
+  block,
+  onEnsureBlockSelected,
+  onChange,
+  className,
+}: DiagramaEditorProps) {
+  const [abierto, setAbierto] = useState(false);
+  const escena = useMemo(() => normalizarEscena(block.escena), [block.escena]);
+  const { titulo, descripcionAccesible } = block;
+
+  return (
+    <figure
+      role="region"
+      aria-label={titulo || 'Diagrama'}
+      className={cn(
+        'relative flex h-full w-full flex-col overflow-hidden rounded-lg bg-background/50 p-2 shadow-xs border border-border/40',
+        className,
+      )}
+      data-diagrama-escena=""
+      onClick={onEnsureBlockSelected}
+      onDoubleClick={onChange ? () => setAbierto(true) : undefined}
+      title={onChange ? 'Doble clic para editar el dibujo' : undefined}
+    >
+      {titulo && (
+        <figcaption className="px-2 pt-1 pb-1.5 text-center text-sm font-semibold tracking-tight text-foreground">{titulo}</figcaption>
+      )}
+      {descripcionAccesible && (
+        <div className="sr-only" aria-live="polite">
+          {descripcionAccesible}
+        </div>
+      )}
+      <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-md">
+        <DibujoSvg escena={escena} titulo={titulo || 'Diagrama'} />
+      </div>
+      {onChange ? (
+        <EditorLibreModal
+          abierto={abierto}
+          escena={escena}
+          {...(titulo ? { titulo } : {})}
+          onCambio={(nueva) => onChange({ ...block, escena: nueva as unknown as DiagramaBlock['escena'] })}
+          onCerrar={() => setAbierto(false)}
+        />
+      ) : null}
+    </figure>
+  );
+}
+
+export function DiagramaEditor(props: DiagramaEditorProps) {
+  return props.block.escena ? <DiagramaEditorEscena {...props} /> : <DiagramaEditorClasico {...props} />;
 }

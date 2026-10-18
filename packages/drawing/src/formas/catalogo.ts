@@ -307,6 +307,22 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
       { x: (p.inclinacion * ancho) / 2, y: alto / 2 },
     ],
   }),
+  'trapecio-invertido': poligonal({
+    id: 'trapecio-invertido',
+    nombre: 'Trapecio invertido',
+    grupo: 'basicas',
+    tamano: { ancho: 160, alto: 100 },
+    parametros: [PARAMETRO_INCLINACION],
+    // Base ancha arriba y angosta abajo (el embudo); el texto sigue derecho.
+    poligono: (ancho, alto, p) => [{ x: 0, y: 0 }, { x: ancho, y: 0 }, { x: (1 - p.inclinacion) * ancho, y: alto }, { x: p.inclinacion * ancho, y: alto }],
+    rectanguloTexto: (ancho, alto, p) => ({ x: p.inclinacion * ancho, y: 0, ancho: (1 - 2 * p.inclinacion) * ancho, alto }),
+    puertos: (ancho, alto, p) => [
+      { x: ancho / 2, y: 0 },
+      { x: ancho - (p.inclinacion * ancho) / 2, y: alto / 2 },
+      { x: ancho / 2, y: alto },
+      { x: (p.inclinacion * ancho) / 2, y: alto / 2 },
+    ],
+  }),
   paralelogramo: poligonal({
     id: 'paralelogramo',
     nombre: 'Paralelogramo',
