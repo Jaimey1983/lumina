@@ -74,7 +74,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W5 — Editor de pantalla casi completa: selección, mover, redimensionar y rotar
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** W4 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/editor/` (nuevo: lienzo, asas, barra superior, atajos de teclado), `dibujo-definition.ts` (`Editor`, `Propiedades` con el botón «Editar dibujo»), specs. Reemplaza el `Editor` provisional de W3. **NO** toca el contrato del canvas del frontend ni `getBlockPos`.
 - **Entregable:** DW6. Lienzo SVG con zoom y desplazamiento; selección por clic, por caja y múltiple (Mayús); mover con arrastre y con flechas; **asas de redimensionar (8) y de rotar**; ajuste a cuadrícula y guías con aviso visual; atajos (Supr, Ctrl+Z / Ctrl+Y, Ctrl+D, Ctrl+A, Ctrl+G); un gesto = **una** confirmación al bloque (DW7); Tab recorre elementos (DW8). Pruebas: mover/redimensionar/rotar producen el parche esperado y una sola entrada de historial; Ctrl+Z deshace el último gesto; la selección múltiple se mueve junta; cerrar el editor confirma la escena. Verificación: la de W3, más comprobación visual del flujo completo.
