@@ -20,6 +20,7 @@ import {
   agregar,
   ajustar as ajustarPunto,
   cajaDeElemento,
+  eliminar,
   elementoEn,
   esquinas,
   normalizarEscena,
@@ -444,6 +445,13 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (ed.id === null) {
       if (ed.valor.trim() === "") return;
       crearElemento(entradaTexto(ed.area.caja, ed.valor));
+    } else if (ed.valor.trim() === "" && actual.elementos.find((x) => x.id === ed.id)?.tipo === "texto") {
+      // Un cuadro de texto sin texto no se puede representar (el normalizador le pondría «Texto»): se quita, como en cualquier editor.
+      const nueva = eliminar(actual, [ed.id]);
+      if (nueva !== actual) {
+        confirmar(actual, { escena: nueva, seleccion: [] });
+        setAnuncio("Cuadro de texto vacío eliminado.");
+      }
     } else if (ed.valor !== ed.area.texto) {
       const nueva = actualizar(actual, [ed.id], { texto: ed.valor });
       if (nueva !== actual) confirmar(actual, { escena: nueva, seleccion: [ed.id] });

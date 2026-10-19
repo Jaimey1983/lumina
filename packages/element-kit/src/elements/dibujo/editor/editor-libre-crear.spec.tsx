@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FORMAS, TIPOS_FORMA, type Escena, type Forma, type Linea, type Texto } from "@lumina/drawing";
+import { FORMAS, TIPOS_FORMA, normalizarEscena, type Escena, type Forma, type Linea, type Texto } from "@lumina/drawing";
 import { EditorLibre } from "./editor-libre.js";
 import { escena, forma, linea } from "./util-pruebas.js";
 
@@ -502,6 +502,20 @@ describe("escribir dentro de un elemento (doble clic)", () => {
     fireEvent.change(cuadroTexto(), { target: { value: "Nuevo" } });
     fireEvent.keyDown(cuadroTexto(), { key: "Enter" });
     expect(formas(m.ultima()).find((f) => f.id === "v")?.texto).toBe("Nuevo");
+  });
+
+  it("vaciar un cuadro de texto existente lo elimina (no queda un «Texto» por defecto), y se puede deshacer", () => {
+    const m = montar(
+      normalizarEscena({ ancho: 1000, alto: 600, elementos: [{ id: "t", tipo: "texto", texto: "Hola", transformacion: { x: 100, y: 100, ancho: 200, alto: 40, rotacion: 0 } }] }),
+    );
+    fireEvent.doubleClick(m.lienzo, m.aPantalla(150, 120));
+    fireEvent.change(cuadroTexto(), { target: { value: "  " } });
+    fireEvent.keyDown(cuadroTexto(), { key: "Enter" });
+    expect(m.onCambio).toHaveBeenCalledTimes(1);
+    expect(m.ultima().elementos).toHaveLength(0);
+    expect(document.querySelector("[data-dibujo-anuncio]")?.textContent).toBe("Cuadro de texto vacío eliminado.");
+    fireEvent.keyDown(m.lienzo, { key: "z", ctrlKey: true });
+    expect(textos(m.ultima())[0]?.texto).toBe("Hola");
   });
 
   it("doble clic en una línea escribe su rótulo", () => {
