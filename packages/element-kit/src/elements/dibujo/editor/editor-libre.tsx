@@ -22,9 +22,12 @@ import {
   cajaDeElemento,
   eliminar,
   elementoEn,
+  escenaConRutas,
   esquinas,
   normalizarEscena,
+  sincronizarConectores,
   trazadoForma,
+  type Conexion,
   type Elemento,
   type EntradaElemento,
   type Escena,
@@ -32,6 +35,7 @@ import {
   type ModoAlineacion,
   type ModoOrden,
   type Punto,
+  type PuertoCercano,
 } from "@lumina/drawing";
 import { Button } from "@lumina/ui/button";
 import { Separator } from "@lumina/ui/separator";
@@ -79,6 +83,19 @@ import {
   type AreaDeTexto,
   type Herramienta,
 } from "./herramientas.js";
+import { BarraConector, CapaAsasDeConector, CapaPuertos } from "./conectores-capa.js";
+import {
+  agarreEn,
+  aConexion,
+  avanzarConector,
+  iniciarConector,
+  lineaUnica,
+  lineasElegidas,
+  quitarPuntoIntermedio,
+  resolverPuntoDeLinea,
+  sinConectoresQueSiguen,
+  type GestoConector,
+} from "./conectores.js";
 import { Paleta } from "./paleta.js";
 import { TextoEnSitio } from "./texto-en-sitio.js";
 import {
@@ -110,8 +127,12 @@ export interface EditorLibreProps {
 }
 
 type Accion = {
-  modo: "pan" | "gesto" | "crear";
+  modo: "pan" | "gesto" | "crear" | "conector";
   gesto: Gesto | null;
+  /** Solo en modo `conector`: arrastre de un extremo o de un punto intermedio de una línea. */
+  conector?: GestoConector;
+  /** Solo al crear una línea: puerto al que se pegó el primer punto. */
+  conexionInicio?: Conexion;
   /** Solo al crear: dónde empezó el arrastre, en coordenadas de escena (ya imantado). */
   inicioEscena?: Punto;
   activo: boolean;
@@ -272,7 +293,7 @@ function BotonBarra({ etiqueta, atajo, onClick, disabled, activo, children }: { 
 }
 
 export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar, enfocarAlAbrir = true }: EditorLibreProps): ReactElement {
-  const [escena, setEscena] = useState<Escena>(() => normalizarEscena(escenaInicial));
+  const [escena, setEscena] = useState<Escena>(() => sincronizarConectores(normalizarEscena(escenaInicial)));
   const [seleccion, setSeleccion] = useState<string[]>([]);
   const [vista, setVista] = useState<Vista>({ zoom: 1, x: 0, y: 0 });
   const [guias, setGuias] = useState<Guia[]>([]);
@@ -286,6 +307,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [enCurso, setEnCurso] = useState<Punto[] | null>(null);
   const [previa, setPrevia] = useState<VistaPrevia | null>(null);
   const [edicion, setEdicion] = useState<Edicion | null>(null);
+  const [objetivoPuerto, setObjetivoPuerto] = useState<PuertoCercano | null>(null);
+  const [arrastrandoExtremo, setArrastrandoExtremo] = useState(false);
+  /** Puerto de cada punto de la línea que se está dibujando (alineado con `enCurso`). */
+  const conexionesCurso = useRef<Array<Conexion | undefined>>([]);
   const edicionRef = useRef<Edicion | null>(null);
 
   const historial = useRef(new Historial({ tope: 100 }));
@@ -299,7 +324,11 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const vivo = useRef({ escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso });
   vivo.current = { escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso };
 
-  const marco = useMemo(() => marcoDeSeleccion(escena, seleccion), [escena, seleccion]);
+  // Las líneas en ángulo recto o curvas no van en línea recta entre sus extremos: lo que se ve (cajas, clics) se calcula sobre su recorrido real.
+  const escenaRutas = useMemo(() => escenaConRutas(escena), [escena]);
+  const lineaElegida = useMemo(() => lineaUnica(escena, seleccion), [escena, seleccion]);
+  // Una sola línea elegida muestra las asas del conector (extremos y puntos intermedios), no las del marco: coincidirían en las puntas.
+  const marco = useMemo(() => (lineaElegida ? null : marcoDeSeleccion(escenaRutas, seleccion)), [escenaRutas, seleccion, lineaElegida]);
 
   // ─── Tamaño de la ventana y zoom inicial ────────────────────────────────────
   const medir = useCallback((): { ancho: number; alto: number } => {
@@ -314,7 +343,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
 
   // ─── Cambios confirmados ────────────────────────────────────────────────────
   const confirmar = useCallback(
-    (antes: Escena, nuevo: EstadoEditor): void => {
+    (antes: Escena, nuevoEstado: EstadoEditor): void => {
+      // Toda escena del editor llega con los conectores al día: así un conector se queda donde se veía si se borra su forma.
+      const nuevo = { ...nuevoEstado, escena: sincronizarConectores(nuevoEstado.escena) };
       const cambio = historial.current.registrar(antes, nuevo.escena);
       setEscena(nuevo.escena);
       setSeleccion(nuevo.seleccion);
@@ -328,7 +359,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const ejecutar = useCallback(
     (c: Comando): boolean => {
       const { escena: actual, seleccion: sel } = vivo.current;
-      const r = ejecutarComando({ escena: actual, seleccion: sel }, c);
+      // Al alinear o distribuir, los conectores siguen a sus formas en vez de moverse solos (se despegarían).
+      const alinea = c.tipo === "alinear" || c.tipo === "distribuir";
+      const resultado = ejecutarComando({ escena: actual, seleccion: alinea ? sinConectoresQueSiguen(actual, sel) : sel }, c);
+      const r = resultado && alinea ? { ...resultado, seleccion: sel } : resultado;
       if (!r) return false;
       if (r.escena === actual) {
         setSeleccion(r.seleccion);
@@ -368,13 +402,23 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   }, [onCerrar]);
 
   // ─── Herramientas de creación (W6) ──────────────────────────────────────────
+  const fijarCurso = useCallback((puntos: Punto[] | null, conexiones: Array<Conexion | undefined> = []): void => {
+    conexionesCurso.current = puntos ? conexiones : [];
+    setEnCurso(puntos);
+  }, []);
+
+  const fijarObjetivo = useCallback((p: PuertoCercano | null): void => {
+    setObjetivoPuerto((previo) => (previo?.elementoId === p?.elementoId && previo?.puerto === p?.puerto ? previo : p));
+  }, []);
+
   const elegirHerramienta = useCallback((h: Herramienta): void => {
     setHerramienta(h);
-    setEnCurso(null);
+    fijarCurso(null);
+    fijarObjetivo(null);
     setPrevia(null);
     setAnuncio(h.tipo === "seleccionar" ? "Herramienta: seleccionar." : h.tipo === "forma" ? `Herramienta: ${FORMAS[h.forma].nombre}. Haz clic o arrastra en el lienzo.` : h.tipo === "linea" ? `Herramienta: ${h.flecha ? "flecha" : "línea"}. Arrastra, o haz clic en cada punto y doble clic para terminar.` : "Herramienta: texto. Haz clic o arrastra en el lienzo.");
     svgRef.current?.focus();
-  }, []);
+  }, [fijarCurso, fijarObjetivo]);
 
   const elegirPorNombre = useCallback(
     (nombre: NombreHerramienta): void => elegirHerramienta(nombre === "seleccionar" ? SELECCIONAR : nombre === "texto" ? { tipo: "texto" } : { tipo: "linea", flecha: nombre === "flecha" }),
@@ -399,17 +443,36 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   );
 
   /** Punto de la escena con el imán de las guías y de la cuadrícula (Ctrl lo suspende). */
-  const imantarPunto = (p: Punto, ctrl: boolean): Punto => {
+  const imantarPunto = (p: Punto, ctrl: boolean, excluir?: readonly string[]): Punto => {
     const { escena: actual, vista: v, cuadricula: grilla, imantar: iman } = vivo.current;
     if (ctrl || (!iman && !grilla)) return p;
-    return ajustarPunto(p, actual, { guias: iman, umbral: 6 / v.zoom, ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}) }).punto;
+    return ajustarPunto(p, actual, { guias: iman, umbral: 6 / v.zoom, ...(excluir ? { excluir } : {}), ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}) }).punto;
   };
 
   /** Termina la línea de varios puntos. (Un doble clic no suma un punto de más: cada clic ya descarta los repetidos.) */
   const terminarLinea = (puntos: readonly Punto[], flecha: boolean): void => {
-    setEnCurso(null);
+    const conexiones = conexionesCurso.current;
+    fijarCurso(null);
+    fijarObjetivo(null);
     setPrevia(null);
-    if (puntos.length >= 2) crearElemento(entradaLinea(puntos, flecha));
+    if (puntos.length >= 2) crearElemento(lineaConConexiones(puntos, flecha, conexiones[0], conexiones[puntos.length - 1]));
+  };
+
+  /** Línea nueva; si empieza o termina en un puerto, queda pegada a esa forma. */
+  const lineaConConexiones = (puntos: readonly Punto[], flecha: boolean, origen: Conexion | undefined, destino: Conexion | undefined): EntradaElemento => ({
+    ...entradaLinea(puntos, flecha),
+    ...(origen ? { origen } : {}),
+    ...(destino ? { destino } : {}),
+  });
+
+  /** Punto de una línea en curso: pegado al puerto cercano, o imantado (con Mayús, a múltiplos de 15° respecto de `desde`). */
+  const puntoDeLinea = (crudo: Punto, ctrl: boolean, shift: boolean, desde?: Punto): ReturnType<typeof resolverPuntoDeLinea> => {
+    const { escena: actual, vista: v } = vivo.current;
+    return resolverPuntoDeLinea(actual, crudo, imantarPunto(crudo, ctrl), {
+      zoom: v.zoom,
+      sinImanDePuertos: ctrl,
+      ...(shift && desde ? { restringir: (p: Punto) => restringirAngulo(desde, p) } : {}),
+    });
   };
 
   // ─── Texto en el sitio ──────────────────────────────────────────────────────
@@ -508,22 +571,35 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (e.button !== 0) return;
     const { escena: actual, seleccion: sel, vista: v, herramienta: h } = vivo.current;
     if (h.tipo !== "seleccionar") {
-      // Crear: se parte del punto (imantado) y se decide al soltar si fue un clic o un arrastre.
-      const inicio = imantarPunto(pantallaAEscena(v, pantalla), e.ctrlKey || e.metaKey);
-      accion.current = { modo: "crear", gesto: null, activo: false, origen: pantalla, ultimo: pantalla, inicioEscena: inicio, shift: e.shiftKey };
+      // Crear: se parte del punto (imantado, o del puerto si se empieza una línea sobre uno) y se decide al soltar si fue un clic o un arrastre.
+      const crudo = pantallaAEscena(v, pantalla);
+      const ctrl = e.ctrlKey || e.metaKey;
+      const desdeLinea = h.tipo === "linea" ? puntoDeLinea(crudo, ctrl, false) : null;
+      const inicio = desdeLinea ? desdeLinea.punto : imantarPunto(crudo, ctrl);
+      const conexionInicio = aConexion(desdeLinea?.puerto ?? null);
+      accion.current = { modo: "crear", gesto: null, activo: false, origen: pantalla, ultimo: pantalla, inicioEscena: inicio, shift: e.shiftKey, ...(conexionInicio ? { conexionInicio } : {}) };
       capturar(e);
       return;
     }
     const p = pantallaAEscena(v, pantalla);
-    const actualMarco = marcoDeSeleccion(actual, sel);
+    // Una línea elegida: sus extremos y puntos intermedios se agarran antes que cualquier otra cosa.
+    const lineaSel = lineaUnica(actual, sel);
+    const agarre = lineaSel ? agarreEn(actual, lineaSel, p, v.zoom) : null;
+    if (lineaSel && agarre) {
+      accion.current = { modo: "conector", gesto: null, conector: iniciarConector(actual, lineaSel.id, agarre), activo: false, origen: pantalla, ultimo: pantalla, shift: e.shiftKey };
+      capturar(e);
+      return;
+    }
+    const rutas = escenaConRutas(actual);
+    const actualMarco = lineaSel ? null : marcoDeSeleccion(rutas, sel);
     const asa = actualMarco ? asaEn(actualMarco, p, v.zoom) : null;
     let gesto: Gesto | null = null;
     let hit: string | undefined;
     if (asa) {
       gesto = asa === "rotar" ? iniciarRotar(actual, sel, p) : iniciarRedimensionar(actual, sel, asa, p);
     } else {
-      const bajo = elementoEn(actual, p, { tolerancia: 6 / v.zoom });
-      const nueva = seleccionAlHacerClic(actual, sel, p, e.shiftKey, v.zoom);
+      const bajo = elementoEn(rutas, p, { tolerancia: 6 / v.zoom });
+      const nueva = seleccionAlHacerClic(rutas, sel, p, e.shiftKey, v.zoom);
       if (bajo === undefined) {
         // En el vacío: sin Mayús se limpia la selección; con Mayús se conserva y el recuadro suma.
         if (!e.shiftKey) {
@@ -552,16 +628,21 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       const { escena: actual, seleccion: sel, vista: v, herramienta: h, enCurso: curso } = vivo.current;
       if (h.tipo !== "seleccionar") {
         setCursor(espacio.current ? "grab" : h.tipo === "texto" ? "text" : "crosshair");
-        if (h.tipo === "linea" && curso && curso.length > 0) {
-          const ultimo = curso[curso.length - 1] as Punto;
-          const p = imantarPunto(pantallaAEscena(v, pantalla), e.ctrlKey || e.metaKey);
-          setPrevia({ tipo: "linea", puntos: [...curso, e.shiftKey ? restringirAngulo(ultimo, p) : p], flecha: h.flecha });
+        if (h.tipo === "linea") {
+          // El puerto que atrae al punto se resalta, también antes de apretar.
+          const ultimo = curso && curso.length > 0 ? (curso[curso.length - 1] as Punto) : undefined;
+          const r = puntoDeLinea(pantallaAEscena(v, pantalla), e.ctrlKey || e.metaKey, e.shiftKey, ultimo);
+          fijarObjetivo(r.puerto);
+          if (curso && ultimo) setPrevia({ tipo: "linea", puntos: [...curso, r.punto], flecha: h.flecha });
         }
         return;
       }
-      const m = marcoDeSeleccion(actual, sel);
-      const asa: TipoAsa | null = m ? asaEn(m, pantallaAEscena(v, pantalla), v.zoom) : null;
-      setCursor(espacio.current ? "grab" : asa && m ? cursorDeAsa(asa, m.rotacion) : "default");
+      const puntoEscena = pantallaAEscena(v, pantalla);
+      const lineaSel = lineaUnica(actual, sel);
+      const sobreAgarre = lineaSel ? agarreEn(actual, lineaSel, puntoEscena, v.zoom) : null;
+      const m = lineaSel ? null : marcoDeSeleccion(escenaConRutas(actual), sel);
+      const asa: TipoAsa | null = m ? asaEn(m, puntoEscena, v.zoom) : null;
+      setCursor(espacio.current ? "grab" : sobreAgarre ? "pointer" : asa && m ? cursorDeAsa(asa, m.rotacion) : "default");
       return;
     }
     if (a.modo === "pan") {
@@ -576,13 +657,30 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       }
       const { vista: v, herramienta: h, enCurso: curso } = vivo.current;
       const inicio = a.inicioEscena as Punto;
-      const fin = imantarPunto(pantallaAEscena(v, pantalla), e.ctrlKey || e.metaKey);
+      const crudo = pantallaAEscena(v, pantalla);
+      const fin = imantarPunto(crudo, e.ctrlKey || e.metaKey);
       if (h.tipo === "forma") setPrevia({ tipo: "forma", forma: h.forma, caja: cajaArrastrada(inicio, fin, { proporcional: e.shiftKey, desdeCentro: e.altKey }) });
       else if (h.tipo === "texto") setPrevia({ tipo: "texto", caja: cajaArrastrada(inicio, fin) });
       else if (h.tipo === "linea") {
         const desde = curso && curso.length > 0 ? (curso[curso.length - 1] as Punto) : inicio;
-        setPrevia({ tipo: "linea", puntos: [...(curso ?? [inicio]), e.shiftKey ? restringirAngulo(desde, fin) : fin], flecha: h.flecha });
+        const r = puntoDeLinea(crudo, e.ctrlKey || e.metaKey, e.shiftKey, desde);
+        fijarObjetivo(r.puerto);
+        setPrevia({ tipo: "linea", puntos: [...(curso ?? [inicio]), r.punto], flecha: h.flecha });
       }
+      return;
+    }
+    if (a.modo === "conector" && a.conector) {
+      if (!a.activo) {
+        if (Math.hypot(pantalla.x - a.origen.x, pantalla.y - a.origen.y) < UMBRAL_ARRASTRE_PX) return;
+        a.activo = true;
+        historial.current.iniciarGesto(a.conector.base);
+        setArrastrandoExtremo(a.conector.tipo === "extremo");
+      }
+      const { vista: v } = vivo.current;
+      const crudo = pantallaAEscena(v, pantalla);
+      const r = avanzarConector(a.conector, { puntero: crudo, imantado: imantarPunto(crudo, e.ctrlKey || e.metaKey, [a.conector.id]), zoom: v.zoom, sinImanDePuertos: e.ctrlKey || e.metaKey });
+      setEscena(r.escena);
+      fijarObjetivo(r.puerto);
       return;
     }
     if (!a.gesto) return;
@@ -598,7 +696,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey },
       { guias: iman, zoom: v.zoom, ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}) },
     );
-    setEscena(r.escena);
+    setEscena(sincronizarConectores(r.escena));
     setGuias(r.guias);
     setRecuadro(r.recuadro ?? null);
     if (r.seleccion) setSeleccion(r.seleccion);
@@ -616,8 +714,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (a.modo === "crear") {
       const { vista: v, herramienta: h, enCurso: curso } = vivo.current;
       const inicio = a.inicioEscena as Punto;
-      const fin = imantarPunto(pantallaAEscena(v, aPantalla(e)), e.ctrlKey || e.metaKey);
+      const crudo = pantallaAEscena(v, aPantalla(e));
+      const fin = imantarPunto(crudo, e.ctrlKey || e.metaKey);
       setPrevia(null);
+      fijarObjetivo(null);
       if (h.tipo === "forma") {
         const arrastrada = cajaArrastrada(inicio, fin, { proporcional: e.shiftKey, desdeCentro: e.altKey });
         const clic = !a.activo || esClic({ ancho: arrastrada.ancho * v.zoom, alto: arrastrada.alto * v.zoom });
@@ -627,19 +727,23 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         const clic = !a.activo || esClic({ ancho: arrastrada.ancho * v.zoom, alto: arrastrada.alto * v.zoom });
         abrirEdicionNueva(clic ? { x: inicio.x, y: inicio.y, ancho: TEXTO_NUEVO.ancho, alto: TEXTO_NUEVO.alto } : conMinimo(arrastrada, 24));
       } else if (curso && curso.length > 0) {
-        // Línea a medio hacer: cada clic suma un punto.
+        // Línea a medio hacer: cada clic suma un punto (pegado al puerto si cae en uno).
         const ultimo = curso[curso.length - 1] as Punto;
-        const punto = e.shiftKey ? restringirAngulo(ultimo, fin) : fin;
-        if (Math.hypot(punto.x - ultimo.x, punto.y - ultimo.y) * v.zoom >= 3) setEnCurso([...curso, punto]);
+        const r = puntoDeLinea(crudo, e.ctrlKey || e.metaKey, e.shiftKey, ultimo);
+        if (Math.hypot(r.punto.x - ultimo.x, r.punto.y - ultimo.y) * v.zoom >= 3) fijarCurso([...curso, r.punto], [...conexionesCurso.current, aConexion(r.puerto)]);
       } else if (a.activo) {
-        // Arrastre: una línea recta de punta a punta.
-        const punto = e.shiftKey ? restringirAngulo(inicio, fin) : fin;
-        if (Math.hypot(punto.x - inicio.x, punto.y - inicio.y) * v.zoom >= 4) crearElemento(entradaLinea([inicio, punto], h.tipo === "linea" && h.flecha));
+        // Arrastre: una línea recta de punta a punta; cada punta se pega al puerto en que empiece o termine.
+        const r = puntoDeLinea(crudo, e.ctrlKey || e.metaKey, e.shiftKey, inicio);
+        if (Math.hypot(r.punto.x - inicio.x, r.punto.y - inicio.y) * v.zoom >= 4) crearElemento(lineaConConexiones([inicio, r.punto], h.tipo === "linea" && h.flecha, a.conexionInicio, aConexion(r.puerto)));
       } else {
         // Clic: empieza una línea con puntos intermedios.
-        setEnCurso([inicio]);
+        fijarCurso([inicio], [a.conexionInicio]);
       }
       return;
+    }
+    if (a.modo === "conector") {
+      fijarObjetivo(null);
+      setArrastrandoExtremo(false);
     }
     if (!a.activo) {
       // Un clic sin arrastre sobre un elemento de una selección múltiple deja solo ese elemento.
@@ -664,9 +768,15 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setGuias([]);
     setRecuadro(null);
     setPrevia(null);
+    fijarObjetivo(null);
+    setArrastrandoExtremo(false);
     if (a?.gesto && a.activo) {
       historial.current.cancelarGesto();
       setEscena(a.gesto.base);
+    }
+    if (a?.conector && a.activo) {
+      historial.current.cancelarGesto();
+      setEscena(a.conector.base);
     }
   };
 
@@ -678,8 +788,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       return;
     }
     if (h.tipo !== "seleccionar") return;
+    const lineaSel = lineaUnica(actual, vivo.current.seleccion);
+    const agarre = lineaSel ? agarreEn(actual, lineaSel, pantallaAEscena(v, aPantalla(e)), v.zoom) : null;
+    if (lineaSel && agarre) {
+      // Doble clic en un punto intermedio lo quita (la línea se vuelve a enrutar sola); en un extremo no hace nada.
+      if (agarre.tipo === "via") {
+        const nueva = quitarPuntoIntermedio(actual, lineaSel.id, agarre.indice);
+        if (nueva !== actual) confirmar(actual, { escena: nueva, seleccion: [lineaSel.id] });
+      }
+      return;
+    }
     // Con seleccionar, el doble clic escribe en el elemento (dentro de una forma, el rótulo de una línea, el cuadro de texto).
-    const id = elementoEn(actual, pantallaAEscena(v, aPantalla(e)), { tolerancia: 6 / v.zoom, entrarEnGrupos: true });
+    const id = elementoEn(escenaConRutas(actual), pantallaAEscena(v, aPantalla(e)), { tolerancia: 6 / v.zoom, entrarEnGrupos: true });
     if (id !== undefined) abrirEdicion(id);
   };
 
@@ -723,7 +843,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       }
       case "cerrar":
         if (vivo.current.enCurso) {
-          setEnCurso(null);
+          fijarCurso(null);
+          fijarObjetivo(null);
           setPrevia(null);
           setAnuncio("Línea cancelada.");
         } else if (vivo.current.herramienta.tipo !== "seleccionar") {
@@ -749,6 +870,13 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   };
 
   // ─── Estado de los botones ──────────────────────────────────────────────────
+  const formasElegidas = useMemo(() => new Set(escena.elementos.filter((x) => x.tipo === "forma" && seleccion.includes(x.id)).map((x) => x.id)), [escena, seleccion]);
+  const lineasConector = useMemo(() => lineasElegidas(escena, seleccion), [escena, seleccion]);
+  const cambiarConector = (nueva: Escena): void => {
+    const { escena: actual, seleccion: sel } = vivo.current;
+    if (nueva !== actual) confirmar(actual, { escena: nueva, seleccion: sel });
+    svgRef.current?.focus();
+  };
   const hay = seleccion.length > 0;
   const varios = seleccion.length > 1;
   // Los grupos no cuentan: son una agrupación de elementos que ya se cuentan.
@@ -895,7 +1023,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
               ))}
             </g>
           ) : null}
-          <CapaSeleccion escena={escena} seleccion={seleccion} vista={vista} marco={marco} />
+          <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} />
+          {lineaElegida ? <CapaAsasDeConector escena={escena} linea={lineaElegida} vista={vista} /> : null}
+          <CapaPuertos escena={escena} vista={vista} formasElegidas={formasElegidas} todas={herramienta.tipo === "linea" || arrastrandoExtremo} objetivo={objetivoPuerto} />
           <CapaGuias guias={guias} vista={vista} />
           <CapaPrevia previa={previa} vista={vista} />
           {recuadro ? (
@@ -914,6 +1044,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
             />
           ) : null}
         </svg>
+        <BarraConector escena={escena} lineas={lineasConector} onCambiar={cambiarConector} />
         {edicion ? (
           <TextoEnSitio
             area={edicion.area}

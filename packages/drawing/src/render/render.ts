@@ -3,7 +3,9 @@
 // componente de pantalla (React, sin `innerHTML`) y el archivo exportable (string),
 // así que ambos dibujan exactamente lo mismo.
 
-import { puertosForma, rectanguloTexto, trazadoForma } from '../formas/index.js';
+import { formasVisibles, puntoDePuerto } from '../conectores/puertos.js';
+import { cajasDeFormas, trazarLinea, type CajaObstaculo } from '../conectores/trazado.js';
+import { rectanguloTexto, trazadoForma } from '../formas/index.js';
 import type { Elemento, Escena, Estilo, EstiloTexto, Extremo, Forma, Linea, Punto, Texto } from '../tipos.js';
 import { resolverColor, type ModoColor } from './colores.js';
 import { ajustarTexto, INTERLINEADO, lineasDeTexto } from './texto.js';
@@ -37,6 +39,8 @@ interface Contexto {
   defs: NodoSvg[];
   siguienteId: number;
   formas: Map<string, Forma>;
+  /** Formas visibles: los conectores en ángulo recto las rodean. */
+  obstaculos: CajaObstaculo[];
   fondoEscena: string;
 }
 
@@ -64,23 +68,8 @@ function transformacion(x: number, y: number, ancho: number, alto: number, rotac
   return rotacion === 0 ? mover : `${mover} rotate(${r(rotacion)} ${r(ancho / 2)} ${r(alto / 2)})`;
 }
 
-function rotarPunto(p: Punto, centro: Punto, grados: number): Punto {
-  if (grados === 0) return p;
-  const a = (grados * Math.PI) / 180;
-  const dx = p.x - centro.x;
-  const dy = p.y - centro.y;
-  return { x: centro.x + dx * Math.cos(a) - dy * Math.sin(a), y: centro.y + dx * Math.sin(a) + dy * Math.cos(a) };
-}
-
 /** Posición en la escena del puerto `puerto` de una forma (con su rotación). */
-export function puntoDePuerto(forma: Forma, puerto: number): Punto {
-  const t = forma.transformacion;
-  const opciones = { parametros: forma.parametros, radio: forma.estilo.radio };
-  const puertos = puertosForma(forma.forma, t.ancho, t.alto, opciones);
-  const local = puertos[puerto] ?? puertos[0] ?? { x: t.ancho / 2, y: t.alto / 2 };
-  const rotado = rotarPunto(local, { x: t.ancho / 2, y: t.alto / 2 }, t.rotacion);
-  return { x: t.x + rotado.x, y: t.y + rotado.y };
-}
+export { puntoDePuerto };
 
 // ─── Relleno, contorno, sombra ────────────────────────────────────────────────
 
@@ -213,54 +202,7 @@ function nodoTexto(e: Texto, ctx: Contexto): NodoSvg {
 
 // ─── Líneas ───────────────────────────────────────────────────────────────────
 
-function puntosDeLinea(l: Linea, ctx: Contexto): Punto[] {
-  const puntos = l.puntos.map((p) => ({ ...p }));
-  const origen = l.origen ? ctx.formas.get(l.origen.elementoId) : undefined;
-  const destino = l.destino ? ctx.formas.get(l.destino.elementoId) : undefined;
-  if (origen && l.origen) puntos[0] = puntoDePuerto(origen, l.origen.puerto);
-  if (destino && l.destino) puntos[puntos.length - 1] = puntoDePuerto(destino, l.destino.puerto);
-  return puntos;
-}
-
 const fp = (p: Punto): string => `${r(p.x)},${r(p.y)}`;
-
-/** Trazado entre puntos: recto, en ángulo recto (un codo) o curvo (W7 refina el enrutado con puertos). */
-function trazadoLinea(l: Linea, puntos: Punto[]): { d: string; ruta: Punto[] } {
-  const primero = puntos[0];
-  const ultimo = puntos[puntos.length - 1];
-  const horizontal = Math.abs(ultimo.x - primero.x) >= Math.abs(ultimo.y - primero.y);
-
-  if (l.trazado === 'ortogonal' && puntos.length === 2) {
-    const medio = horizontal ? { x: (primero.x + ultimo.x) / 2, y: 0 } : { x: 0, y: (primero.y + ultimo.y) / 2 };
-    const ruta = horizontal
-      ? [primero, { x: medio.x, y: primero.y }, { x: medio.x, y: ultimo.y }, ultimo]
-      : [primero, { x: primero.x, y: medio.y }, { x: ultimo.x, y: medio.y }, ultimo];
-    return { d: `M${ruta.map(fp).join(' L')}`, ruta };
-  }
-
-  if (l.trazado === 'curvo' && puntos.length === 2) {
-    const c1 = horizontal ? { x: (primero.x + ultimo.x) / 2, y: primero.y } : { x: primero.x, y: (primero.y + ultimo.y) / 2 };
-    const c2 = horizontal ? { x: (primero.x + ultimo.x) / 2, y: ultimo.y } : { x: ultimo.x, y: (primero.y + ultimo.y) / 2 };
-    return { d: `M${fp(primero)} C${fp(c1)} ${fp(c2)} ${fp(ultimo)}`, ruta: [primero, c1, c2, ultimo] };
-  }
-
-  if (l.trazado === 'curvo' && puntos.length > 2) {
-    // Catmull-Rom → cúbicas, para que la curva pase por todos los puntos.
-    let d = `M${fp(puntos[0])}`;
-    for (let i = 0; i < puntos.length - 1; i++) {
-      const p0 = puntos[Math.max(0, i - 1)];
-      const p1 = puntos[i];
-      const p2 = puntos[i + 1];
-      const p3 = puntos[Math.min(puntos.length - 1, i + 2)];
-      const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
-      const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
-      d += ` C${fp(c1)} ${fp(c2)} ${fp(p2)}`;
-    }
-    return { d, ruta: puntos };
-  }
-
-  return { d: `M${puntos.map(fp).join(' L')}`, ruta: puntos };
-}
 
 function extremoSvg(tipo: Extremo, punta: Punto, desde: Punto, grosor: number, color: string, ctx: Contexto): NodoSvg | undefined {
   if (tipo === 'ninguno') return undefined;
@@ -298,8 +240,7 @@ function extremoSvg(tipo: Extremo, punta: Punto, desde: Punto, grosor: number, c
 }
 
 function nodoLinea(l: Linea, ctx: Contexto): NodoSvg {
-  const puntos = puntosDeLinea(l, ctx);
-  const { d, ruta } = trazadoLinea(l, puntos);
+  const { d, ruta, medio: centro } = trazarLinea(l, ctx.formas, ctx.obstaculos);
   const c = l.estilo.contorno;
   const grosor = Math.max(c.grosor, 1);
   const hijos: NodoSvg[] = [];
@@ -314,9 +255,6 @@ function nodoLinea(l: Linea, ctx: Contexto): NodoSvg {
   if (fin) hijos.push(fin);
 
   if (l.texto) {
-    const medio = ruta[Math.floor((ruta.length - 1) / 2)];
-    const siguiente = ruta[Math.floor((ruta.length - 1) / 2) + 1] ?? medio;
-    const centro = ruta.length === 2 || ruta.length === 4 ? { x: (medio.x + siguiente.x) / 2, y: (medio.y + siguiente.y) / 2 } : medio;
     const ancho = Math.max(24, l.texto.length * l.estiloTexto.tamano * 0.55 + 14);
     const alto = l.estiloTexto.tamano * 1.5;
     hijos.push(
@@ -351,6 +289,7 @@ export function escenaANodos(escena: Escena, opciones: OpcionesRender = {}): Esc
     defs: [],
     siguienteId: 0,
     formas: new Map(escena.elementos.filter((e): e is Forma => e.tipo === 'forma').map((f) => [f.id, f])),
+    obstaculos: cajasDeFormas(formasVisibles(escena)),
     fondoEscena: escena.fondo ?? 'var(--background)',
   };
   const ocultos = idsOcultos(escena.elementos);

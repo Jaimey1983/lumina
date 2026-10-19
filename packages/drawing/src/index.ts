@@ -4,3 +4,4 @@ export * from './formas/index.js';
 export * from './render/index.js';
 export * from './operaciones/index.js';
 export * from './historial/index.js';
+export * from './conectores/index.js';
