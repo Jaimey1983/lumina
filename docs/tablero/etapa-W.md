@@ -101,7 +101,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W7 — Conectores que siguen a las formas
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** W6 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/drawing/src/conectores/` (enrutado puro) y `packages/element-kit/src/elements/dibujo/editor/conectores*` + specs. **NO** toca el panel de propiedades (W8; V3.2/W8 comparten estilos de línea, se coordinan por el modelo).
 - **Entregable:** una línea puede **pegarse a un puerto** de una forma (`origen`/`destino` = `{elementoId, puerto}`); al mover, redimensionar, rotar o eliminar la forma, el conector se **re-enruta solo** (recto, ortogonal con esquinas vivas o redondeadas, curvo); soltar un extremo cerca de un puerto lo pega (ajuste visible); extremos configurables (ninguno, flecha, flecha abierta, círculo, rombo); etiqueta en el conector; puntos intermedios arrastrables. Reutiliza `polilinea`/`puntaFlecha` de `diagrama-export.ts` generalizados. Pruebas: enrutado determinista por tipo y lados; mover una forma mueve el extremo; eliminar una forma desconecta (no borra) el conector; conectores entre formas rotadas. Verificación: la de W5.
