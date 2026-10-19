@@ -675,7 +675,7 @@ function DiagramaPropertiesClasico({
           <div>
             <div className="font-semibold text-foreground text-xs leading-tight">Edición libre</div>
             <div className="text-[10px] text-muted-foreground leading-snug">
-              Agrega, quita y cambia de forma figuras, líneas, flechas y texto como en un editor de dibujo. El diagrama original se conserva hasta que hagas un cambio.
+              Mueve, cambia de forma, gira, agrupa y alinea las figuras como en un editor de dibujo. El diagrama original se conserva hasta que hagas un cambio.
             </div>
           </div>
         </div>
