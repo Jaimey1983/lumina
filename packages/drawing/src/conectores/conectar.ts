@@ -7,8 +7,8 @@
 import { LIMITES } from '../normalizar.js';
 import { bloqueadosEfectivos } from '../operaciones/utilidades.js';
 import type { Conexion, Elemento, Escena, Forma, Linea, Punto } from '../tipos.js';
-import { cantidadDePuertos, puertoCercano, puntoDePuerto, type PuertoCercano } from './puertos.js';
-import { trazarLinea, type TrazadoLinea } from './trazado.js';
+import { cantidadDePuertos, formasVisibles, puertoCercano, puntoDePuerto, type PuertoCercano } from './puertos.js';
+import { cajasDeFormas, trazarLinea, type TrazadoLinea } from './trazado.js';
 
 const r2 = (v: number): number => Math.round(v * 100) / 100;
 const punto = (p: Punto): Punto => ({ x: r2(p.x), y: r2(p.y) });
@@ -20,7 +20,7 @@ function formasDe(escena: Escena): Map<string, Forma> {
 }
 
 /** El trazado de una línea de la escena tal como se dibuja. */
-export const trazadoDeLinea = (escena: Escena, linea: Linea): TrazadoLinea => trazarLinea(linea, formasDe(escena));
+export const trazadoDeLinea = (escena: Escena, linea: Linea): TrazadoLinea => trazarLinea(linea, formasDe(escena), cajasDeFormas(formasVisibles(escena)));
 
 function conCambios(escena: Escena, cambios: Map<string, Elemento>): Escena {
   if (cambios.size === 0) return escena;
@@ -173,10 +173,11 @@ export function conectoresDe(escena: Escena, formaId: string): Linea[] {
  */
 export function escenaConRutas(escena: Escena): Escena {
   const formas = formasDe(escena);
+  const otras = cajasDeFormas(formasVisibles(escena));
   const cambios = new Map<string, Elemento>();
   for (const e of escena.elementos) {
     if (e.tipo !== 'linea' || e.trazado === 'recto') continue;
-    cambios.set(e.id, conExtremos({ ...e, trazado: 'recto' }, trazarLinea(e, formas).polilinea, undefined, undefined));
+    cambios.set(e.id, conExtremos({ ...e, trazado: 'recto' }, trazarLinea(e, formas, otras).polilinea, undefined, undefined));
   }
   return conCambios(escena, cambios);
 }

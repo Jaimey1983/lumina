@@ -3,8 +3,8 @@
 // componente de pantalla (React, sin `innerHTML`) y el archivo exportable (string),
 // así que ambos dibujan exactamente lo mismo.
 
-import { trazarLinea } from '../conectores/trazado.js';
-import { puntoDePuerto } from '../conectores/puertos.js';
+import { formasVisibles, puntoDePuerto } from '../conectores/puertos.js';
+import { cajasDeFormas, trazarLinea, type CajaObstaculo } from '../conectores/trazado.js';
 import { rectanguloTexto, trazadoForma } from '../formas/index.js';
 import type { Elemento, Escena, Estilo, EstiloTexto, Extremo, Forma, Linea, Punto, Texto } from '../tipos.js';
 import { resolverColor, type ModoColor } from './colores.js';
@@ -39,6 +39,8 @@ interface Contexto {
   defs: NodoSvg[];
   siguienteId: number;
   formas: Map<string, Forma>;
+  /** Formas visibles: los conectores en ángulo recto las rodean. */
+  obstaculos: CajaObstaculo[];
   fondoEscena: string;
 }
 
@@ -238,7 +240,7 @@ function extremoSvg(tipo: Extremo, punta: Punto, desde: Punto, grosor: number, c
 }
 
 function nodoLinea(l: Linea, ctx: Contexto): NodoSvg {
-  const { d, ruta, medio: centro } = trazarLinea(l, ctx.formas);
+  const { d, ruta, medio: centro } = trazarLinea(l, ctx.formas, ctx.obstaculos);
   const c = l.estilo.contorno;
   const grosor = Math.max(c.grosor, 1);
   const hijos: NodoSvg[] = [];
@@ -287,6 +289,7 @@ export function escenaANodos(escena: Escena, opciones: OpcionesRender = {}): Esc
     defs: [],
     siguienteId: 0,
     formas: new Map(escena.elementos.filter((e): e is Forma => e.tipo === 'forma').map((f) => [f.id, f])),
+    obstaculos: cajasDeFormas(formasVisibles(escena)),
     fondoEscena: escena.fondo ?? 'var(--background)',
   };
   const ocultos = idsOcultos(escena.elementos);

@@ -1,5 +1,6 @@
 export {
   cantidadDePuertos,
+  formasVisibles,
   ladoDePuerto,
   LADO_OPUESTO,
   puertoCercano,
@@ -13,6 +14,7 @@ export {
 export {
   largoDe,
   MARGEN_POR_DEFECTO,
+  UMBRAL_ENDEREZAR,
   muestrearCurva,
   polilineaRedondeada,
   puntoMedio,
@@ -28,7 +30,7 @@ export {
   type ResultadoOrtogonal,
   type SegmentoCurvo,
 } from './ruteo.js';
-export { puntosDeControl, resolverExtremo, trazarLinea, type ExtremoResuelto, type TrazadoLinea } from './trazado.js';
+export { cajaDeForma, cajasDeFormas, puntosDeControl, resolverExtremo, trazarLinea, type CajaObstaculo, type ExtremoResuelto, type TrazadoLinea } from './trazado.js';
 export {
   conectar,
   conectoresDe,

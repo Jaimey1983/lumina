@@ -311,6 +311,18 @@ function tramoDeEmergencia(t: Tramo): Punto[] {
 const memoria = new Map<string, Punto[]>();
 const MEMORIA_MAX = 2000;
 
+/**
+ * Un desnivel de hasta tantas unidades entre dos puertos casi alineados no se dibuja como un codo
+ * diminuto: el conector queda recto, con una inclinación imperceptible.
+ */
+export const UMBRAL_ENDEREZAR = 8;
+
+function enderezar(ruta: Punto[]): Punto[] {
+  if (ruta.length !== 4) return ruta;
+  const [a, p1, p2, b] = ruta as [Punto, Punto, Punto, Punto];
+  return distancia(p1, p2) <= UMBRAL_ENDEREZAR ? [a, b] : ruta;
+}
+
 function claveTramo(t: Tramo, obstaculos: readonly Rect[], margen: number): string {
   return [
     num(t.desde.x),
@@ -337,10 +349,21 @@ function tramoOrtogonal(t: Tramo, obstaculos: readonly Rect[], margen: number): 
     ruta = buscarTramo(t, obstaculos, m);
     if (ruta) break;
   }
-  const resultado = ruta ?? tramoDeEmergencia(t);
+  const resultado = enderezar(ruta ?? tramoDeEmergencia(t));
   if (memoria.size >= MEMORIA_MAX) memoria.clear();
   memoria.set(clave, resultado);
   return resultado.map((p) => ({ ...p }));
+}
+
+/**
+ * Si los dos puertos se miran de frente y están más cerca que dos márgenes, el margen se reduce para
+ * que el codo quede justo a mitad de camino (con el margen entero, las dos salidas se cruzarían en zigzag).
+ */
+function margenDelTramo(t: Tramo, margen: number): number {
+  if (!t.ladoDesde || !t.ladoHasta || t.ladoDesde !== LADO_OPUESTO[t.ladoHasta]) return margen;
+  const v = VECTOR_LADO[t.ladoDesde];
+  const hueco = (t.hasta.x - t.desde.x) * v.x + (t.hasta.y - t.desde.y) * v.y;
+  return hueco > 0 ? Math.min(margen, Math.max(hueco / 2, 2)) : margen;
 }
 
 export interface EntradaRuta {
@@ -366,18 +389,13 @@ export function rutaOrtogonal(entrada: EntradaRuta, opciones: OpcionesRuta = {})
   const obstaculos = entrada.obstaculos ?? [];
   const tramos: Punto[][] = [];
   for (let i = 0; i < puntos.length - 1; i++) {
-    tramos.push(
-      tramoOrtogonal(
-        {
-          desde: puntos[i] as Punto,
-          ladoDesde: i === 0 ? entrada.ladoInicio : undefined,
-          hasta: puntos[i + 1] as Punto,
-          ladoHasta: i === puntos.length - 2 ? entrada.ladoFin : undefined,
-        },
-        obstaculos,
-        margen,
-      ),
-    );
+    const tramo: Tramo = {
+      desde: puntos[i] as Punto,
+      ladoDesde: i === 0 ? entrada.ladoInicio : undefined,
+      hasta: puntos[i + 1] as Punto,
+      ladoHasta: i === puntos.length - 2 ? entrada.ladoFin : undefined,
+    };
+    tramos.push(tramoOrtogonal(tramo, obstaculos, margenDelTramo(tramo, margen)));
   }
   return { ruta: simplificar(tramos.flat()), tramos };
 }

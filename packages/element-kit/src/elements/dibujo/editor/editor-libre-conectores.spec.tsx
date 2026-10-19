@@ -211,6 +211,28 @@ describe("el conector sigue a las formas", () => {
     expect(l.puntos[0]).toEqual({ x: 200, y: 330 });
   });
 
+  it("mover la forma con las flechas del teclado y luego eliminarla: el conector queda donde la forma lo dejó", () => {
+    const m = montar(conectada());
+    clic(m, 150, 130);
+    fireEvent.keyDown(m.lienzo, { key: "ArrowDown", shiftKey: true });
+    expect(linea0(m.ultima()).puntos[0]).toEqual({ x: 200, y: 140 });
+    fireEvent.keyDown(m.lienzo, { key: "Delete" });
+    const l = linea0(m.ultima());
+    expect(l.origen).toBeUndefined();
+    expect(l.puntos[0]).toEqual({ x: 200, y: 140 });
+  });
+
+  it("alinear las formas también arrastra a los conectores", () => {
+    const m = montar(conectada());
+    arrastrar(m, [60, 60], [850, 360]); // elige las tres formas (y el conector)
+    fireEvent.click(screen.getByRole("button", { name: "Alinear arriba" }));
+    const l = linea0(m.ultima());
+    expect(l.origen).toEqual({ elementoId: "A", puerto: 1 });
+    expect(l.destino).toEqual({ elementoId: "B", puerto: 3 });
+    expect(l.puntos[0]).toEqual({ x: 200, y: 130 });
+    expect(l.puntos[1]?.y).toBe(130); // B subió hasta la fila de A y su puerto izquierdo con ella
+  });
+
   it("deshacer devuelve la forma y la conexión", () => {
     const m = montar(conectada());
     clic(m, 150, 130);

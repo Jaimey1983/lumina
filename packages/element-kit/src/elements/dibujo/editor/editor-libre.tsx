@@ -93,6 +93,7 @@ import {
   lineasElegidas,
   quitarPuntoIntermedio,
   resolverPuntoDeLinea,
+  sinConectoresQueSiguen,
   type GestoConector,
 } from "./conectores.js";
 import { Paleta } from "./paleta.js";
@@ -358,7 +359,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const ejecutar = useCallback(
     (c: Comando): boolean => {
       const { escena: actual, seleccion: sel } = vivo.current;
-      const r = ejecutarComando({ escena: actual, seleccion: sel }, c);
+      // Al alinear o distribuir, los conectores siguen a sus formas en vez de moverse solos (se despegarían).
+      const alinea = c.tipo === "alinear" || c.tipo === "distribuir";
+      const resultado = ejecutarComando({ escena: actual, seleccion: alinea ? sinConectoresQueSiguen(actual, sel) : sel }, c);
+      const r = resultado && alinea ? { ...resultado, seleccion: sel } : resultado;
       if (!r) return false;
       if (r.escena === actual) {
         setSeleccion(r.seleccion);
@@ -804,7 +808,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     // Nada de lo que se teclea aquí debe llegar al editor de diapositivas (Supr borraría el bloque, Ctrl+Z deshace la clase…).
     e.stopPropagation();
     const objetivo = e.target as HTMLElement;
-    if (objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.tagName === "SELECT" || objetivo.isContentEditable) return;
+    if (objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.isContentEditable) return;
     if (e.key === " " && (objetivo as Element) === svgRef.current) {
       espacio.current = true;
       setCursor("grab");
@@ -1019,7 +1023,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
               ))}
             </g>
           ) : null}
-          <CapaSeleccion escena={escenaRutas} seleccion={seleccion} vista={vista} marco={marco} />
+          <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} />
           {lineaElegida ? <CapaAsasDeConector escena={escena} linea={lineaElegida} vista={vista} /> : null}
           <CapaPuertos escena={escena} vista={vista} formasElegidas={formasElegidas} todas={herramienta.tipo === "linea" || arrastrandoExtremo} objetivo={objetivoPuerto} />
           <CapaGuias guias={guias} vista={vista} />

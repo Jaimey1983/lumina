@@ -28,7 +28,17 @@ export interface TrazadoLinea {
   fin: Punto;
 }
 
-function cajaDeForma(f: Forma): Rect {
+export interface CajaObstaculo {
+  id: string;
+  caja: Rect;
+}
+
+/** Cuántas formas de por medio, como máximo, rodea un conector (acota el coste de enrutar en dibujos muy cargados). */
+const MAX_OBSTACULOS = 16;
+/** Alrededor de los puntos del conector, hasta dónde se miran las demás formas. */
+const HOLGURA_PASILLO = 60;
+
+export function cajaDeForma(f: Forma): Rect {
   const t = f.transformacion;
   const c = { x: t.x + t.ancho / 2, y: t.y + t.alto / 2 };
   const a = (t.rotacion * Math.PI) / 180;
@@ -54,6 +64,40 @@ export function resolverExtremo(linea: Linea, cual: 'origen' | 'destino', formas
   return { punto: puntoDePuerto(forma, conexion.puerto), lado: ladoDePuerto(forma, conexion.puerto), forma };
 }
 
+export const cajasDeFormas = (formas: Iterable<Forma>): CajaObstaculo[] => [...formas].map((f) => ({ id: f.id, caja: cajaDeForma(f) }));
+
+const contiene = (o: Rect, p: Punto): boolean => p.x > o.x && p.x < o.x + o.ancho && p.y > o.y && p.y < o.y + o.alto;
+
+/**
+ * Formas de por medio que el conector debe rodear: las que quedan en el pasillo que forman sus puntos.
+ * Una forma que contiene un extremo (un fondo, un contenedor) no estorba: el conector está dentro de ella.
+ */
+function obstaculosDelPasillo(puntos: readonly Punto[], propios: ReadonlySet<string>, otras: readonly CajaObstaculo[]): Rect[] {
+  const xs = puntos.map((p) => p.x);
+  const ys = puntos.map((p) => p.y);
+  const pasillo: Rect = {
+    x: Math.min(...xs) - HOLGURA_PASILLO,
+    y: Math.min(...ys) - HOLGURA_PASILLO,
+    ancho: Math.max(...xs) - Math.min(...xs) + 2 * HOLGURA_PASILLO,
+    alto: Math.max(...ys) - Math.min(...ys) + 2 * HOLGURA_PASILLO,
+  };
+  const extremos = [puntos[0] as Punto, puntos[puntos.length - 1] as Punto];
+  const centro = { x: pasillo.x + pasillo.ancho / 2, y: pasillo.y + pasillo.alto / 2 };
+  return otras
+    .filter(
+      (o) =>
+        !propios.has(o.id) &&
+        o.caja.x < pasillo.x + pasillo.ancho &&
+        o.caja.x + o.caja.ancho > pasillo.x &&
+        o.caja.y < pasillo.y + pasillo.alto &&
+        o.caja.y + o.caja.alto > pasillo.y &&
+        !extremos.some((e) => contiene(o.caja, e)),
+    )
+    .sort((a, b) => Math.hypot(a.caja.x - centro.x, a.caja.y - centro.y) - Math.hypot(b.caja.x - centro.x, b.caja.y - centro.y))
+    .slice(0, MAX_OBSTACULOS)
+    .map((o) => o.caja);
+}
+
 /** Puntos de la línea tal como se dibujan (extremos pegados a su puerto) y los lados por los que sale/entra. */
 export function puntosDeControl(linea: Linea, formas: ReadonlyMap<string, Forma>): { puntos: Punto[]; ladoInicio?: Lado; ladoFin?: Lado; obstaculos: Rect[] } {
   const a = resolverExtremo(linea, 'origen', formas);
@@ -67,8 +111,15 @@ export function puntosDeControl(linea: Linea, formas: ReadonlyMap<string, Forma>
   };
 }
 
-export function trazarLinea(linea: Linea, formas: ReadonlyMap<string, Forma>): TrazadoLinea {
-  const { puntos, ladoInicio, ladoFin, obstaculos } = puntosDeControl(linea, formas);
+/**
+ * `otras` son las demás formas visibles del dibujo: los conectores en ángulo recto (y los curvos pegados a
+ * formas) las rodean además de las dos a las que están pegados.
+ */
+export function trazarLinea(linea: Linea, formas: ReadonlyMap<string, Forma>, otras: readonly CajaObstaculo[] = []): TrazadoLinea {
+  const control = puntosDeControl(linea, formas);
+  const { puntos, ladoInicio, ladoFin } = control;
+  const propios = new Set([linea.origen?.elementoId, linea.destino?.elementoId].filter((id): id is string => id !== undefined));
+  const obstaculos = [...control.obstaculos, ...(ladoInicio || ladoFin ? obstaculosDelPasillo(puntos, propios, otras) : [])];
   const inicio = puntos[0] as Punto;
   const fin = puntos[puntos.length - 1] as Punto;
 

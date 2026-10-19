@@ -173,3 +173,23 @@ export function valorComun<T>(lineas: readonly Linea[], leer: (l: Linea) => T): 
   const v = leer(primero);
   return lineas.every((l) => leer(l) === v) ? v : null;
 }
+
+/**
+ * Selección sin las líneas que ya siguen a una forma elegida. Alinear y distribuir mueven pieza por
+ * pieza: una línea pegada que se moviera sola se despegaría; así que se deja que siga a su forma.
+ */
+export function sinConectoresQueSiguen(escena: Escena, seleccion: readonly string[]): string[] {
+  const porId = new Map(escena.elementos.map((e) => [e.id, e]));
+  const incluidos = new Set<string>();
+  const sumar = (id: string): void => {
+    if (incluidos.has(id)) return;
+    incluidos.add(id);
+    const e = porId.get(id);
+    if (e?.tipo === "grupo") e.hijos.forEach(sumar);
+  };
+  seleccion.forEach(sumar);
+  return seleccion.filter((id) => {
+    const e = porId.get(id);
+    return !(e?.tipo === "linea" && ((e.origen && incluidos.has(e.origen.elementoId)) || (e.destino && incluidos.has(e.destino.elementoId))));
+  });
+}

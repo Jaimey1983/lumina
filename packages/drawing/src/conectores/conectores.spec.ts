@@ -4,6 +4,7 @@ import { normalizarEscena } from '../normalizar.js';
 import { eliminar } from '../operaciones/edicion.js';
 import { mover, redimensionar, rotarA } from '../operaciones/transformar.js';
 import { escena, forma, getForma, getLinea, linea } from '../operaciones/util-pruebas.js';
+import { escenaANodos, type NodoSvg } from '../render/render.js';
 import { TIPOS_FORMA, type Escena, type Punto } from '../tipos.js';
 import {
   conectar,
@@ -17,7 +18,7 @@ import {
   trazadoDeLinea,
 } from './conectar.js';
 import { cantidadDePuertos, ladoDePuerto, puertoCercano, puertosDeEscena, puntoDePuerto, type Lado } from './puertos.js';
-import { muestrearCurva, puntoMedio, rutaCurva, rutaOrtogonal, simplificar, trazadoPoligonal, type Rect } from './ruteo.js';
+import { muestrearCurva, puntoMedio, rutaCurva, rutaOrtogonal, simplificar, trazadoPoligonal, UMBRAL_ENDEREZAR, type Rect } from './ruteo.js';
 
 // ─── Ayudas ───────────────────────────────────────────────────────────────────
 
@@ -105,6 +106,13 @@ describe('ruta ortogonal', () => {
     const e = conector({ x: 400, y: 260 }, 'derecha', 'izquierda');
     const { ruta } = trazadoDeLinea(e, getLinea(e, 'L'));
     expect(ruta).toEqual([{ x: 200, y: 130 }, { x: 300, y: 130 }, { x: 300, y: 290 }, { x: 400, y: 290 }]);
+  });
+
+  it('el punto medio (donde va la etiqueta) está a la mitad del recorrido real, no de la recta entre los extremos', () => {
+    const e = conector({ x: 400, y: 260 }, 'derecha', 'izquierda');
+    expect(trazadoDeLinea(e, getLinea(e, 'L')).medio).toEqual({ x: 300, y: 210 });
+    const recto = conector({ x: 400, y: 260 }, 'derecha', 'izquierda', 'recto');
+    expect(trazadoDeLinea(recto, getLinea(recto, 'L')).medio).toEqual({ x: 300, y: 210 });
   });
 
   it('alineadas queda una recta, sin codos de más', () => {
@@ -249,6 +257,131 @@ describe('ruta ortogonal', () => {
     expect(puntoMedio([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }])).toEqual({ x: 100, y: 0 });
     expect(puntoMedio([{ x: 0, y: 0 }, { x: 100, y: 0 }])).toEqual({ x: 50, y: 0 });
     expect(puntoMedio([])).toEqual({ x: 0, y: 0 });
+  });
+});
+
+// ─── Casi alineadas y formas de por medio ─────────────────────────────────────
+
+describe('puertos que se miran de cerca', () => {
+  it('con menos de dos márgenes entre ellos, el codo queda a mitad de camino en vez de zigzaguear', () => {
+    const e = conector({ x: 225, y: 300 }, 'derecha', 'izquierda');
+    const { ruta } = trazadoDeLinea(e, getLinea(e, 'L'));
+    expect(ruta).toEqual([{ x: 200, y: 130 }, { x: 212.5, y: 130 }, { x: 212.5, y: 330 }, { x: 225, y: 330 }]);
+  });
+  it('con espacio de sobra, no cambia nada', () => {
+    const e = conector({ x: 400, y: 300 }, 'derecha', 'izquierda');
+    expect(trazadoDeLinea(e, getLinea(e, 'L')).ruta[1]).toEqual({ x: 300, y: 130 });
+  });
+  it('si no se miran de frente, el margen entero se mantiene (sale y rodea con holgura)', () => {
+    const e = conector({ x: 225, y: 300 }, 'derecha', 'derecha');
+    const { ruta } = trazadoDeLinea(e, getLinea(e, 'L'));
+    // el conector pasa 20 unidades más allá del puerto de la otra forma (325 + 20)
+    expect(ruta[1]).toEqual({ x: 345, y: 130 });
+  });
+});
+
+describe('desniveles diminutos', () => {
+  it(`hasta ${UMBRAL_ENDEREZAR} unidades de desnivel el conector queda recto, sin codo diminuto; con más, hace su codo`, () => {
+    for (const desnivel of [0, 3, 5, UMBRAL_ENDEREZAR]) {
+      const e = conector({ x: 400, y: 100 + desnivel }, 'derecha', 'izquierda');
+      expect(trazadoDeLinea(e, getLinea(e, 'L')).ruta, `desnivel ${desnivel}`).toEqual([{ x: 200, y: 130 }, { x: 400, y: 130 + desnivel }]);
+    }
+    for (const desnivel of [UMBRAL_ENDEREZAR + 1, 20]) {
+      const e = conector({ x: 400, y: 100 + desnivel }, 'derecha', 'izquierda');
+      expect(trazadoDeLinea(e, getLinea(e, 'L')).ruta, `desnivel ${desnivel}`).toHaveLength(4);
+    }
+  });
+  it('también en vertical', () => {
+    const e = conector({ x: 105, y: 300 }, 'abajo', 'arriba');
+    expect(trazadoDeLinea(e, getLinea(e, 'L')).ruta).toHaveLength(2);
+  });
+  it('no afecta a los conectores con los dos extremos libres (la «Z» de siempre)', () => {
+    expect(rutaOrtogonal({ puntos: [{ x: 0, y: 0 }, { x: 100, y: 5 }] }).ruta).toHaveLength(4);
+  });
+  it('el trazado curvo tampoco hace un bucle por un desnivel diminuto', () => {
+    const e = conector({ x: 400, y: 105 }, 'derecha', 'izquierda', 'curvo');
+    expect(trazadoDeLinea(e, getLinea(e, 'L')).d).toBe('M200,130 L400,135');
+  });
+});
+
+describe('formas de por medio', () => {
+  const conTercera = (extra: Record<string, unknown>, id = 'C', x = 300, y = 100): Escena =>
+    escena(
+      forma('A', 100, 100),
+      forma('B', 500, 100),
+      forma(id, x, y, 100, 60, extra),
+      linea('L', [[0, 0], [1, 1]], { trazado: 'ortogonal', origen: { elementoId: 'A', puerto: PUERTO.derecha }, destino: { elementoId: 'B', puerto: PUERTO.izquierda } }),
+    );
+
+  it('el conector rodea una forma que está justo en medio, además de las dos a las que está pegado', () => {
+    const e = conTercera({});
+    const { ruta } = trazadoDeLinea(e, getLinea(e, 'L'));
+    expect(esOrtogonal(ruta)).toBe(true);
+    expect(atraviesa(ruta, rect(300, 100))).toBe(false);
+    expect(atraviesa(ruta, rect(100, 100))).toBe(false);
+    expect(atraviesa(ruta, rect(500, 100))).toBe(false);
+    expect(direccion(ruta[0] as Punto, ruta[1] as Punto)).toBe('derecha');
+    expect(direccion(ruta[ruta.length - 2] as Punto, ruta[ruta.length - 1] as Punto)).toBe('derecha');
+    expect(codos(ruta)).toBeGreaterThan(0);
+  });
+
+  it('una forma oculta no estorba', () => {
+    const e = conTercera({ oculto: true });
+    expect(trazadoDeLinea(e, getLinea(e, 'L')).ruta).toEqual([{ x: 200, y: 130 }, { x: 500, y: 130 }]);
+  });
+
+  it('una forma lejos del pasillo no cambia nada', () => {
+    const e = conTercera({}, 'C', 300, 500);
+    expect(trazadoDeLinea(e, getLinea(e, 'L')).ruta).toEqual([{ x: 200, y: 130 }, { x: 500, y: 130 }]);
+  });
+
+  it('un fondo o contenedor que contiene los extremos tampoco estorba', () => {
+    const e = escena(
+      forma('Fondo', 50, 50, 700, 200),
+      forma('A', 100, 100),
+      forma('B', 500, 100),
+      linea('L', [[0, 0], [1, 1]], { trazado: 'ortogonal', origen: { elementoId: 'A', puerto: PUERTO.derecha }, destino: { elementoId: 'B', puerto: PUERTO.izquierda } }),
+    );
+    expect(trazadoDeLinea(e, getLinea(e, 'L')).ruta).toEqual([{ x: 200, y: 130 }, { x: 500, y: 130 }]);
+  });
+
+  it('con un fondo debajo y una forma en medio, rodea la forma (el fondo no cuenta como obstáculo)', () => {
+    const e = escena(
+      forma('Fondo', 50, 50, 700, 300),
+      forma('A', 100, 100),
+      forma('B', 500, 100),
+      forma('C', 300, 100),
+      linea('L', [[0, 0], [1, 1]], { trazado: 'ortogonal', origen: { elementoId: 'A', puerto: PUERTO.derecha }, destino: { elementoId: 'B', puerto: PUERTO.izquierda } }),
+    );
+    const { ruta } = trazadoDeLinea(e, getLinea(e, 'L'));
+    expect(atraviesa(ruta, rect(300, 100))).toBe(false);
+    expect(esOrtogonal(ruta)).toBe(true);
+  });
+
+  it('el render dibuja exactamente el mismo trazado que el módulo de conectores', () => {
+    const e = conTercera({});
+    const buscar = (nodos: NodoSvg[]): NodoSvg | undefined => {
+      for (const n of nodos) {
+        if (n.attrs['data-elemento-id'] === 'L') return n;
+        const h = buscar(n.hijos ?? []);
+        if (h) return h;
+      }
+      return undefined;
+    };
+    const g = buscar(escenaANodos(e).nodos);
+    expect(g?.hijos?.find((n) => n.tag === 'path')?.attrs.d).toBe(trazadoDeLinea(e, getLinea(e, 'L')).d);
+  });
+
+  it('con muchas formas en el pasillo sigue enrutando rápido y sin cruzarlas', () => {
+    const elementos: Array<Record<string, unknown>> = [forma('A', 20, 300), forma('B', 900, 300)];
+    for (let i = 0; i < 40; i++) elementos.push(forma(`X${i}`, 160 + (i % 8) * 90, 200 + Math.floor(i / 8) * 40, 60, 24));
+    elementos.push(linea('L', [[0, 0], [1, 1]], { trazado: 'ortogonal', origen: { elementoId: 'A', puerto: PUERTO.derecha }, destino: { elementoId: 'B', puerto: PUERTO.izquierda } }));
+    const e = escena(...elementos);
+    const t0 = performance.now();
+    const { ruta } = trazadoDeLinea(e, getLinea(e, 'L'));
+    expect(performance.now() - t0).toBeLessThan(100);
+    expect(esOrtogonal(ruta)).toBe(true);
+    expect(ruta.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))).toBe(true);
   });
 });
 

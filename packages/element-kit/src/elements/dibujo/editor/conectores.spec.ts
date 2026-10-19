@@ -15,6 +15,7 @@ import {
   lineasElegidas,
   quitarPuntoIntermedio,
   resolverPuntoDeLinea,
+  sinConectoresQueSiguen,
   valorComun,
 } from "./conectores.js";
 import { escena, forma, getLinea, linea } from "./util-pruebas.js";
@@ -68,6 +69,12 @@ describe("asas de una línea", () => {
     // La «Z» tiene su mitad en el tramo vertical, no en la recta entre los extremos.
     expect(insertar?.punto).toEqual({ x: 300, y: 210 });
   });
+  it("si un punto de crear cae sobre un extremo o un punto intermedio, gana el extremo o el punto", () => {
+    const corta = normalizarEscena(escena(linea("L", [[100, 100], [110, 100]])));
+    expect(agarreEn(corta, getLinea(corta, "L"), { x: 105, y: 100 }, 1)?.tipo).toBe("extremo");
+    const conVia = normalizarEscena(escena(linea("L", [[0, 0], [10, 0], [20, 0]])));
+    expect(agarreEn(conVia, getLinea(conVia, "L"), { x: 10, y: 0 }, 1)).toMatchObject({ tipo: "via", indice: 1 });
+  });
   it("agarreEn respeta la tolerancia en píxeles de pantalla y da prioridad a extremos y puntos sobre los de crear", () => {
     const e = base();
     const l = getLinea(e, "L");
@@ -98,6 +105,14 @@ describe("arrastrar un extremo", () => {
     expect(sinIman.puerto).toBeNull();
     expect(getLinea(sinIman.escena, "L").destino).toBeUndefined();
     expect(getLinea(sinIman.escena, "L").origen).toEqual({ elementoId: "A", puerto: 1 });
+  });
+  it("deja al día el otro extremo aunque la escena llegara con los puntos viejos", () => {
+    const vieja = normalizarEscena(escena(forma("A", 100, 100), forma("B", 400, 260), linea("L", [[0, 0], [1, 1]], { origen: { elementoId: "A", puerto: 1 }, destino: { elementoId: "B", puerto: 3 } })));
+    const g = iniciarConector(vieja, "L", { tipo: "extremo", cual: "destino", punto: { x: 400, y: 290 } });
+    const r = avanzarConector(g, entrada({ x: 700, y: 500 }));
+    expect(getLinea(r.escena, "L").puntos).toEqual([{ x: 200, y: 130 }, { x: 700, y: 500 }]);
+    const v = avanzarConector(iniciarConector(vieja, "L", { tipo: "insertar", tramo: 0, punto: { x: 300, y: 210 } }), entrada({ x: 310, y: 60 }));
+    expect(getLinea(v.escena, "L").puntos).toEqual([{ x: 200, y: 130 }, { x: 310, y: 60 }, { x: 400, y: 290 }]);
   });
   it("el radio del imán son píxeles de pantalla: con más zoom hay que acercarse más", () => {
     const e = base();
@@ -183,5 +198,22 @@ describe("barra del conector", () => {
     expect(valorComun(ls, (l) => l.fin)).toBe("flecha");
     expect(valorComun(ls, (l) => l.trazado)).toBeNull();
     expect(valorComun([], (l) => l.fin)).toBeNull();
+  });
+});
+
+describe("sinConectoresQueSiguen", () => {
+  const e = base();
+  it("quita las líneas pegadas a una forma elegida y deja lo demás en su orden", () => {
+    expect(sinConectoresQueSiguen(e, ["A", "B", "L"])).toEqual(["A", "B"]);
+    expect(sinConectoresQueSiguen(e, ["L", "A"])).toEqual(["A"]);
+  });
+  it("una línea pegada solo a formas que no están elegidas se queda (se mueve sola)", () => {
+    expect(sinConectoresQueSiguen(e, ["L"])).toEqual(["L"]);
+    const libre = normalizarEscena(escena(forma("A", 0, 0), linea("M", [[0, 0], [10, 10]])));
+    expect(sinConectoresQueSiguen(libre, ["A", "M"])).toEqual(["A", "M"]);
+  });
+  it("cuenta las formas que van dentro de un grupo elegido", () => {
+    const g = normalizarEscena({ ...e, elementos: [...e.elementos, { id: "G", tipo: "grupo", hijos: ["A", "B"] }] });
+    expect(sinConectoresQueSiguen(g, ["G", "L"])).toEqual(["G"]);
   });
 });

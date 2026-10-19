@@ -77,12 +77,16 @@ function ocultas(escena: Escena): Set<string> {
   return salida;
 }
 
+/** Formas que se ven (no ocultas ni dentro de un grupo oculto), en el orden de apilado. */
+export function formasVisibles(escena: Escena): Forma[] {
+  const invisibles = ocultas(escena);
+  return escena.elementos.filter((e): e is Forma => e.tipo === 'forma' && !invisibles.has(e.id));
+}
+
 /** Todos los puertos de las formas visibles, en el orden de apilado (las de arriba, al final). */
 export function puertosDeEscena(escena: Escena): PuertoDeEscena[] {
-  const invisibles = ocultas(escena);
   const salida: PuertoDeEscena[] = [];
-  for (const e of escena.elementos) {
-    if (e.tipo !== 'forma' || invisibles.has(e.id)) continue;
+  for (const e of formasVisibles(escena)) {
     const n = cantidadDePuertos(e);
     for (let i = 0; i < n; i++) salida.push({ elementoId: e.id, puerto: i, punto: puntoDePuerto(e, i), lado: ladoDePuerto(e, i) });
   }
