@@ -9,17 +9,24 @@ import {
   useRef,
   useState,
   type KeyboardEvent as TeclaReact,
+  type MouseEvent as RatonReact,
   type PointerEvent as PunteroReact,
   type ReactElement,
 } from "react";
 import {
   FORMAS,
   Historial,
+  actualizar,
+  agregar,
+  ajustar as ajustarPunto,
   cajaDeElemento,
+  eliminar,
   elementoEn,
   esquinas,
   normalizarEscena,
+  trazadoForma,
   type Elemento,
+  type EntradaElemento,
   type Escena,
   type Guia,
   type ModoAlineacion,
@@ -55,8 +62,25 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { NodosSvg } from "../../../widgets/dibujo/dibujo-render.js";
-import { asaEn, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
-import { depurarSeleccion, ejecutarComando, ordenDeTecla, type Comando, type EstadoEditor } from "./comandos.js";
+import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
+import { depurarSeleccion, ejecutarComando, ordenDeTecla, type Comando, type EstadoEditor, type NombreHerramienta } from "./comandos.js";
+import {
+  SELECCIONAR,
+  TEXTO_NUEVO,
+  areaDeTexto,
+  cajaArrastrada,
+  cajaPorDefecto,
+  conMinimo,
+  entradaForma,
+  entradaLinea,
+  entradaTexto,
+  esClic,
+  restringirAngulo,
+  type AreaDeTexto,
+  type Herramienta,
+} from "./herramientas.js";
+import { Paleta } from "./paleta.js";
+import { TextoEnSitio } from "./texto-en-sitio.js";
 import {
   avanzarGesto,
   iniciarMover,
@@ -86,8 +110,10 @@ export interface EditorLibreProps {
 }
 
 type Accion = {
-  modo: "pan" | "gesto";
+  modo: "pan" | "gesto" | "crear";
   gesto: Gesto | null;
+  /** Solo al crear: dónde empezó el arrastre, en coordenadas de escena (ya imantado). */
+  inicioEscena?: Punto;
   activo: boolean;
   origen: Punto;
   ultimo: Punto;
@@ -95,6 +121,19 @@ type Accion = {
   hit?: string;
   shift: boolean;
 };
+
+/** Lo que se ve mientras se dibuja, antes de soltar. */
+type VistaPrevia =
+  | { tipo: "forma"; forma: Parameters<typeof trazadoForma>[0]; caja: { x: number; y: number; ancho: number; alto: number } }
+  | { tipo: "texto"; caja: { x: number; y: number; ancho: number; alto: number } }
+  | { tipo: "linea"; puntos: Punto[]; flecha: boolean };
+
+interface Edicion {
+  /** `null` = texto nuevo que todavía no existe en la escena. */
+  id: string | null;
+  area: AreaDeTexto;
+  valor: string;
+}
 
 /** Captura el puntero para seguir el arrastre fuera del lienzo; algunos entornos (y los eventos sintéticos) no lo admiten. */
 function capturar(e: PunteroReact<SVGSVGElement>): void {
@@ -166,6 +205,42 @@ function CapaSeleccion({ escena, seleccion, vista, marco }: { escena: Escena; se
   );
 }
 
+/** Texto de ayuda de la barra de estado según la herramienta. */
+function ayudaDeHerramienta(h: Herramienta, enCurso: Punto[] | null): string {
+  if (h.tipo === "forma") return `${FORMAS[h.forma].nombre}: haz clic para insertarla o arrastra para dibujarla (Mayús = proporcional, Alt = desde el centro) · Esc cancela`;
+  if (h.tipo === "texto") return "Texto: haz clic o arrastra donde quieras escribir · Enter confirma, Mayús+Enter salta de línea, Esc cancela";
+  if (h.tipo === "linea") return enCurso ? "Haz clic en cada punto · doble clic o Enter termina · Mayús ajusta el ángulo · Esc cancela" : `${h.flecha ? "Flecha" : "Línea"}: arrastra para trazarla o haz clic en cada punto (doble clic termina) · Esc cancela`;
+  return "Clic para elegir · Mayús suma · Arrastra para mover · Doble clic escribe · Rueda desplaza · Ctrl+rueda acerca";
+}
+
+/** Lo que se está dibujando, antes de soltar. */
+function CapaPrevia({ previa, vista }: { previa: VistaPrevia | null; vista: Vista }): ReactElement | null {
+  if (!previa) return null;
+  if (previa.tipo === "linea") {
+    const puntos = previa.puntos.map((p) => escenaAPantalla(vista, p));
+    return (
+      <g data-capa="previa" pointerEvents="none">
+        <polyline points={puntos.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={COLOR_SELECCION} strokeWidth={2} strokeDasharray="5 4" strokeLinejoin="round" />
+        {puntos.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={3.5} fill="#fff" stroke={COLOR_SELECCION} strokeWidth={1.5} />
+        ))}
+      </g>
+    );
+  }
+  const o = escenaAPantalla(vista, { x: previa.caja.x, y: previa.caja.y });
+  const ancho = previa.caja.ancho * vista.zoom;
+  const alto = previa.caja.alto * vista.zoom;
+  return (
+    <g data-capa="previa" pointerEvents="none">
+      {previa.tipo === "forma" && ancho > 1 && alto > 1 ? (
+        <path d={trazadoForma(previa.forma, ancho, alto)} transform={`translate(${o.x} ${o.y})`} fill={COLOR_SELECCION} fillOpacity={0.1} stroke={COLOR_SELECCION} strokeWidth={1.5} strokeDasharray="5 4" />
+      ) : (
+        <rect x={o.x} y={o.y} width={ancho} height={alto} fill={COLOR_SELECCION} fillOpacity={0.06} stroke={COLOR_SELECCION} strokeWidth={1.5} strokeDasharray="5 4" />
+      )}
+    </g>
+  );
+}
+
 function CapaGuias({ guias, vista }: { guias: readonly Guia[]; vista: Vista }): ReactElement {
   return (
     <g data-capa="guias" pointerEvents="none">
@@ -207,6 +282,11 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [cursor, setCursor] = useState("default");
   const [anuncio, setAnuncio] = useState("");
   const [, setVersionHistorial] = useState(0);
+  const [herramienta, setHerramienta] = useState<Herramienta>(SELECCIONAR);
+  const [enCurso, setEnCurso] = useState<Punto[] | null>(null);
+  const [previa, setPrevia] = useState<VistaPrevia | null>(null);
+  const [edicion, setEdicion] = useState<Edicion | null>(null);
+  const edicionRef = useRef<Edicion | null>(null);
 
   const historial = useRef(new Historial({ tope: 100 }));
   const ventanaRef = useRef<HTMLDivElement | null>(null);
@@ -216,8 +296,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const ayudaId = useId();
 
   // Estado «actual» para los manejadores de eventos (evita cierres con valores viejos).
-  const vivo = useRef({ escena, seleccion, vista, cuadricula, imantar });
-  vivo.current = { escena, seleccion, vista, cuadricula, imantar };
+  const vivo = useRef({ escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso });
+  vivo.current = { escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso };
 
   const marco = useMemo(() => marcoDeSeleccion(escena, seleccion), [escena, seleccion]);
 
@@ -287,6 +367,102 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     onCerrar(vivo.current.escena);
   }, [onCerrar]);
 
+  // ─── Herramientas de creación (W6) ──────────────────────────────────────────
+  const elegirHerramienta = useCallback((h: Herramienta): void => {
+    setHerramienta(h);
+    setEnCurso(null);
+    setPrevia(null);
+    setAnuncio(h.tipo === "seleccionar" ? "Herramienta: seleccionar." : h.tipo === "forma" ? `Herramienta: ${FORMAS[h.forma].nombre}. Haz clic o arrastra en el lienzo.` : h.tipo === "linea" ? `Herramienta: ${h.flecha ? "flecha" : "línea"}. Arrastra, o haz clic en cada punto y doble clic para terminar.` : "Herramienta: texto. Haz clic o arrastra en el lienzo.");
+    svgRef.current?.focus();
+  }, []);
+
+  const elegirPorNombre = useCallback(
+    (nombre: NombreHerramienta): void => elegirHerramienta(nombre === "seleccionar" ? SELECCIONAR : nombre === "texto" ? { tipo: "texto" } : { tipo: "linea", flecha: nombre === "flecha" }),
+    [elegirHerramienta],
+  );
+
+  /** Agrega lo dibujado, lo deja seleccionado y vuelve a la herramienta de seleccionar. */
+  const crearElemento = useCallback(
+    (entrada: EntradaElemento): void => {
+      const { escena: actual } = vivo.current;
+      const r = agregar(actual, entrada);
+      if (r.id === "") {
+        setAnuncio("No se pudo agregar el elemento.");
+        return;
+      }
+      confirmar(actual, { escena: r.escena, seleccion: [r.id] });
+      const nuevo = r.escena.elementos.find((x) => x.id === r.id);
+      setAnuncio(`${nuevo ? describirElemento(nuevo) : "Elemento"} agregado.`);
+      setHerramienta(SELECCIONAR);
+    },
+    [confirmar],
+  );
+
+  /** Punto de la escena con el imán de las guías y de la cuadrícula (Ctrl lo suspende). */
+  const imantarPunto = (p: Punto, ctrl: boolean): Punto => {
+    const { escena: actual, vista: v, cuadricula: grilla, imantar: iman } = vivo.current;
+    if (ctrl || (!iman && !grilla)) return p;
+    return ajustarPunto(p, actual, { guias: iman, umbral: 6 / v.zoom, ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}) }).punto;
+  };
+
+  /** Termina la línea de varios puntos. (Un doble clic no suma un punto de más: cada clic ya descarta los repetidos.) */
+  const terminarLinea = (puntos: readonly Punto[], flecha: boolean): void => {
+    setEnCurso(null);
+    setPrevia(null);
+    if (puntos.length >= 2) crearElemento(entradaLinea(puntos, flecha));
+  };
+
+  // ─── Texto en el sitio ──────────────────────────────────────────────────────
+  const fijarEdicion = useCallback((e: Edicion | null): void => {
+    edicionRef.current = e;
+    setEdicion(e);
+  }, []);
+
+  const abrirEdicion = (id: string): void => {
+    const { escena: actual } = vivo.current;
+    const el = actual.elementos.find((x) => x.id === id);
+    if (!el || bloqueadosEfectivosDe(actual).has(id)) return;
+    const area = areaDeTexto(actual, el);
+    if (!area) return;
+    setSeleccion([id]);
+    fijarEdicion({ id, area, valor: area.texto });
+  };
+
+  const abrirEdicionNueva = (caja: { x: number; y: number; ancho: number; alto: number }): void => {
+    // El aspecto del texto nuevo es el que el normalizador le da a un texto sin estilo.
+    const modelo = normalizarEscena({ elementos: [{ tipo: "texto", id: "modelo", texto: "" }] }).elementos[0];
+    const base = modelo ? areaDeTexto(vivo.current.escena, modelo) : null;
+    if (!base) return;
+    fijarEdicion({ id: null, area: { ...base, caja, centro: { x: caja.x + caja.ancho / 2, y: caja.y + caja.alto / 2 }, texto: "" }, valor: "" });
+  };
+
+  const confirmarEdicion = (): void => {
+    const ed = edicionRef.current;
+    if (!ed) return;
+    fijarEdicion(null);
+    svgRef.current?.focus();
+    const { escena: actual } = vivo.current;
+    if (ed.id === null) {
+      if (ed.valor.trim() === "") return;
+      crearElemento(entradaTexto(ed.area.caja, ed.valor));
+    } else if (ed.valor.trim() === "" && actual.elementos.find((x) => x.id === ed.id)?.tipo === "texto") {
+      // Un cuadro de texto sin texto no se puede representar (el normalizador le pondría «Texto»): se quita, como en cualquier editor.
+      const nueva = eliminar(actual, [ed.id]);
+      if (nueva !== actual) {
+        confirmar(actual, { escena: nueva, seleccion: [] });
+        setAnuncio("Cuadro de texto vacío eliminado.");
+      }
+    } else if (ed.valor !== ed.area.texto) {
+      const nueva = actualizar(actual, [ed.id], { texto: ed.valor });
+      if (nueva !== actual) confirmar(actual, { escena: nueva, seleccion: [ed.id] });
+    }
+  };
+
+  const cancelarEdicion = (): void => {
+    fijarEdicion(null);
+    svgRef.current?.focus();
+  };
+
   // ─── Zoom ───────────────────────────────────────────────────────────────────
   const centroVentana = useCallback((): Punto => {
     const m = medir();
@@ -330,7 +506,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       return;
     }
     if (e.button !== 0) return;
-    const { escena: actual, seleccion: sel, vista: v } = vivo.current;
+    const { escena: actual, seleccion: sel, vista: v, herramienta: h } = vivo.current;
+    if (h.tipo !== "seleccionar") {
+      // Crear: se parte del punto (imantado) y se decide al soltar si fue un clic o un arrastre.
+      const inicio = imantarPunto(pantallaAEscena(v, pantalla), e.ctrlKey || e.metaKey);
+      accion.current = { modo: "crear", gesto: null, activo: false, origen: pantalla, ultimo: pantalla, inicioEscena: inicio, shift: e.shiftKey };
+      capturar(e);
+      return;
+    }
     const p = pantallaAEscena(v, pantalla);
     const actualMarco = marcoDeSeleccion(actual, sel);
     const asa = actualMarco ? asaEn(actualMarco, p, v.zoom) : null;
@@ -365,8 +548,17 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     const a = accion.current;
     const pantalla = aPantalla(e);
     if (!a) {
-      // Sin arrastre: solo cambia el cursor según lo que haya debajo.
-      const { escena: actual, seleccion: sel, vista: v } = vivo.current;
+      // Sin arrastre: cambia el cursor según la herramienta y lo que haya debajo; una línea a medio hacer sigue al cursor.
+      const { escena: actual, seleccion: sel, vista: v, herramienta: h, enCurso: curso } = vivo.current;
+      if (h.tipo !== "seleccionar") {
+        setCursor(espacio.current ? "grab" : h.tipo === "texto" ? "text" : "crosshair");
+        if (h.tipo === "linea" && curso && curso.length > 0) {
+          const ultimo = curso[curso.length - 1] as Punto;
+          const p = imantarPunto(pantallaAEscena(v, pantalla), e.ctrlKey || e.metaKey);
+          setPrevia({ tipo: "linea", puntos: [...curso, e.shiftKey ? restringirAngulo(ultimo, p) : p], flecha: h.flecha });
+        }
+        return;
+      }
       const m = marcoDeSeleccion(actual, sel);
       const asa: TipoAsa | null = m ? asaEn(m, pantallaAEscena(v, pantalla), v.zoom) : null;
       setCursor(espacio.current ? "grab" : asa && m ? cursorDeAsa(asa, m.rotacion) : "default");
@@ -375,6 +567,22 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (a.modo === "pan") {
       setVista((v) => desplazar(v, pantalla.x - a.ultimo.x, pantalla.y - a.ultimo.y));
       a.ultimo = pantalla;
+      return;
+    }
+    if (a.modo === "crear") {
+      if (!a.activo) {
+        if (Math.hypot(pantalla.x - a.origen.x, pantalla.y - a.origen.y) < UMBRAL_ARRASTRE_PX) return;
+        a.activo = true;
+      }
+      const { vista: v, herramienta: h, enCurso: curso } = vivo.current;
+      const inicio = a.inicioEscena as Punto;
+      const fin = imantarPunto(pantallaAEscena(v, pantalla), e.ctrlKey || e.metaKey);
+      if (h.tipo === "forma") setPrevia({ tipo: "forma", forma: h.forma, caja: cajaArrastrada(inicio, fin, { proporcional: e.shiftKey, desdeCentro: e.altKey }) });
+      else if (h.tipo === "texto") setPrevia({ tipo: "texto", caja: cajaArrastrada(inicio, fin) });
+      else if (h.tipo === "linea") {
+        const desde = curso && curso.length > 0 ? (curso[curso.length - 1] as Punto) : inicio;
+        setPrevia({ tipo: "linea", puntos: [...(curso ?? [inicio]), e.shiftKey ? restringirAngulo(desde, fin) : fin], flecha: h.flecha });
+      }
       return;
     }
     if (!a.gesto) return;
@@ -402,8 +610,37 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     liberar(e);
     setGuias([]);
     setRecuadro(null);
-    setCursor(espacio.current ? "grab" : "default");
+    const base = vivo.current.herramienta.tipo === "seleccionar" ? "default" : vivo.current.herramienta.tipo === "texto" ? "text" : "crosshair";
+    setCursor(espacio.current ? "grab" : base);
     if (!a || a.modo === "pan") return;
+    if (a.modo === "crear") {
+      const { vista: v, herramienta: h, enCurso: curso } = vivo.current;
+      const inicio = a.inicioEscena as Punto;
+      const fin = imantarPunto(pantallaAEscena(v, aPantalla(e)), e.ctrlKey || e.metaKey);
+      setPrevia(null);
+      if (h.tipo === "forma") {
+        const arrastrada = cajaArrastrada(inicio, fin, { proporcional: e.shiftKey, desdeCentro: e.altKey });
+        const clic = !a.activo || esClic({ ancho: arrastrada.ancho * v.zoom, alto: arrastrada.alto * v.zoom });
+        crearElemento(entradaForma(h.forma, clic ? cajaPorDefecto(h.forma, inicio) : conMinimo(arrastrada)));
+      } else if (h.tipo === "texto") {
+        const arrastrada = cajaArrastrada(inicio, fin);
+        const clic = !a.activo || esClic({ ancho: arrastrada.ancho * v.zoom, alto: arrastrada.alto * v.zoom });
+        abrirEdicionNueva(clic ? { x: inicio.x, y: inicio.y, ancho: TEXTO_NUEVO.ancho, alto: TEXTO_NUEVO.alto } : conMinimo(arrastrada, 24));
+      } else if (curso && curso.length > 0) {
+        // Línea a medio hacer: cada clic suma un punto.
+        const ultimo = curso[curso.length - 1] as Punto;
+        const punto = e.shiftKey ? restringirAngulo(ultimo, fin) : fin;
+        if (Math.hypot(punto.x - ultimo.x, punto.y - ultimo.y) * v.zoom >= 3) setEnCurso([...curso, punto]);
+      } else if (a.activo) {
+        // Arrastre: una línea recta de punta a punta.
+        const punto = e.shiftKey ? restringirAngulo(inicio, fin) : fin;
+        if (Math.hypot(punto.x - inicio.x, punto.y - inicio.y) * v.zoom >= 4) crearElemento(entradaLinea([inicio, punto], h.tipo === "linea" && h.flecha));
+      } else {
+        // Clic: empieza una línea con puntos intermedios.
+        setEnCurso([inicio]);
+      }
+      return;
+    }
     if (!a.activo) {
       // Un clic sin arrastre sobre un elemento de una selección múltiple deja solo ese elemento.
       if (a.hit !== undefined && !a.shift) {
@@ -426,10 +663,24 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     accion.current = null;
     setGuias([]);
     setRecuadro(null);
+    setPrevia(null);
     if (a?.gesto && a.activo) {
       historial.current.cancelarGesto();
       setEscena(a.gesto.base);
     }
+  };
+
+  const alDobleClic = (e: RatonReact<SVGSVGElement>): void => {
+    const { herramienta: h, enCurso: curso, escena: actual, vista: v } = vivo.current;
+    // Con la herramienta de línea, el doble clic cierra la línea de varios puntos.
+    if (h.tipo === "linea") {
+      if (curso) terminarLinea(curso, h.flecha);
+      return;
+    }
+    if (h.tipo !== "seleccionar") return;
+    // Con seleccionar, el doble clic escribe en el elemento (dentro de una forma, el rótulo de una línea, el cuadro de texto).
+    const id = elementoEn(actual, pantallaAEscena(v, aPantalla(e)), { tolerancia: 6 / v.zoom, entrarEnGrupos: true });
+    if (id !== undefined) abrirEdicion(id);
   };
 
   // ─── Teclado ────────────────────────────────────────────────────────────────
@@ -446,8 +697,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
     const orden = ordenDeTecla(e);
     if (!orden) return;
-    // Tab recorre los elementos solo desde el lienzo; en la barra de herramientas sigue siendo el Tab de siempre.
-    if (orden.tipo === "siguiente" && (objetivo as Element) !== svgRef.current) return;
+    // Tab, Enter y las letras de herramienta solo valen desde el lienzo; en la barra siguen siendo las teclas de siempre.
+    if ((orden.tipo === "siguiente" || orden.tipo === "aceptar" || orden.tipo === "herramienta") && (objetivo as Element) !== svgRef.current) return;
     // Mientras se arrastra, Escape cancela el gesto.
     if (orden.tipo === "cerrar" && accion.current?.activo) {
       e.preventDefault();
@@ -462,8 +713,22 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       case "rehacer":
         rehacer();
         return;
+      case "herramienta":
+        elegirPorNombre(orden.herramienta);
+        return;
+      case "aceptar": {
+        const { enCurso: curso, herramienta: h } = vivo.current;
+        if (curso && h.tipo === "linea") terminarLinea(curso, h.flecha);
+        return;
+      }
       case "cerrar":
-        if (vivo.current.seleccion.length > 0) {
+        if (vivo.current.enCurso) {
+          setEnCurso(null);
+          setPrevia(null);
+          setAnuncio("Línea cancelada.");
+        } else if (vivo.current.herramienta.tipo !== "seleccionar") {
+          elegirHerramienta(SELECCIONAR);
+        } else if (vivo.current.seleccion.length > 0) {
           setSeleccion([]);
           setAnuncio("Nada seleccionado.");
         } else {
@@ -493,6 +758,11 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const puedeRehacer = historial.current.puedeRehacer;
   const alinear = (modo: ModoAlineacion): void => void ejecutar({ tipo: "alinear", modo });
   const orden = (modo: ModoOrden): void => void ejecutar({ tipo: "orden", modo });
+
+  // El cursor base sigue a la herramienta (el movimiento del puntero lo afina sobre las asas).
+  useEffect(() => {
+    setCursor(herramienta.tipo === "seleccionar" ? "default" : herramienta.tipo === "texto" ? "text" : "crosshair");
+  }, [herramienta]);
 
   const paginaX = escenaAPantalla(vista, { x: 0, y: 0 });
 
@@ -594,7 +864,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         </div>
       </div>
 
-      <div ref={ventanaRef} className="relative min-h-0 flex-1 overflow-hidden bg-muted/50">
+      <div className="flex min-h-0 flex-1">
+      <Paleta herramienta={herramienta} onElegir={elegirHerramienta} />
+      <div ref={ventanaRef} className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-muted/50">
         <svg
           ref={svgRef}
           tabIndex={0}
@@ -607,6 +879,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           onPointerMove={alMover}
           onPointerUp={alSoltar}
           onPointerCancel={alCancelarPuntero}
+          onDoubleClick={alDobleClic}
         >
           <g transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
             <rect width={escena.ancho} height={escena.alto} fill="var(--background, #fff)" stroke="var(--border, #e2e8f0)" strokeWidth={1 / vista.zoom} data-dibujo-pagina="" />
@@ -624,6 +897,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           ) : null}
           <CapaSeleccion escena={escena} seleccion={seleccion} vista={vista} marco={marco} />
           <CapaGuias guias={guias} vista={vista} />
+          <CapaPrevia previa={previa} vista={vista} />
           {recuadro ? (
             <rect
               data-capa="recuadro"
@@ -640,6 +914,17 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
             />
           ) : null}
         </svg>
+        {edicion ? (
+          <TextoEnSitio
+            area={edicion.area}
+            valor={edicion.valor}
+            vista={vista}
+            onCambio={(valor) => fijarEdicion({ ...edicion, valor })}
+            onConfirmar={confirmarEdicion}
+            onCancelar={cancelarEdicion}
+          />
+        ) : null}
+      </div>
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t bg-card px-3 py-1 text-[11px] text-muted-foreground">
@@ -647,7 +932,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           {cantidad === 0 ? "Lienzo vacío" : `${cantidad} ${cantidad === 1 ? "elemento" : "elementos"}`}
           {hay ? ` · ${seleccion.length} ${seleccion.length === 1 ? "seleccionado" : "seleccionados"}` : ""}
         </span>
-        <span>Clic para elegir · Mayús suma · Arrastra para mover · Rueda desplaza · Ctrl+rueda acerca</span>
+        <span>{ayudaDeHerramienta(herramienta, enCurso)}</span>
       </div>
 
       <p id={ayudaId} className="sr-only">

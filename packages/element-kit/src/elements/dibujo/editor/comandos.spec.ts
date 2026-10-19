@@ -30,7 +30,22 @@ describe("ordenDeTecla", () => {
   it("lo demás no significa nada", () => {
     expect(ordenDeTecla(tecla("x"))).toBeNull();
     expect(ordenDeTecla(tecla("c", { ctrlKey: true }))).toBeNull();
-    expect(ordenDeTecla(tecla("Enter"))).toBeNull();
+    expect(ordenDeTecla(tecla("q"))).toBeNull();
+  });
+});
+
+describe("teclas de herramienta (W6)", () => {
+  it("V, L, A y T eligen herramienta, con mayúsculas o minúsculas, y Enter acepta", () => {
+    expect(ordenDeTecla(tecla("v"))).toEqual({ tipo: "herramienta", herramienta: "seleccionar" });
+    expect(ordenDeTecla(tecla("l"))).toEqual({ tipo: "herramienta", herramienta: "linea" });
+    expect(ordenDeTecla(tecla("a"))).toEqual({ tipo: "herramienta", herramienta: "flecha" });
+    expect(ordenDeTecla(tecla("t"))).toEqual({ tipo: "herramienta", herramienta: "texto" });
+    expect(ordenDeTecla(tecla("Enter"))).toEqual({ tipo: "aceptar" });
+  });
+  it("con Mayús o Alt no son herramientas, y Ctrl+A sigue siendo seleccionar todo", () => {
+    expect(ordenDeTecla(tecla("L", { shiftKey: true }))).toBeNull();
+    expect(ordenDeTecla(tecla("l", { altKey: true }))).toBeNull();
+    expect(ordenDeTecla(tecla("a", { ctrlKey: true }))).toEqual({ tipo: "seleccionar-todo" });
   });
 });
 
