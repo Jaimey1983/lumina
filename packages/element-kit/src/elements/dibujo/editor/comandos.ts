@@ -35,7 +35,18 @@ export type Comando =
   | { tipo: "siguiente"; atras: boolean };
 
 /** Lo que el teclado puede pedir además de los comandos de escena. */
-export type Orden = Comando | { tipo: "deshacer" } | { tipo: "rehacer" } | { tipo: "cerrar" };
+export type NombreHerramienta = "seleccionar" | "linea" | "flecha" | "texto";
+
+export type Orden =
+  | Comando
+  | { tipo: "deshacer" }
+  | { tipo: "rehacer" }
+  | { tipo: "cerrar" }
+  | { tipo: "herramienta"; herramienta: NombreHerramienta }
+  | { tipo: "aceptar" };
+
+/** Teclas de una sola letra que eligen herramienta. */
+const HERRAMIENTA_DE_TECLA: Record<string, NombreHerramienta> = { v: "seleccionar", l: "linea", a: "flecha", t: "texto" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
@@ -141,7 +152,12 @@ export function ordenDeTecla(e: TeclaEvento): Orden | null {
     return null;
   }
   const paso = e.shiftKey ? PASO_FLECHA_MAYUS : PASO_FLECHA;
+  if (!e.altKey && !e.shiftKey && e.key.length === 1 && k in HERRAMIENTA_DE_TECLA) {
+    return { tipo: "herramienta", herramienta: HERRAMIENTA_DE_TECLA[k] as NombreHerramienta };
+  }
   switch (e.key) {
+    case "Enter":
+      return { tipo: "aceptar" };
     case "Delete":
     case "Backspace":
       return { tipo: "eliminar" };

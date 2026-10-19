@@ -73,7 +73,7 @@ export function DibujoProperties({ estado: crudo, onChange }: DibujoPropertiesPr
           <PenTool /> Editar dibujo
         </Button>
         <p className="text-[11px] text-muted-foreground">
-          Abre el lienzo a pantalla casi completa: elige, mueve, redimensiona y gira formas. Las herramientas para crear formas, líneas y texto llegan en el siguiente paso de la etapa.
+          Abre el lienzo a pantalla casi completa: agrega formas, líneas y texto, y muévelos, redimensiónalos, gíralos y alinéalos.
         </p>
       </div>
 
