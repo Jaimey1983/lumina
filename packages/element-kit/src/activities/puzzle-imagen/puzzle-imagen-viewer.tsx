@@ -15,6 +15,7 @@ import { useDraggable, useDroppable, type DragEndEvent, type DragStartEvent } fr
 import type { PuzzleImagenActivity } from '@lumina/types/slide';
 import { evaluateActivityResponse, wrapActivityDraftResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 
+import { colisionPorPuntero } from '../_shared/activity-colisiones.js';
 import { ActivityDndRoot } from '../_shared/activity-dnd-root.js';
 import { useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
@@ -36,6 +37,9 @@ import {
   type EstadoPuzzle,
 } from './puzzle-imagen-estado.js';
 import styles from './puzzle-imagen.module.css';
+
+/** Soltar manda el puntero (no el área de la pieza): las zonas pequeñas aciertan a la primera. */
+const COLISIONES = colisionPorPuntero();
 
 function posicionDeFondo(index: number, filas: number, columnas: number): string {
   const row = Math.floor(index / columnas);
@@ -357,6 +361,7 @@ function Cuerpo({ actividad, estado, setEstado, rango, ctx, responder, alEvaluar
 
       <ActivityDndRoot
         arrastreActivo={!tocar}
+        colisiones={COLISIONES}
         onDragStart={(e: DragStartEvent) => setActivo(e.active.id as string)}
         onDragEnd={alSoltar}
         overlay={

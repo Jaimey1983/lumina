@@ -310,45 +310,64 @@ describe("Definición", () => {
   });
 });
 
-describe("Editor y propiedades", () => {
-  it("el lienzo del editor muestra la imagen y cuántos marcadores y etiquetas hay", () => {
-    render(<Editor estado={base()} config={{}} onChange={() => {}} />);
-    expect(screen.getByText(/2 marcadores · 3 etiquetas/)).toBeTruthy();
-    expect(screen.getByAltText("Una célula")).toBeTruthy();
-  });
-  const montarProp = (a = base()) => {
+describe("Editor (lienzo) — los marcadores se colocan sobre la imagen", () => {
+  const montarEd = (a = base(), seleccionado = true) => {
     const onChange = vi.fn();
-    render(<Propiedades estado={a} config={{}} onChange={onChange} onConfigChange={() => {}} />);
+    render(<Editor estado={a} config={{ isSelected: seleccionado }} onChange={onChange} />);
     const lienzo = screen.getByTestId("ei-lienzo");
     lienzo.getBoundingClientRect = () => ({ left: 100, top: 50, width: 200, height: 100, right: 300, bottom: 150, x: 100, y: 50, toJSON() {} });
     return { onChange, lienzo, ultimo: () => onChange.mock.calls.at(-1)![0] as EtiquetarImagenActivity };
   };
+  it("muestra la imagen, cuántos marcadores y etiquetas hay y el texto de cada marcador", () => {
+    render(<Editor estado={base()} config={{}} onChange={() => {}} />);
+    expect(screen.getByText(/2 marcadores · 3 etiquetas/)).toBeTruthy();
+    expect(screen.getByAltText("Una célula")).toBeTruthy();
+    expect(screen.getByLabelText("Marcador 1: Núcleo")).toBeTruthy();
+  });
   it("clic sobre la imagen pone un marcador en fracciones y le asigna la primera etiqueta libre", () => {
-    const { lienzo, ultimo } = montarProp();
+    const { lienzo, ultimo } = montarEd();
     puntero(lienzo, "pointerdown", 150, 75);
-    const nueva = ultimo().zonas.at(-1)!;
     expect(ultimo().zonas).toHaveLength(3);
-    expect(nueva).toMatchObject({ x: 0.25, y: 0.25, etiquetaId: "e3" });
+    expect(ultimo().zonas.at(-1)).toMatchObject({ x: 0.25, y: 0.25, etiquetaId: "e3" });
   });
   it("si no queda etiqueta libre, crea una etiqueta vacía para el marcador nuevo", () => {
-    const { lienzo, ultimo } = montarProp(base({ etiquetas: base().etiquetas.slice(0, 2) }));
+    const { lienzo, ultimo } = montarEd(base({ etiquetas: base().etiquetas.slice(0, 2) }));
     puntero(lienzo, "pointerdown", 200, 100);
     expect(ultimo().etiquetas).toHaveLength(3);
     expect(ultimo().zonas.at(-1)!.etiquetaId).toBe(ultimo().etiquetas.at(-1)!.id);
   });
-  it("arrastrar un marcador lo mueve (y no pone uno nuevo)", () => {
-    const { ultimo, onChange } = montarProp();
-    const m = screen.getByLabelText("Marcador 1");
+  it("sin seleccionar el bloque, el lienzo no edita (el clic selecciona el bloque)", () => {
+    const { lienzo, onChange } = montarEd(base(), false);
+    puntero(lienzo, "pointerdown", 150, 75);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(lienzo.hasAttribute("data-moveable-ignore")).toBe(false);
+  });
+  it("seleccionado, el lienzo cede el gesto al marcador (no mueve el bloque entero)", () => {
+    const { lienzo } = montarEd();
+    expect(lienzo.hasAttribute("data-moveable-ignore")).toBe(true);
+  });
+  it("arrastrar un marcador lo mueve, avisa UNA vez al soltar y no pone uno nuevo", () => {
+    const { ultimo, onChange } = montarEd();
+    const m = screen.getByLabelText(/^Marcador 1/);
     puntero(m, "pointerdown", 200, 100);
+    puntero(m, "pointermove", 230, 110);
     puntero(m, "pointermove", 250, 125);
+    expect(onChange).not.toHaveBeenCalled();
     puntero(m, "pointerup", 250, 125);
     expect(ultimo().zonas[0]).toMatchObject({ id: "z1", x: 0.75, y: 0.75 });
     expect(ultimo().zonas).toHaveLength(2);
     expect(onChange).toHaveBeenCalledTimes(1);
   });
-  it("las flechas mueven el marcador elegido y Supr lo quita", () => {
-    const { ultimo } = montarProp();
-    const m = screen.getByLabelText("Marcador 1");
+  it("un clic sobre el marcador (sin arrastrar) no lo mueve", () => {
+    const { onChange } = montarEd();
+    const m = screen.getByLabelText(/^Marcador 1/);
+    puntero(m, "pointerdown", 200, 100);
+    puntero(m, "pointerup", 200, 100);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+  it("las flechas mueven el marcador y Supr lo quita", () => {
+    const { ultimo } = montarEd();
+    const m = screen.getByLabelText(/^Marcador 1/);
     fireEvent.keyDown(m, { key: "ArrowRight" });
     expect(ultimo().zonas[0]!.x).toBeCloseTo(0.51);
     fireEvent.keyDown(m, { key: "ArrowUp", shiftKey: true });
@@ -357,16 +376,33 @@ describe("Editor y propiedades", () => {
     expect(ultimo().zonas.map((z) => z.id)).toEqual(["z2"]);
   });
   it("las coordenadas nunca salen de 0–1", () => {
-    const { ultimo } = montarProp(base({ zonas: [{ id: "z1", x: 1, y: 0, etiquetaId: "e1" }, base().zonas[1]!] }));
-    fireEvent.keyDown(screen.getByLabelText("Marcador 1"), { key: "ArrowRight", shiftKey: true });
+    const { ultimo } = montarEd(base({ zonas: [{ id: "z1", x: 1, y: 0, etiquetaId: "e1" }, base().zonas[1]!] }));
+    fireEvent.keyDown(screen.getByLabelText(/^Marcador 1/), { key: "ArrowRight", shiftKey: true });
     expect(ultimo().zonas[0]!.x).toBe(1);
-    fireEvent.keyDown(screen.getByLabelText("Marcador 1"), { key: "ArrowUp" });
+    fireEvent.keyDown(screen.getByLabelText(/^Marcador 1/), { key: "ArrowUp" });
     expect(ultimo().zonas[0]!.y).toBe(0);
   });
-  it("asignar la etiqueta del marcador elegido", () => {
+});
+
+describe("Propiedades", () => {
+  const montarProp = (a = base()) => {
+    const onChange = vi.fn();
+    render(<Propiedades estado={a} config={{}} onChange={onChange} onConfigChange={() => {}} />);
+    return { onChange, ultimo: () => onChange.mock.calls.at(-1)![0] as EtiquetarImagenActivity };
+  };
+  it("ya no hay miniatura para colocar marcadores: se colocan en el lienzo", () => {
+    montarProp();
+    expect(screen.queryByTestId("ei-lienzo")).toBeNull();
+    expect(screen.getByText(/se colocan sobre la imagen, en el lienzo/)).toBeTruthy();
+  });
+  it("quitar un marcador desde la lista", () => {
     const { ultimo } = montarProp();
-    fireEvent.click(screen.getByLabelText("Marcador 2"));
-    fireEvent.change(screen.getByLabelText("Etiqueta del marcador elegido"), { target: { value: "e3" } });
+    fireEvent.click(screen.getByLabelText("Quitar el marcador 1"));
+    expect(ultimo().zonas.map((z) => z.id)).toEqual(["z2"]);
+  });
+  it("asignar la etiqueta de un marcador", () => {
+    const { ultimo } = montarProp();
+    fireEvent.change(screen.getByLabelText("Etiqueta del marcador 2"), { target: { value: "e3" } });
     expect(ultimo().zonas[1]!.etiquetaId).toBe("e3");
   });
   it("quitar una etiqueta deja sin asignar los marcadores que la usaban", () => {

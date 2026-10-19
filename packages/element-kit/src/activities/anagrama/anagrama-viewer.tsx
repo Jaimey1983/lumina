@@ -14,6 +14,7 @@ import { useDroppable, type DragEndEvent, type DragStartEvent } from '@dnd-kit/c
 import type { AnagramaActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 
+import { colisionPorPuntero } from '../_shared/activity-colisiones.js'
 import { ActivityDndRoot } from '../_shared/activity-dnd-root.js'
 import { ActivityDragWord } from '../_shared/activity-drag-word.js'
 import { useActivityFeedback } from '../_shared/activity-feedback.js'
@@ -27,6 +28,9 @@ import {
 } from '../_shared/activity-tap-place.js'
 import { colocarLetra, crearEstadoPalabra, idHueco, type EstadoPalabra } from './anagrama-estado.js'
 import styles from './anagrama.module.css'
+
+/** Soltar manda el puntero (no el área de la pieza): las zonas pequeñas aciertan a la primera. */
+const COLISIONES = colisionPorPuntero()
 
 // ── Hueco destino para una letra ──────────────────────────────────────────────
 function HuecoLetra({
@@ -184,6 +188,7 @@ function Cuerpo({ actividad, estados, setEstados, indice, setIndice, crear, ctx,
 
       <ActivityDndRoot
         arrastreActivo={!tocar}
+        colisiones={COLISIONES}
         onDragStart={(e: DragStartEvent) => setActiva(e.active.id as string)}
         onDragEnd={alSoltar}
         overlay={arrastrada ? <div className={styles.fantasma}>{arrastrada}</div> : null}

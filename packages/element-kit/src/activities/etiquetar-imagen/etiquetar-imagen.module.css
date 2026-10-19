@@ -76,8 +76,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  /* Zona de soltar generosa (≥ 44 px, WCAG 2.5.8) alrededor de la insignia de 28 px. */
+  width: 3.5rem;
+  height: 3.5rem;
   transform: translate(-50%, -50%);
   border-radius: 50%;
 }

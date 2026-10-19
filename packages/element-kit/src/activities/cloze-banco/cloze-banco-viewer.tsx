@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { ClozeBancoActivity } from '@lumina/types/slide';
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 
+import { colisionPorPuntero } from '../_shared/activity-colisiones.js';
 import { ActivityDndRoot } from '../_shared/activity-dnd-root.js';
 import { useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
@@ -38,6 +39,9 @@ import {
   type Ficha,
 } from './cloze-banco-config.js';
 import styles from './cloze-banco.module.css';
+
+/** Soltar manda el puntero (no el área de la pieza): las zonas pequeñas aciertan a la primera. */
+const COLISIONES = colisionPorPuntero();
 
 type EstadoHueco = 'correcta' | 'incorrecta';
 
@@ -291,6 +295,7 @@ function Cuerpo({ act, fichas, orden, ubicaciones, setUbicaciones, estados, ctx,
       </div>
       <ActivityDndRoot
         arrastreActivo={!tocar}
+        colisiones={COLISIONES}
         onDragStart={ubicar.alEmpezar}
         onDragEnd={ubicar.alSoltar}
         overlay={arrastrada ? <div className={styles.fantasma}>{arrastrada}</div> : null}

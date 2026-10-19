@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { EtiquetarImagenActivity, EtiquetarImagenEtiqueta, EtiquetarImagenZona } from '@lumina/types/slide';
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 
+import { colisionPorPuntero } from '../_shared/activity-colisiones.js';
 import { ActivityDndRoot } from '../_shared/activity-dnd-root.js';
 import { useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
@@ -33,6 +34,9 @@ import { BANCO, etiquetarImagenFingerprint, normalizarEtiquetarImagen } from './
 import styles from './etiquetar-imagen.module.css';
 
 type EstadoZona = 'correcta' | 'incorrecta';
+
+/** Soltar manda el puntero (no el área de la etiqueta): un marcador pequeño acierta a la primera. */
+const COLISIONES = colisionPorPuntero();
 
 /** Proporción de la imagen mientras no se conoce la real: el espacio queda reservado (sin saltos). */
 const PROPORCION_INICIAL = 1.6;
@@ -296,6 +300,7 @@ function Cuerpo({ act, orden, ubicaciones, setUbicaciones, estados, ctx, respond
       </div>
       <ActivityDndRoot
         arrastreActivo={!tocar}
+        colisiones={COLISIONES}
         onDragStart={ubicar.alEmpezar}
         onDragEnd={ubicar.alSoltar}
         overlay={arrastrada ? <div className={styles.fantasma}>{arrastrada}</div> : null}

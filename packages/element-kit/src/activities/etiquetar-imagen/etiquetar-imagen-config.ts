@@ -70,3 +70,37 @@ export function normalizarEtiquetarImagen(
 export function etiquetarImagenFingerprint(a: EtiquetarImagenActivity): string {
   return JSON.stringify([a.instruccion, a.imagen, a.textoAlternativo, a.zonas, a.etiquetas]);
 }
+
+/** Resultado de poner un marcador nuevo: la actividad ya con él y el id del marcador. */
+export interface MarcadorAgregado {
+  actividad: EtiquetarImagenActivity;
+  zonaId: string;
+}
+
+/**
+ * Pone un marcador en `(x, y)` (fracciones 0–1) y le asigna la primera etiqueta libre; si no queda
+ * ninguna crea una vacía. `null` si se alcanzó el máximo de marcadores o de etiquetas.
+ */
+export function agregarMarcador(act: EtiquetarImagenActivity, x: number, y: number): MarcadorAgregado | null {
+  if (act.zonas.length >= ETIQUETAR_MAX_ZONAS) return null;
+  const usadas = new Set(act.zonas.map((z) => z.etiquetaId));
+  let etiquetas = act.etiquetas;
+  let etiquetaId = etiquetas.find((e) => !usadas.has(e.id))?.id;
+  if (!etiquetaId) {
+    if (etiquetas.length >= ETIQUETAR_MAX_ETIQUETAS) return null;
+    etiquetaId = generarIdEtiquetar('etq');
+    etiquetas = [...etiquetas, { id: etiquetaId, texto: '' }];
+  }
+  const zona: EtiquetarImagenZona = { id: generarIdEtiquetar('zona'), x: fraccion(x), y: fraccion(y), etiquetaId };
+  return { actividad: { ...act, zonas: [...act.zonas, zona], etiquetas }, zonaId: zona.id };
+}
+
+/** Mueve un marcador a `(x, y)` (se recortan a 0–1). */
+export function moverMarcador(act: EtiquetarImagenActivity, id: string, x: number, y: number): EtiquetarImagenActivity {
+  return { ...act, zonas: act.zonas.map((z) => (z.id === id ? { ...z, x: fraccion(x), y: fraccion(y) } : z)) };
+}
+
+/** Quita un marcador (su etiqueta queda en el banco como distractor). */
+export function quitarMarcador(act: EtiquetarImagenActivity, id: string): EtiquetarImagenActivity {
+  return { ...act, zonas: act.zonas.filter((z) => z.id !== id) };
+}
