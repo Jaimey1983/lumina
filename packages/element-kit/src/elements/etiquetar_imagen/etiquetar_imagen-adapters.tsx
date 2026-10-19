@@ -13,8 +13,10 @@ import type { EtiquetarImagenConfig, EtiquetarImagenEstado } from "./etiquetar_i
 /** Vista del lienzo en el editor. */
 export function EtiquetarImagenEditor({
   estado,
+  config,
+  onChange,
 }: ElementEditorProps<EtiquetarImagenEstado, EtiquetarImagenConfig>) {
-  return <LegacyEditor actividad={estado} />;
+  return <LegacyEditor actividad={estado} isSelected={config.isSelected} onChange={onChange} />;
 }
 
 /** Viewer del alumno. */

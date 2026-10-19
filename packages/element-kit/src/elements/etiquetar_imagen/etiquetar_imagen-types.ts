@@ -7,6 +7,8 @@ export type EtiquetarImagenEstado = EtiquetarImagenActivity;
 export interface EtiquetarImagenConfig {
   /** Canal de respuesta unificado (etapa U / DU2). */
   readonly onResponse?: (response: unknown) => void;
+  /** Editor: el bloque está seleccionado en el lienzo (solo entonces se colocan marcadores). */
+  readonly isSelected?: boolean;
 }
 
 export const ETIQUETAR_IMAGEN_TIPO = "etiquetar_imagen" as const;

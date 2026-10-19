@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type CollisionDetection,
   type DragStartEvent,
   type Modifier,
 } from '@dnd-kit/core'
@@ -83,6 +84,8 @@ interface ActivityDndRootProps {
   etiquetas?: ResolverEtiquetas
   /** `false` desactiva el arrastre (modo «tocar y colocar»). Por defecto `true`. */
   arrastreActivo?: boolean
+  /** Detección de dónde se soltó; por defecto la de dnd-kit (por área de la pieza). */
+  colisiones?: CollisionDetection
 }
 
 /**
@@ -96,6 +99,7 @@ export function ActivityDndRoot({
   onDragEnd,
   etiquetas,
   arrastreActivo = true,
+  colisiones,
 }: ActivityDndRootProps) {
   const sensors = useActivityDnDSensors(arrastreActivo)
   const accesibilidad = useMemo(
@@ -114,6 +118,7 @@ export function ActivityDndRoot({
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={colisiones}
       accessibility={accesibilidad}
       modifiers={modifiers}
       onDragStart={onDragStart}
