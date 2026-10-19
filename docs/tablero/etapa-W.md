@@ -91,7 +91,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W6 — Herramientas de creación: formas, líneas y texto
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** W5 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/editor/` (paleta de formas, herramientas, edición de texto), specs. **NO** toca conectores (W7) ni el panel de propiedades (W8).
 - **Entregable:** paleta lateral con el catálogo de W2 agrupado (básicas, flechas, diagramas); insertar con clic (tamaño por defecto) o **dibujando con arrastre**; herramienta de **línea y flecha** (recta y con puntos intermedios); **texto**: doble clic en una forma para escribir dentro (usa `rectanguloTexto`) y herramienta de texto libre; edición de texto en el sitio con Escape/Enter. Pruebas: cada forma del catálogo se puede insertar; arrastrar crea el tamaño dibujado; el texto escrito queda en el modelo y en el SVG. Verificación: la de W5.
