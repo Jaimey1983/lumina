@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { ClasificarActivity, ClasificarItem } from '@lumina/types/slide';
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 
+import { colisionPorPuntero } from '../_shared/activity-colisiones.js';
 import { ActivityDndRoot } from '../_shared/activity-dnd-root.js';
 import { useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
@@ -24,6 +25,9 @@ import {
 } from '../_shared/ubicar-elementos.js';
 import { barajar } from '../_shared/barajar.js';
 import styles from './clasificar.module.css';
+
+/** Soltar manda el puntero (no el área de la pieza): las zonas pequeñas aciertan a la primera. */
+const COLISIONES = colisionPorPuntero();
 
 const SIN_CLASIFICAR = 'sin-clasificar';
 type EstadoItem = 'correcto' | 'incorrecto' | null;
@@ -187,6 +191,7 @@ function Cuerpo({ actividad, piezas, ubicaciones, setUbicaciones, estados, ctx, 
       {/* El DndContext envuelve TODA la zona interactiva: el área de origen y las categorías. */}
       <ActivityDndRoot
         arrastreActivo={!tocar}
+        colisiones={COLISIONES}
         onDragStart={ubicar.alEmpezar}
         onDragEnd={ubicar.alSoltar}
         overlay={arrastrada ? <div className={styles.fantasma}>{arrastrada}</div> : null}

@@ -18,6 +18,7 @@ import { cn } from '@lumina/ui/lib/utils';
 import { wrapActivityDraftResponse } from '@lumina/scoring';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
+import { colisionPorPuntero } from '../_shared/activity-colisiones.js';
 import { ActivityDndRoot } from '../_shared/activity-dnd-root.js';
 import { useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
@@ -29,6 +30,9 @@ import {
   useUbicarElementos,
 } from '../_shared/ubicar-elementos.js';
 import styles from './drag-drop.module.css';
+
+/** Soltar manda el puntero (no el área de la pieza): las zonas pequeñas aciertan a la primera. */
+const COLISIONES = colisionPorPuntero();
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -285,6 +289,7 @@ function Cuerpo({ actividad, isDark, ctx, ubicaciones, setUbicaciones, enviada, 
 
       <ActivityDndRoot
         arrastreActivo={!tocar}
+        colisiones={COLISIONES}
         onDragStart={ubicar.alEmpezar}
         onDragEnd={ubicar.alSoltar}
         overlay={fantasma ? <div className={styles.fantasma}>{fantasma}</div> : null}
