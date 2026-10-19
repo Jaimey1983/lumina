@@ -14,6 +14,7 @@ import { useDroppable, type DragEndEvent, type DragStartEvent } from '@dnd-kit/c
 import type { PuzzlePalabrasActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 
+import { colisionPorPuntero } from '../_shared/activity-colisiones.js'
 import { ActivityDndRoot } from '../_shared/activity-dnd-root.js'
 import { ActivityDragWord } from '../_shared/activity-drag-word.js'
 import { useActivityFeedback } from '../_shared/activity-feedback.js'
@@ -34,6 +35,9 @@ import {
   type EstadoOracion,
 } from './puzzle-palabras-estado.js'
 import styles from './puzzle-palabras.module.css'
+
+/** Soltar manda el puntero (no el área de la pieza): las zonas pequeñas aciertan a la primera. */
+const COLISIONES = colisionPorPuntero()
 
 // ── Zona droppable ────────────────────────────────────────────────────────────
 function ZonaDroppable({
@@ -192,6 +196,7 @@ function Cuerpo({ actividad, estados, setEstados, indice, setIndice, crear, ctx,
 
       <ActivityDndRoot
         arrastreActivo={!tocar}
+        colisiones={COLISIONES}
         onDragStart={(e: DragStartEvent) => setActivo(e.active.id as string)}
         onDragEnd={alSoltar}
         overlay={arrastrada ? <div className={styles.fantasma}>{arrastrada}</div> : null}
