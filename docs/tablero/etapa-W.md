@@ -127,7 +127,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W10 — `diagrama` pasa a usar la escena (DW11)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** W9 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/diagrama/` y `packages/element-kit/src/elements/diagrama*` (el bloque adopta la escena como modelo y monta el editor de W5–W9), `packages/element-kit/src/elements/dibujo/` y `widgets/dibujo/` (se trasladan o borran), `packages/types` (retirar `dibujo` de `WIDGET_TIPOS`), frontend solo en los sitios de cableado de `dibujo` (panel, normalización, posición), `diagrama-export.ts` (retirar `formaSvg` duplicada; cierra el `TODO(W10)`), specs.
 - **Entregable:** `diagramaAEscena(block)` convierte un diagrama existente (grafo: nodos → formas con su forma, color y texto, aristas → conectores pegados a puertos; Venn → círculos y textos) en escena; al **abrir** un diagrama viejo se convierte y se edita con el editor completo, y al guardar queda como escena (el original se conserva hasta guardar). El bloque `diagrama` trae **plantillas básicas modificables** (flujo, mapa conceptual, línea de tiempo, comparación, ciclo, pirámide) y la galería de plantillas actual de `diagrama` apunta a ellas. Se retira el tipo transitorio `dibujo`. Pruebas: cada plantilla/diagrama de los existentes se convierte con el mismo número de elementos y los textos intactos; el conector sigue pegado a las formas correctas; un diagrama viejo guardado sin abrir no cambia. Verificación: la de W3, más comprobación visual del flujo abrir → editar → guardar.
