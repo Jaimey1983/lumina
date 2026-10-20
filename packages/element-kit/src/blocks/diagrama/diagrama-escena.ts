@@ -12,7 +12,6 @@ import {
   type Forma,
   type Linea,
   type PatronLinea,
-  type TipoForma,
   type Trazado,
 } from '@lumina/drawing';
 import type {
@@ -24,6 +23,7 @@ import type {
   DiagramaVennBlock,
 } from '@lumina/types/slide';
 import { diagramaToGraphModel } from './diagrama-bridge.js';
+import { EQUIVALENCIAS, radioDeForma } from './diagrama-formas.js';
 import { medirNodo, mezclar, textoSobre, type Caja } from './diagrama-export.js';
 import { regionCentroid } from './diagrama-regions.js';
 import { coloresVenn, resolverEstiloArista, resolverEstiloDiagrama } from './diagrama-temas.js';
@@ -32,31 +32,6 @@ import { nombreConjunto } from './venn-svg.js';
 const MARGEN = 40;
 const ACENTO_RAIZ = '#2563EB';
 const ACENTO_RAMA = '#0D9488';
-
-interface FormaEquivalente {
-  forma: TipoForma;
-  parametros?: Record<string, number>;
-  /** Radio de esquinas en unidades (o, si es `'mitad'`, la mitad del alto: forma de píldora). */
-  radio?: number | 'mitad';
-}
-
-/** Forma del dibujo que equivale a cada forma de nodo del diagrama. */
-const EQUIVALENCIAS: Record<DiagramaNodoForma, FormaEquivalente> = {
-  rect: { forma: 'rectangulo' },
-  rounded: { forma: 'rectangulo', radio: 8 },
-  pill: { forma: 'rectangulo', radio: 'mitad' },
-  chip: { forma: 'rectangulo', radio: 'mitad' },
-  root: { forma: 'rectangulo', radio: 12 },
-  'card-icon': { forma: 'rectangulo', radio: 8 },
-  diamond: { forma: 'rombo' },
-  parallelogram: { forma: 'paralelogramo', parametros: { inclinacion: 0.12 } },
-  ellipse: { forma: 'elipse' },
-  circle: { forma: 'circulo' },
-  hexagon: { forma: 'hexagono', parametros: { inclinacion: 0.16 } },
-  trapezoid: { forma: 'trapecio', parametros: { inclinacion: 0.04 } },
-  'inverted-trapezoid': { forma: 'trapecio-invertido', parametros: { inclinacion: 0.04 } },
-  triangle: { forma: 'triangulo' },
-};
 
 const TRAZADOS: Record<string, Trazado> = { straight: 'recto', bezier: 'curvo', smoothstep: 'ortogonal', orthogonal: 'ortogonal' };
 const PATRONES: Record<string, PatronLinea> = { solida: 'solido', discontinua: 'guiones', punteada: 'puntos' };
@@ -192,7 +167,7 @@ function convertirGrafo(block: DiagramaGrafoBlock): Escena {
         contorno: { color: acento, grosor: 2, patron: 'solido' },
         opacidad: 1,
         sombra: estilo.sombra ? { color: '#00000026', desenfoque: 6, dx: 0, dy: 2 } : null,
-        radio: eq.radio === 'mitad' ? caja.alto / 2 : (eq.radio ?? 0),
+        radio: radioDeForma(eq, caja.alto),
       },
       texto,
       estiloTexto: { tamano: 13, negrita: nodoForma === 'root', cursiva: false, subrayado: false, alineacionH: 'centro', alineacionV: 'medio', color: colorTexto, fuente: '' },
