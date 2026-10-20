@@ -97,6 +97,7 @@ import {
   type GestoConector,
 } from "./conectores.js";
 import { Paleta } from "./paleta.js";
+import { PanelPropiedades } from "./propiedades-panel.js";
 import { TextoEnSitio } from "./texto-en-sitio.js";
 import {
   avanzarGesto,
@@ -330,6 +331,33 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   // Una sola línea elegida muestra las asas del conector (extremos y puntos intermedios), no las del marco: coincidirían en las puntas.
   const marco = useMemo(() => (lineaElegida ? null : marcoDeSeleccion(escenaRutas, seleccion)), [escenaRutas, seleccion, lineaElegida]);
 
+  // ─── Panel de propiedades (W8) ──────────────────────────────────────────────
+  // Los deslizadores y el selector de color dan vista previa sin tocar el historial y entran como UNA entrada al soltar.
+  const vistaPanel = useRef<{ base: Escena; ultima: Escena } | null>(null);
+
+  const finVistaPanel = useCallback((): void => {
+    const v = vistaPanel.current;
+    if (!v) return;
+    vistaPanel.current = null;
+    const registrado = historial.current.terminarGesto(v.ultima);
+    setVersionHistorial((n) => n + 1);
+    if (registrado) {
+      setAnuncio("Propiedades cambiadas.");
+      onCambio(v.ultima);
+    }
+  }, [onCambio]);
+
+  const vistaDelPanel = useCallback((cambio: (e: Escena) => Escena): void => {
+    if (!vistaPanel.current) {
+      const base = vivo.current.escena;
+      vistaPanel.current = { base, ultima: base };
+      historial.current.iniciarGesto(base);
+    }
+    const nueva = sincronizarConectores(cambio(vistaPanel.current.base));
+    vistaPanel.current.ultima = nueva;
+    setEscena(nueva);
+  }, []);
+
   // ─── Tamaño de la ventana y zoom inicial ────────────────────────────────────
   const medir = useCallback((): { ancho: number; alto: number } => {
     const r = ventanaRef.current?.getBoundingClientRect();
@@ -358,6 +386,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
 
   const ejecutar = useCallback(
     (c: Comando): boolean => {
+      finVistaPanel();
       const { escena: actual, seleccion: sel } = vivo.current;
       // Al alinear o distribuir, los conectores siguen a sus formas en vez de moverse solos (se despegarían).
       const alinea = c.tipo === "alinear" || c.tipo === "distribuir";
@@ -372,10 +401,25 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       }
       return true;
     },
-    [confirmar],
+    [confirmar, finVistaPanel],
   );
 
+  const aplicarDelPanel = useCallback(
+    (cambio: (e: Escena) => Escena): void => {
+      finVistaPanel();
+      const { escena: actual, seleccion: sel } = vivo.current;
+      const nueva = cambio(actual);
+      if (nueva !== actual) confirmar(actual, { escena: nueva, seleccion: sel });
+    },
+    [confirmar, finVistaPanel],
+  );
+
+  const seleccionarDesdeCapas = useCallback((ids: string[], sumar: boolean): void => {
+    setSeleccion((previa) => (sumar ? (ids.every((i) => previa.includes(i)) ? previa.filter((i) => !ids.includes(i)) : [...new Set([...previa, ...ids])]) : ids));
+  }, []);
+
   const deshacer = useCallback((): void => {
+    finVistaPanel();
     const { escena: actual, seleccion: sel } = vivo.current;
     const r = historial.current.deshacer(actual);
     if (!r) return;
@@ -384,9 +428,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setVersionHistorial((n) => n + 1);
     setAnuncio("Cambio deshecho.");
     onCambio(r);
-  }, [onCambio]);
+  }, [onCambio, finVistaPanel]);
 
   const rehacer = useCallback((): void => {
+    finVistaPanel();
     const { escena: actual, seleccion: sel } = vivo.current;
     const r = historial.current.rehacer(actual);
     if (!r) return;
@@ -395,11 +440,12 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setVersionHistorial((n) => n + 1);
     setAnuncio("Cambio rehecho.");
     onCambio(r);
-  }, [onCambio]);
+  }, [onCambio, finVistaPanel]);
 
   const cerrar = useCallback((): void => {
-    onCerrar(vivo.current.escena);
-  }, [onCerrar]);
+    finVistaPanel();
+    onCerrar(vistaPanel.current ? vistaPanel.current.ultima : vivo.current.escena);
+  }, [onCerrar, finVistaPanel]);
 
   // ─── Herramientas de creación (W6) ──────────────────────────────────────────
   const fijarCurso = useCallback((puntos: Punto[] | null, conexiones: Array<Conexion | undefined> = []): void => {
@@ -560,6 +606,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   };
 
   const alApretar = (e: PunteroReact<SVGSVGElement>): void => {
+    finVistaPanel();
     svgRef.current?.focus();
     const pantalla = aPantalla(e);
     if (e.button === 1 || (e.button === 0 && espacio.current)) {
@@ -1056,6 +1103,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           />
         ) : null}
       </div>
+      <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} />
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t bg-card px-3 py-1 text-[11px] text-muted-foreground">
