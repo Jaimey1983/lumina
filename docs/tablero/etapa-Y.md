@@ -15,7 +15,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 - **DY1. Cinta completa por pestañas** (decisión del dueño, 2026-10-20): Inicio · Insertar · Organizar · Vista · Exportar, más pestañas **contextuales** («Formato de forma», «Formato de conector») que aparecen según la selección. Una pestaña sin contenido no se muestra (Diseño aparece con la fase D/E; Exportar, con W9). Barra de acceso rápido fija (deshacer, rehacer) encima, colapsable con doble clic en la pestaña, con modo compacto de iconos para ventanas estrechas.
 - **DY2. La cinta es un componente genérico de `@lumina/ui`**, no código del editor: otros elementos (gráficos, ecuaciones) podrán reutilizarla. El editor solo declara sus pestañas y comandos.
 - **DY3. Un registro único de comandos.** Cada acción del editor (duplicar, agrupar, alinear, …) se declara una vez —id, etiqueta, icono, atajo, habilitado-si, ejecutar— y de ahí salen el botón de la cinta, el atajo de teclado, el buscador `Ctrl+K` y el panel de atajos. Prohibido repetir etiqueta/atajo en tres lugares.
-- **DY4. Comportamiento al soltar una forma sobre otra** (**recomendación mía, pendiente de confirmación del dueño; ajustable antes de Y7**): por defecto **solapa** (mover y soltar no crea nada). Solo **conecta** si el puntero cae sobre el halo de un puerto/borde de la forma destino, o con la tecla `Alt` apretada; antes de soltar siempre se ve la vista previa de qué va a pasar. Motivo: quien solo quiere mover no debe llevarse conectores por sorpresa.
+- **DY4. Comportamiento al soltar una forma sobre otra** (**confirmada por el dueño el 2026-10-20**): por defecto **solapa** (mover y soltar no crea nada). Solo **conecta** si el puntero cae sobre el halo de un puerto/borde de la forma destino, o con la tecla `Alt` apretada; antes de soltar siempre se ve la vista previa de qué va a pasar. Motivo: quien solo quiere mover no debe llevarse conectores por sorpresa.
 - **DY5. Un gesto, una entrada de historial y una confirmación al bloque** (DW7), también cuando un gesto crea forma + conector (hijo rápido, conectar al soltar). Es el caso de prueba obligatorio de cada ficha de la fase B.
 - **DY6. Contenedores y carriles quedan para después de W10** (decisión del dueño, 2026-10-20): cambian el modelo (`padre`/`hijos` en `tipos.ts`) y se evalúan con `diagrama` ya migrado. Ninguna ficha de esta etapa los incluye.
 
@@ -37,7 +37,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 
 #### Y1 — Componente `Ribbon` (cinta) en `@lumina/ui`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna (independiente).
 - **Alcance — PUEDE tocar:** `packages/ui/src/` (nuevo `ribbon/` con `Ribbon`, `RibbonTab`, `RibbonGroup`, `RibbonButton`, `RibbonSplitButton`, `QuickAccessBar`), exportación en `package.json` del paquete, specs, y su CSS (módulo puro, patrón del paquete). **NO** toca `element-kit`, el frontend ni el editor.
 - **Entregable:** DY1 y DY2. Cinta con pestañas (`role="tablist"`/`tab`/`tabpanel`, flechas entre pestañas con *roving tabindex*, `F6` salta entre barra de acceso rápido / cinta / lienzo), grupos con etiqueta inferior, botones de icono + texto en tamaño grande y mediano, **colapsable** (doble clic en la pestaña; al elegir una pestaña colapsada se abre como menú flotante y se cierra al actuar), **modo compacto** por ancho (los grupos se reducen a un botón desplegable), pestañas **contextuales** con realce, y atajo visible en el *tooltip*. Tema claro/oscuro por tokens. Pruebas: navegación por teclado completa, colapsar/expandir, modo compacto por ancho, pestaña contextual que aparece y desaparece sin perder la pestaña activa del usuario, `aria-selected` correcto. Verificación: `pnpm --filter @lumina/ui build && pnpm --filter @lumina/ui test && pnpm --filter @lumina/ui lint`.
@@ -92,7 +92,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 #### Y7 — Conectar al soltar una forma sobre otra
 - **Operador:** Claude Code
 - **Estado:** pendiente
-- **Precondición:** Y6 `hecho`; **DY4 confirmada por el dueño**.
+- **Precondición:** Y6 `hecho` (DY4 ya confirmada por el dueño, 2026-10-20).
 - **Alcance — PUEDE tocar:** `editor/gestos.ts`, `editor/conectores.ts`, `editor/editor-libre.tsx`, `packages/drawing/src/conectores/` (solo un helper puro `puertosParaConectar(escena, origen, destino)` que elige el par de puertos según la posición relativa), specs.
 - **Entregable:** DY4. Al arrastrar una forma (o varias) y soltar con el puntero sobre el halo de otra, o con `Alt` apretada, se crea un conector entre ambas, eligiendo el par de puertos por posición relativa (si cae debajo: del puerto inferior al superior). Vista previa del conector y del destino **antes de soltar**; sin halo ni `Alt`, soltar solo mueve. Una sola entrada de historial (mover + crear). Si ya hay conector entre ambas en ese sentido, no se duplica. Pruebas: elección de puertos en los cuatro cuadrantes y con formas giradas, `Alt` y halo, no crea sin ellos, deshacer deshace todo de una vez, formas bloqueadas no se conectan. Verificación: la de Y2.
 - **Cierre:** ninguno.
