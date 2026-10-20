@@ -16,7 +16,8 @@ function bloqueConTodasLasFormas(): DiagramaGrafoBlock {
   const base = createDefaultFlujoBlock({ id: 'b-formas' }) as DiagramaGrafoBlock;
   return {
     ...base,
-    nodos: FORMAS.map((forma, i) => ({ ...base.nodos[0]!, id: `n${i}`, etiqueta: `Nodo ${i}`, forma })),
+    // El círculo lleva un alto propio distinto de su ancho: así se ve si se dibuja como elipse (llena la caja) o como círculo inscrito.
+    nodos: FORMAS.map((forma, i) => ({ ...base.nodos[0]!, id: `n${i}`, etiqueta: `Nodo ${i}`, forma, ...(forma === 'circle' ? { alto: 60 } : {}) })),
     aristas: [],
   };
 }
