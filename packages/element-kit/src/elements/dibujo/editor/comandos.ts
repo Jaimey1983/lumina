@@ -13,8 +13,10 @@ import {
   type Escena,
   type ModoAlineacion,
   type ModoOrden,
+  type TipoForma,
 } from "@lumina/drawing";
 import { bloqueadosEfectivos } from "./asas.js";
+import { comandoDeTecla } from "./comandos-registro.js";
 
 export interface EstadoEditor {
   escena: Escena;
@@ -43,10 +45,14 @@ export type Orden =
   | { tipo: "rehacer" }
   | { tipo: "cerrar" }
   | { tipo: "herramienta"; herramienta: NombreHerramienta }
+  | { tipo: "herramienta-forma"; forma: TipoForma }
+  | { tipo: "zoom"; factor: number }
+  | { tipo: "ajustar-vista" }
+  | { tipo: "cuadricula" }
+  | { tipo: "imantar" }
+  /** «Listo»: cierra el editor y devuelve la escena (a diferencia de Escape, que primero suelta lo que haya). */
+  | { tipo: "terminar" }
   | { tipo: "aceptar" };
-
-/** Teclas de una sola letra que eligen herramienta. */
-const HERRAMIENTA_DE_TECLA: Record<string, NombreHerramienta> = { v: "seleccionar", l: "linea", a: "flecha", t: "texto" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
@@ -137,30 +143,19 @@ export interface TeclaEvento {
 export const PASO_FLECHA = 1;
 export const PASO_FLECHA_MAYUS = 10;
 
-/** Orden que pide una tecla, o `null` si la tecla no significa nada para el editor. */
+/**
+ * Orden que pide una tecla, o `null` si la tecla no significa nada para el editor. Los comandos
+ * (atajos de Ctrl, letras de herramienta, Supr…) salen del registro único; acá solo quedan las teclas de
+ * navegación (Enter, Escape, Tab y flechas), que no son un botón de la cinta.
+ */
 export function ordenDeTecla(e: TeclaEvento): Orden | null {
-  const mod = e.ctrlKey || e.metaKey;
-  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-  if (mod) {
-    if (k === "z") return e.shiftKey ? { tipo: "rehacer" } : { tipo: "deshacer" };
-    if (k === "y") return { tipo: "rehacer" };
-    if (k === "d") return { tipo: "duplicar" };
-    if (k === "a") return { tipo: "seleccionar-todo" };
-    if (k === "g") return e.shiftKey ? { tipo: "desagrupar" } : { tipo: "agrupar" };
-    if (k === "]") return { tipo: "orden", modo: e.shiftKey ? "frente" : "subir" };
-    if (k === "[") return { tipo: "orden", modo: e.shiftKey ? "fondo" : "bajar" };
-    return null;
-  }
+  const registrado = comandoDeTecla(e);
+  if (registrado) return registrado.orden;
+  if (e.ctrlKey || e.metaKey) return null;
   const paso = e.shiftKey ? PASO_FLECHA_MAYUS : PASO_FLECHA;
-  if (!e.altKey && !e.shiftKey && e.key.length === 1 && k in HERRAMIENTA_DE_TECLA) {
-    return { tipo: "herramienta", herramienta: HERRAMIENTA_DE_TECLA[k] as NombreHerramienta };
-  }
   switch (e.key) {
     case "Enter":
       return { tipo: "aceptar" };
-    case "Delete":
-    case "Backspace":
-      return { tipo: "eliminar" };
     case "Escape":
       return { tipo: "cerrar" };
     case "Tab":

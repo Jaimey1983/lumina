@@ -511,7 +511,7 @@ function Ribbon({
             aria-labelledby={`${baseId}-tab-${tab.id}`}
             data-floating={isCollapsed || undefined}
             className={cn(
-              'flex min-h-[4.5rem] flex-wrap items-stretch gap-0 border-t bg-card px-1 py-1',
+              'flex min-h-[5.5rem] flex-wrap items-stretch gap-0 border-t bg-card px-1 py-1',
               isCollapsed && 'absolute inset-x-0 top-full z-20 border-b shadow-md',
             )}
             onKeyDown={(e) => {

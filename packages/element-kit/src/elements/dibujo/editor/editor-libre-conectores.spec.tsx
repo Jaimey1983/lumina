@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { normalizarEscena, puntoDePuerto, type Escena, type Forma, type Linea } from "@lumina/drawing";
 import { EditorLibre } from "./editor-libre.js";
-import { escena, forma, linea } from "./util-pruebas.js";
+import { botonCinta, escena, forma, irAPestana, linea } from "./util-pruebas.js";
 
 afterEach(() => cleanup());
 
@@ -48,7 +48,7 @@ function arrastrar(m: Montado, desde: [number, number], hasta: [number, number],
   }
   puntero(m.lienzo, "pointerup", m.aPantalla(...hasta), extra);
 }
-const herramienta = (nombre: string): HTMLElement => screen.getByRole("button", { name: nombre });
+const herramienta = (nombre: string): HTMLElement => botonCinta(nombre);
 const formas = (e: Escena): Forma[] => e.elementos.filter((x): x is Forma => x.tipo === "forma");
 const lineas = (e: Escena): Linea[] => e.elementos.filter((x): x is Linea => x.tipo === "linea");
 const linea0 = (e: Escena): Linea => lineas(e)[0] as Linea;
@@ -225,7 +225,7 @@ describe("el conector sigue a las formas", () => {
   it("alinear las formas también arrastra a los conectores", () => {
     const m = montar(conectada());
     arrastrar(m, [60, 60], [850, 360]); // elige las tres formas (y el conector)
-    fireEvent.click(screen.getByRole("button", { name: "Alinear arriba" }));
+    fireEvent.click(botonCinta("Alinear arriba"));
     const l = linea0(m.ultima());
     expect(l.origen).toEqual({ elementoId: "A", puerto: 1 });
     expect(l.destino).toEqual({ elementoId: "B", puerto: 3 });
@@ -371,16 +371,32 @@ describe("asas del conector seleccionado", () => {
   });
 });
 
-describe("barra del conector", () => {
-  const barra = (): HTMLElement => screen.getByRole("toolbar", { name: "Propiedades del conector" });
+describe("pestaña «Formato de conector»", () => {
+  const pestana = (): HTMLElement | null => screen.queryByRole("tab", { name: "Formato de conector" });
 
-  it("solo aparece con líneas elegidas", () => {
+  it("solo aparece con líneas elegidas, resaltada como contextual, y se abre sola desde Inicio", () => {
     const m = montar(conectada());
-    expect(screen.queryByRole("toolbar", { name: "Propiedades del conector" })).toBeNull();
+    expect(pestana()).toBeNull();
     clic(m, 150, 130);
-    expect(screen.queryByRole("toolbar", { name: "Propiedades del conector" })).toBeNull();
+    expect(pestana()).toBeNull();
     clic(m, 300, 250);
-    expect(barra()).toBeTruthy();
+    expect(pestana()).not.toBeNull();
+    expect(pestana()?.hasAttribute("data-contextual")).toBe(true);
+    expect(pestana()?.getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("group", { name: "Trazado" })).toBeTruthy();
+    // Al soltar la selección desaparece y la cinta vuelve a Inicio.
+    clic(m, 700, 500);
+    expect(pestana()).toBeNull();
+    expect(screen.getByRole("tab", { name: "Inicio" }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("no le quita la pestaña a quien trabaja en otra", () => {
+    const m = montar(conectada());
+    irAPestana("Organizar");
+    clic(m, 300, 250);
+    expect(pestana()).not.toBeNull();
+    expect(pestana()?.getAttribute("aria-selected")).toBe("false");
+    expect(screen.getByRole("tab", { name: "Organizar" }).getAttribute("aria-selected")).toBe("true");
   });
 
   it("cambiar el trazado es una sola entrada y se ve en el dibujo; el estado queda marcado", () => {

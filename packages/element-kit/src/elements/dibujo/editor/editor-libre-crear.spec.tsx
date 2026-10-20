@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FORMAS, TIPOS_FORMA, normalizarEscena, type Escena, type Forma, type Linea, type Texto } from "@lumina/drawing";
 import { EditorLibre } from "./editor-libre.js";
-import { escena, forma, linea } from "./util-pruebas.js";
+import { botonCinta, escena, forma, irAPestana, linea } from "./util-pruebas.js";
 
 afterEach(() => cleanup());
 
@@ -48,33 +48,34 @@ function arrastrar(m: Montado, desde: [number, number], hasta: [number, number],
   }
   puntero(m.lienzo, "pointerup", m.aPantalla(...hasta), extra);
 }
-const herramienta = (nombre: string): HTMLButtonElement => screen.getByRole("button", { name: nombre }) as HTMLButtonElement;
+const herramienta = (nombre: string): HTMLButtonElement => botonCinta(nombre);
 const insertar = (nombre: string): void => {
-  fireEvent.click(screen.getByRole("button", { name: `Insertar ${nombre}` }));
+  fireEvent.click(botonCinta(`Insertar ${nombre}`));
 };
 const sinIman = (): void => {
-  fireEvent.click(screen.getByRole("button", { name: "Imantar a otros elementos" }));
+  fireEvent.click(botonCinta("Imantar a otros elementos"));
 };
 const formas = (e: Escena): Forma[] => e.elementos.filter((x): x is Forma => x.tipo === "forma");
 const lineas = (e: Escena): Linea[] => e.elementos.filter((x): x is Linea => x.tipo === "linea");
 const textos = (e: Escena): Texto[] => e.elementos.filter((x): x is Texto => x.tipo === "texto");
 const cuadroTexto = (): HTMLTextAreaElement => screen.getByRole("textbox", { name: "Texto del elemento" }) as HTMLTextAreaElement;
 
-describe("paleta", () => {
-  it("tiene las herramientas y el catálogo agrupado: un botón por cada forma", () => {
+describe("cinta: herramientas y formas", () => {
+  it("las herramientas están en Inicio y el catálogo agrupado en Insertar: un botón por cada forma", () => {
     montar();
-    const paleta = screen.getByRole("complementary", { name: /Paleta/ });
-    for (const g of ["Formas básicas", "Flechas", "Diagramas"]) expect(within(paleta).getByRole("region", { name: g })).toBeTruthy();
-    expect(within(paleta).getAllByRole("button", { name: /^Insertar / })).toHaveLength(TIPOS_FORMA.length);
-    for (const f of TIPOS_FORMA) expect(within(paleta).getByRole("button", { name: `Insertar ${FORMAS[f].nombre}` })).toBeTruthy();
-    for (const h of ["Seleccionar", "Línea", "Flecha", "Texto"]) expect(within(paleta).getByRole("button", { name: h })).toBeTruthy();
+    for (const h of ["Seleccionar", "Línea", "Flecha", "Texto"]) expect(herramienta(h)).toBeTruthy();
+    irAPestana("Insertar");
+    const panel = screen.getByRole("tabpanel");
+    for (const g of ["Formas básicas", "Flechas", "Diagramas"]) expect(within(panel).getByRole("group", { name: g })).toBeTruthy();
+    expect(within(panel).getAllByRole("button", { name: /^Insertar / })).toHaveLength(TIPOS_FORMA.length);
+    for (const f of TIPOS_FORMA) expect(within(panel).getByRole("button", { name: `Insertar ${FORMAS[f].nombre}` })).toBeTruthy();
   });
 
   it("empieza con «Seleccionar» activa; elegir una forma la marca y desmarca la anterior", () => {
     montar();
     expect(herramienta("Seleccionar").getAttribute("aria-pressed")).toBe("true");
     insertar("Rombo");
-    expect(screen.getByRole("button", { name: "Insertar Rombo" }).getAttribute("aria-pressed")).toBe("true");
+    expect(botonCinta("Insertar Rombo").getAttribute("aria-pressed")).toBe("true");
     expect(herramienta("Seleccionar").getAttribute("aria-pressed")).toBe("false");
     expect(document.querySelector("[data-dibujo-anuncio]")?.textContent).toMatch(/Herramienta: Rombo/);
   });
@@ -199,7 +200,7 @@ describe("insertar una forma", () => {
   it("se encaja a la cuadrícula si está encendida (el centro queda en una intersección)", () => {
     const m = montar();
     sinIman();
-    fireEvent.click(screen.getByRole("button", { name: "Cuadrícula" }));
+    fireEvent.click(botonCinta("Cuadrícula"));
     insertar("Rectángulo");
     clic(m, 403, 197);
     const t = formas(m.ultima())[0]?.transformacion;
@@ -244,7 +245,7 @@ describe("herramientas por teclado", () => {
 
   it("las letras no hacen nada si el foco está en un botón de la barra", () => {
     montar();
-    const boton = screen.getByRole("button", { name: "Duplicar" });
+    const boton = botonCinta("Duplicar");
     boton.focus();
     fireEvent.keyDown(boton, { key: "l" });
     expect(herramienta("Línea").getAttribute("aria-pressed")).toBe("false");

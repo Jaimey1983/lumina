@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { normalizarEscena, type Escena } from "@lumina/drawing";
 import { EditorLibre, describirSeleccion } from "./editor-libre.js";
 import { EditorLibreModal } from "./editor-libre-modal.js";
-import { escena, forma, getForma, grupo, ids } from "./util-pruebas.js";
+import { botonCinta, deshabilitado, escena, forma, getForma, grupo, ids } from "./util-pruebas.js";
 
 afterEach(() => cleanup());
 
@@ -56,11 +56,12 @@ const base = () => escena(forma("a", 100, 100, 200, 100), forma("b", 500, 100, 2
 const estado = () => screen.getByText(/elementos?|Lienzo vacío/, { selector: "[data-dibujo-estado]" }).textContent ?? "";
 
 describe("apertura", () => {
-  it("es un diálogo modal con nombre, barra de herramientas y un lienzo enfocable", () => {
+  it("es un diálogo modal con nombre, cinta, barra de acceso rápido y un lienzo enfocable", () => {
     montar(base());
     const dialogo = screen.getByRole("dialog", { name: "Editor de dibujo: Prueba" });
     expect(dialogo.getAttribute("aria-modal")).toBe("true");
-    expect(within(dialogo).getByRole("toolbar", { name: "Herramientas del dibujo" })).toBeTruthy();
+    expect(within(dialogo).getByRole("tablist", { name: "Cinta de opciones" })).toBeTruthy();
+    expect(within(dialogo).getByRole("toolbar", { name: "Acceso rápido" })).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByRole("application"));
     expect(estado()).toBe("3 elementos");
   });
@@ -78,8 +79,8 @@ describe("apertura", () => {
 
   it("sin cambios todavía, deshacer y rehacer están deshabilitados", () => {
     montar(base());
-    expect((screen.getByRole("button", { name: "Deshacer" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "Rehacer" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(deshabilitado(botonCinta("Deshacer"))).toBe(true);
+    expect(deshabilitado(botonCinta("Rehacer"))).toBe(true);
   });
 });
 
@@ -165,7 +166,7 @@ describe("mover, redimensionar y rotar", () => {
 
   it("un clic con un temblor menor al umbral no mueve nada", () => {
     const m = montar(base());
-    fireEvent.click(screen.getByRole("button", { name: "Imantar a otros elementos" })); // el imán podría devolverlo a su sitio y ocultar el fallo
+    fireEvent.click(botonCinta("Imantar a otros elementos")); // el imán podría devolverlo a su sitio y ocultar el fallo
     arrastrar(m, [200, 150], [202, 152], 2);
     expect(m.onCambio).not.toHaveBeenCalled();
     arrastrar(m, [200, 150], [212, 152], 2);
@@ -223,7 +224,7 @@ describe("mover, redimensionar y rotar", () => {
 
   it("la selección múltiple se mueve junta", () => {
     const m = montar(base());
-    fireEvent.click(screen.getByRole("button", { name: "Imantar a otros elementos" })); // sin imán: se compara el desplazamiento exacto
+    fireEvent.click(botonCinta("Imantar a otros elementos")); // sin imán: se compara el desplazamiento exacto
     fireEvent.keyDown(m.lienzo, { key: "a", ctrlKey: true });
     arrastrar(m, [200, 150], [230, 180], 6);
     const final = m.ultima();
@@ -302,21 +303,21 @@ describe("teclado", () => {
 describe("barra de herramientas", () => {
   it("los botones se habilitan según la selección", () => {
     const m = montar(base());
-    const boton = (n: string) => screen.getByRole("button", { name: n }) as HTMLButtonElement;
-    expect(boton("Duplicar").disabled).toBe(true);
-    expect(boton("Agrupar").disabled).toBe(true);
+    const boton = (n: string) => botonCinta(n);
+    expect(deshabilitado(boton("Duplicar"))).toBe(true);
+    expect(deshabilitado(boton("Agrupar"))).toBe(true);
     fireEvent.keyDown(m.lienzo, { key: "Tab" });
-    expect(boton("Duplicar").disabled).toBe(false);
-    expect(boton("Agrupar").disabled).toBe(true);
+    expect(deshabilitado(boton("Duplicar"))).toBe(false);
+    expect(deshabilitado(boton("Agrupar"))).toBe(true);
     fireEvent.keyDown(m.lienzo, { key: "a", ctrlKey: true });
-    expect(boton("Agrupar").disabled).toBe(false);
-    expect(boton("Distribuir horizontalmente").disabled).toBe(false);
+    expect(deshabilitado(boton("Agrupar"))).toBe(false);
+    expect(deshabilitado(boton("Distribuir horizontalmente"))).toBe(false);
   });
 
   it("alinear desde la barra confirma un cambio", () => {
     const m = montar(base());
     fireEvent.keyDown(m.lienzo, { key: "a", ctrlKey: true });
-    fireEvent.click(screen.getByRole("button", { name: "Alinear a la izquierda" }));
+    fireEvent.click(botonCinta("Alinear a la izquierda"));
     expect(getForma(m.ultima(), "b").transformacion.x).toBe(100);
     expect(m.onCambio).toHaveBeenCalledTimes(1);
   });
@@ -324,9 +325,9 @@ describe("barra de herramientas", () => {
   it("subir, bajar, frente y fondo cambian el apilado", () => {
     const m = montar(base());
     fireEvent.keyDown(m.lienzo, { key: "Tab" });
-    fireEvent.click(screen.getByRole("button", { name: "Traer al frente" }));
+    fireEvent.click(botonCinta("Traer al frente"));
     expect(ids(m.ultima())).toEqual(["b", "c", "a"]);
-    fireEvent.click(screen.getByRole("button", { name: "Enviar al fondo" }));
+    fireEvent.click(botonCinta("Enviar al fondo"));
     expect(ids(m.ultima())).toEqual(["a", "b", "c"]);
   });
 
@@ -342,12 +343,12 @@ describe("barra de herramientas", () => {
 
   it("Cuadrícula e imantar son interruptores", () => {
     montar(base());
-    const cuadricula = screen.getByRole("button", { name: "Cuadrícula" });
+    const cuadricula = botonCinta("Cuadrícula");
     expect(cuadricula.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(cuadricula);
     expect(cuadricula.getAttribute("aria-pressed")).toBe("true");
     expect(document.querySelector("[data-capa=cuadricula]")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Imantar a otros elementos" }).getAttribute("aria-pressed")).toBe("true");
+    expect(botonCinta("Imantar a otros elementos").getAttribute("aria-pressed")).toBe("true");
   });
 });
 
@@ -355,12 +356,12 @@ describe("zoom", () => {
   it("los botones acercan y alejan; ajustar vuelve a mostrar todo", () => {
     const m = montar(base());
     const z0 = m.zoom();
-    fireEvent.click(screen.getByRole("button", { name: "Acercar" }));
+    fireEvent.click(botonCinta("Acercar"));
     expect(m.zoom()).toBeCloseTo(z0 * 1.25, 6);
-    fireEvent.click(screen.getByRole("button", { name: "Alejar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Alejar" }));
+    fireEvent.click(botonCinta("Alejar"));
+    fireEvent.click(botonCinta("Alejar"));
     expect(m.zoom()).toBeCloseTo(z0 / 1.25, 6);
-    fireEvent.click(screen.getByRole("button", { name: "Ajustar a la ventana" }));
+    fireEvent.click(botonCinta("Ajustar a la ventana"));
     expect(m.zoom()).toBeCloseTo(z0, 6);
   });
 
