@@ -109,7 +109,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W8 — Panel de propiedades de estilo
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** W6 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/editor/propiedades*` y specs. **NO** toca conectores (W7).
 - **Entregable:** panel derecho con secciones plegables (etapa S) y ayudas ⓘ (etapa R): **relleno** (ninguno, sólido, degradado de 2 colores), **contorno** (color, grosor, patrón sólido/guiones/puntos), **opacidad**, **sombra**, **esquinas** (radio), **texto** (tipografía, tamaño, negrita/cursiva, alineación horizontal/vertical, color), **posición y tamaño** numéricos y **rotación**; se aplica a toda la selección (valores mixtos se muestran como tal); paleta de colores con las 10 de `diagrama-temas.ts` + selector libre + tokens del tema; **panel de capas** (ordenar, bloquear, ocultar, renombrar). Pruebas: cambiar un estilo con selección múltiple actualiza todos; un valor mixto no se pisa al abrir el panel; cada cambio es una entrada de historial. Verificación: la de W5.
