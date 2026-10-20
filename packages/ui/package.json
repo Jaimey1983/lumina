@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "tsc --noEmit",
+    "test": "tsc --noEmit && vitest run",
     "lint": "eslint ."
   },
   "peerDependencies": {
@@ -49,12 +49,18 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9",
+    "jsdom": "^26.1.0",
     "next": "15.5.19",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }
