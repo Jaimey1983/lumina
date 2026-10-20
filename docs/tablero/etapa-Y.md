@@ -61,7 +61,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 
 #### Y4 — Barra de estado útil
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y2 `hecho`.
 - **Alcance — PUEDE tocar:** `editor/editor-libre.tsx` (solo la barra inferior), nuevo `editor/barra-estado.tsx`, specs.
 - **Entregable:** coordenadas del cursor en la escena, tamaño y posición de la selección, **deslizador de zoom** (10 %–800 %, el mismo límite de W5), accesos a cuadrícula e imán, y un lugar reservado para el indicador de guardado (lo llena la fase E). Se conserva el aviso `aria-live` y la ayuda por herramienta. Pruebas: valores correctos con zoom y desplazamiento, selección múltiple, selección girada, texto accesible. Verificación: la de Y2.
