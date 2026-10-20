@@ -119,7 +119,7 @@ W1–W6 van en serie (cada una necesita la anterior). W7 (conectores) y W8 (pane
 
 #### W9 — Exportar, accesibilidad e interacción
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** W7 y W8 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/dibujo/` (exportar, descripción por elemento, eventos), specs. Reutiliza `renderEscenaSvg` (W3) y `svgAPng`/`descargarBlob` de `diagrama-export.ts` (se importan, no se copian).
 - **Entregable:** «Exportar» SVG y PNG (tema claro/oscuro, fondo opcional) con la escena completa; `descripcion` por elemento expuesta como `<title>`/`aria-label`; el `Viewer` emite el evento de clic sobre un elemento si el contrato de eventos del kit lo permite (`eventos` de `ElementDefinition`, etapa K) para que las reglas del docente reaccionen. Pruebas: el SVG exportado tiene tantos elementos como la escena y es XML válido; el evento de clic lleva el id del elemento. Verificación: la de W5, más comprobación manual del archivo descargado.
