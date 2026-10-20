@@ -69,6 +69,7 @@ import {
   type GestoConector,
 } from "./conectores.js";
 import { PanelPropiedades } from "./propiedades-panel.js";
+import { ZonaRedimensionable } from "./zona-redimensionable.js";
 import { TextoEnSitio } from "./texto-en-sitio.js";
 import {
   avanzarGesto,
@@ -1010,7 +1011,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           />
         ) : null}
       </div>
-      <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} />
+      <ZonaRedimensionable etiqueta="Propiedades" clave="dibujo-panel">
+        {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} />}
+      </ZonaRedimensionable>
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t bg-card px-3 py-1 text-[11px] text-muted-foreground">
