@@ -7,7 +7,10 @@ import { diagramaToGraphModel } from './diagrama-bridge.js';
 import { VennSvg } from './venn-svg.js';
 import { DIAGRAMA_NODE_TYPES } from './diagrama-shape-node.js';
 import { normalizarEscena } from '@lumina/drawing';
-import { DibujoSvg } from '../../widgets/dibujo/dibujo-render.js';
+import { DibujoSvg } from './libre/dibujo-render.js';
+import { ListaAccesible } from './libre/accesibilidad.js';
+import { elementoBajo } from './libre/eventos.js';
+import type { ElementRuntimeConfig } from '@lumina/element-kit-core';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@lumina/ui/lib/utils';
 
@@ -27,12 +30,18 @@ interface DiagramaViewerProps {
   block: DiagramaBlock;
   isThumbnail?: boolean;
   className?: string;
+  /**
+   * Motor de interacción (etapa K). Con él, un clic emite `clic` y, si el diagrama es un dibujo libre y el clic cae
+   * sobre un elemento, `parte_clic` con `{ parte: id }`. Sin motor o en miniatura no emite nada.
+   */
+  emitir?: ElementRuntimeConfig['emitir'];
 }
 
 export function DiagramaViewer({
   block,
   isThumbnail = false,
   className,
+  emitir,
 }: DiagramaViewerProps) {
   const { titulo, descripcionAccesible } = block;
 
@@ -49,12 +58,30 @@ export function DiagramaViewer({
   // Un diagrama editado como dibujo libre se ve con su escena; los nodos y aristas quedan guardados como el original.
   const escena = useMemo(() => (block.escena ? normalizarEscena(block.escena) : null), [block.escena]);
 
+  const motor = isThumbnail ? undefined : emitir;
+  const alClic = motor
+    ? (e: React.MouseEvent<HTMLElement>): void => {
+        motor('clic');
+        const id = escena ? elementoBajo(e.target) : null;
+        if (id) motor('parte_clic', { parte: id });
+      }
+    : undefined;
+  const alElegir = motor
+    ? (id: string): void => {
+        motor('clic');
+        motor('parte_clic', { parte: id });
+      }
+    : undefined;
+
   return (
     <figure
       role="region"
       aria-label={titulo || 'Diagrama'}
+      data-diagrama-interactivo={motor ? '' : undefined}
+      onClick={alClic}
       className={cn(
         'relative flex h-full w-full flex-col overflow-hidden rounded-lg bg-background/50 p-2 shadow-xs border border-border/40',
+        motor && escena && '[&_[data-elemento-id]]:cursor-pointer',
         className,
       )}
     >
@@ -72,7 +99,10 @@ export function DiagramaViewer({
 
       <div className="relative min-h-0 flex-1 w-full overflow-hidden rounded-md">
         {escena ? (
-          <DibujoSvg escena={escena} titulo={titulo || 'Diagrama'} />
+          <>
+            <DibujoSvg escena={escena} titulo={titulo || 'Diagrama'} />
+            {!isThumbnail && <ListaAccesible escena={escena} {...(alElegir ? { onElegir: alElegir } : {})} />}
+          </>
         ) : isVenn && vennBlock ? (
           <VennSvg block={vennBlock} />
         ) : isGrafo && grafoBlock && grafoBlock.nodos.length > 0 ? (

@@ -21,6 +21,9 @@ export const diagramaDefinition = {
     animacion: false,
   },
   catalogo: CATALOGO_ELEMENTOS["diagrama"],
+  // W10: con motor, el visor emite `clic`. En un dibujo libre emite además `parte_clic` con el id del elemento tocado,
+  // pero ese evento aún no se declara: el editor de reglas solo sabe elegir partes de una fórmula (ver ficha W10).
+  eventos: ["clic"],
 } as const satisfies ElementDefinition<DiagramaEstado, DiagramaConfig>;
 
 export type DiagramaDefinition = typeof diagramaDefinition;

@@ -65,7 +65,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { NodosSvg } from "../../../widgets/dibujo/dibujo-render.js";
+import { NodosSvg } from "../dibujo-render.js";
 import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, type Comando, type EstadoEditor, type NombreHerramienta } from "./comandos.js";
 import {

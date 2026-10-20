@@ -234,7 +234,10 @@ describe('Propiedades de un diagrama con escena', () => {
 
     it('el SVG sale con el nombre del título y es un documento SVG válido', async () => {
       montarPropiedades({ ...conEscena(), titulo: 'Mi proceso' } as DiagramaBlock);
-      fireEvent.click(screen.getByRole('button', { name: /SVG/ }));
+      // W10: usa el mismo «Exportar» del editor (formato, tema, fondo y resolución).
+      fireEvent.click(document.querySelector('[data-dibujo-exportar]') as Element);
+      const panel = document.querySelector('[data-dibujo-exportar-panel]') as HTMLElement;
+      fireEvent.click(Array.from(panel.querySelectorAll('button')).find((b) => /Descargar/.test(b.textContent ?? '')) as Element);
       await vi.waitFor(() => expect(descargas).toHaveLength(1));
       expect(descargas[0]).toEqual({ nombre: 'mi-proceso.svg', tipo: 'image/svg+xml;charset=utf-8' });
     });

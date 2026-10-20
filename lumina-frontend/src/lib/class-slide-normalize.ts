@@ -41,7 +41,7 @@ import { normalizeTimelineWidget } from '@lumina/element-kit/widgets/timeline/ti
 import { normalizeCalloutWidget } from '@lumina/element-kit/widgets/callout/callout-defaults';
 import { normalizeGaleriaWidget } from '@lumina/element-kit/widgets/galeria/galeria-defaults';
 import { normalizeStepperWidget } from '@lumina/element-kit/widgets/stepper/stepper-defaults';
-import { normalizeDibujoWidget } from '@lumina/element-kit/widgets/dibujo/dibujo-defaults';
+import { dibujoLegadoADiagrama, esDibujoLegado } from '@lumina/element-kit/blocks/diagrama/libre/dibujo-legado';
 import { normalizeSelloWidget } from '@lumina/element-kit/widgets/sello/sello-defaults';
 import { normalizeQrSesionWidget } from '@lumina/element-kit/widgets/qr-sesion/qr-sesion-defaults';
 import { esWidgetSoloRegistry, type WidgetTipoSoloRegistry } from '@lumina/types/widget';
@@ -257,7 +257,6 @@ const NORMALIZAR_SOLO_REGISTRY: Record<WidgetTipoSoloRegistry, (bloque: never) =
   stepper: normalizeStepperWidget,
   sello: normalizeSelloWidget,
   'qr-sesion': normalizeQrSesionWidget,
-  dibujo: normalizeDibujoWidget,
 };
 
 function normalizeBlock(block: Block): Block {
@@ -265,6 +264,8 @@ function normalizeBlock(block: Block): Block {
 }
 
 function normalizeBlockBase(block: Block): Block {
+  // W10: el tipo transitorio `dibujo` ya no existe; un dibujo guardado se abre como diagrama con su escena.
+  if (esDibujoLegado(block)) return dibujoLegadoADiagrama(block) as unknown as Block;
   const tipoRegistry = (block as { tipo: string }).tipo;
   if (esWidgetSoloRegistry(tipoRegistry)) {
     return NORMALIZAR_SOLO_REGISTRY[tipoRegistry](block as never) as Block;

@@ -11,17 +11,16 @@ import {
 describe('widget-panel-catalog', () => {
   it('incluye todos los widgets del registro, sin duplicados', () => {
     const types = WIDGET_PANEL_ITEMS.map((item) => item.type);
-    // `dibujo` está registrado pero oculto del panel (etapa W, DW11).
-    const esperados = WIDGET_TIPOS.filter((t) => t !== 'dibujo');
-    expect(types).toEqual(esperados);
-    expect(new Set(types).size).toBe(esperados.length);
+    expect(types).toEqual([...WIDGET_TIPOS]);
+    expect(new Set(types).size).toBe(WIDGET_TIPOS.length);
   });
 
   it('agrupa los widgets en lienzo, overlay y control', () => {
     const grouped = WIDGET_PANEL_GROUP_ORDER.flatMap((group) =>
       getWidgetPanelItemsByGroup(group).map((item) => item.type),
     );
-    expect(grouped).toHaveLength(WIDGET_TIPOS.length - 1);
+    expect(grouped).toHaveLength(WIDGET_TIPOS.length);
+    // W10: el tipo transitorio `dibujo` ya no existe; el dibujo libre vive dentro de Diagramas.
     expect(grouped).not.toContain('dibujo');
     expect(getWidgetPanelItemsByGroup('lienzo').map((item) => item.type)).toEqual([
       'flip-cards',

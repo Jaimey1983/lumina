@@ -18,7 +18,6 @@ import type {
   DiagramaArista,
   DiagramaBlock,
   DiagramaGrafoBlock,
-  DiagramaNodo,
   DiagramaNodoForma,
   DiagramaVennBlock,
 } from '@lumina/types/slide';
