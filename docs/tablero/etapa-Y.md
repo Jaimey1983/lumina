@@ -53,7 +53,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 
 #### Y3 — Panel derecho redimensionable y plegable
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y2 `hecho`.
 - **Alcance — PUEDE tocar:** `editor/editor-libre.tsx` (layout), `editor/propiedades-panel.tsx` (solo el contenedor), un nuevo `editor/zona-redimensionable.tsx`, specs. **NO** toca el contenido de las secciones del panel.
 - **Entregable:** el panel derecho (hoy 320 px) se **arrastra para cambiar su ancho** (la paleta lateral desapareció en Y2: sus herramientas y formas viven en la cinta) (límites, doble clic restaura), se **pliegan** a un riel de iconos, recuerdan su estado en `localStorage` con la convención de etapa S (`lumina.panel.dibujo-*`, con `try/catch`), y por debajo de un ancho de ventana se pliegan solos. Teclado: separador enfocable que cambia el ancho con flechas (`role="separator"`, `aria-valuenow`). Pruebas: ancho acotado, persistencia, restauración, plegado automático por ancho, accesibilidad del separador. Verificación: la de Y2.
