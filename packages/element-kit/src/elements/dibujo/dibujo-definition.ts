@@ -22,6 +22,8 @@ export const dibujoDefinition = {
   apariencia: { color: false, tipografia: false, animacion: true },
   catalogo: CATALOGO_ELEMENTOS["dibujo"],
   presets: DIBUJO_PRESETS,
+  // W9: el visor emite `clic` y `parte_clic` (con el id del elemento tocado) cuando hay motor de interacción.
+  eventos: ["clic", "parte_clic"],
 } as const satisfies ElementDefinition<DibujoEstado, DibujoConfig>;
 
 export type DibujoDefinition = typeof dibujoDefinition;

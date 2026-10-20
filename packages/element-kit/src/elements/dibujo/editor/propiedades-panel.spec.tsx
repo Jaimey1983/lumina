@@ -534,3 +534,78 @@ describe("el teclado se queda en el panel", () => {
     expect(sube).not.toHaveBeenCalled();
   });
 });
+
+describe("descripción para lectores de pantalla", () => {
+  const campoDescripcion = (): HTMLTextAreaElement => unico([...document.querySelectorAll<HTMLTextAreaElement>("textarea")].filter((t) => t.getAttribute("aria-label") === "Descripción para lectores de pantalla"), "descripción");
+
+  it("con un solo elemento elegido aparece con su descripción actual; con varios o con un grupo, no", () => {
+    montar(escena(forma("A", 0, 0, 100, 60, { descripcion: "Caja de entrada" }), forma("B", 200, 0)), ["A"]);
+    expect(campoDescripcion().value).toBe("Caja de entrada");
+    cleanup();
+    montar(base(), ["A", "B"]);
+    expect(hay('textarea[aria-label="Descripción para lectores de pantalla"]')).toBe(false);
+    cleanup();
+    montar(escena(forma("A", 0, 0), forma("B", 200, 0), grupo("G", ["A", "B"])), ["G"]);
+    expect(hay('textarea[aria-label="Descripción para lectores de pantalla"]')).toBe(false);
+    cleanup();
+    montar(base(), []);
+    expect(hay('textarea[aria-label="Descripción para lectores de pantalla"]')).toBe(false);
+  });
+
+  it("escribir no confirma; al salir del campo entra UNA vez, recortada", () => {
+    const m = montar(base(), ["A"]);
+    fireEvent.change(campoDescripcion(), { target: { value: "  Una caja roja  " } });
+    fireEvent.change(campoDescripcion(), { target: { value: "  Una caja roja que da inicio  " } });
+    expect(m.aplicar).not.toHaveBeenCalled();
+    fireEvent.blur(campoDescripcion());
+    expect(m.aplicar).toHaveBeenCalledTimes(1);
+    expect(m.resultado().elementos.find((x) => x.id === "A")?.descripcion).toBe("Una caja roja que da inicio");
+  });
+
+  it("salir sin cambios (o con solo espacios de más) no cambia nada; borrarla la quita", () => {
+    const m = montar(escena(forma("A", 0, 0, 100, 60, { descripcion: "Caja de entrada" })), ["A"]);
+    fireEvent.focus(campoDescripcion());
+    fireEvent.blur(campoDescripcion());
+    fireEvent.change(campoDescripcion(), { target: { value: "  Caja de entrada " } });
+    fireEvent.blur(campoDescripcion());
+    expect(m.aplicar).not.toHaveBeenCalled();
+    fireEvent.change(campoDescripcion(), { target: { value: "" } });
+    fireEvent.blur(campoDescripcion());
+    expect(m.resultado().elementos[0]?.descripcion).toBeUndefined();
+  });
+
+  it("al cambiar la selección se muestra la descripción del otro elemento", () => {
+    const e = escena(forma("A", 0, 0, 100, 60, { descripcion: "Primera" }), forma("B", 200, 0, 100, 60, { descripcion: "Segunda" }));
+    const props = { escena: e, onAplicar: vi.fn(), onVista: vi.fn(), onFinVista: vi.fn(), onSeleccionar: vi.fn() };
+    const { rerender } = render(<PanelPropiedades {...props} seleccion={["A"]} />);
+    expect(campoDescripcion().value).toBe("Primera");
+    rerender(<PanelPropiedades {...props} seleccion={["B"]} />);
+    expect(campoDescripcion().value).toBe("Segunda");
+  });
+
+  it("un borrador a medias de un elemento no se guarda en otro al cambiar de selección", () => {
+    const e = escena(forma("A", 0, 0, 100, 60, { descripcion: "Primera" }), forma("B", 200, 0, 100, 60, { descripcion: "Segunda" }));
+    const onAplicar = vi.fn();
+    const props = { escena: e, onAplicar, onVista: vi.fn(), onFinVista: vi.fn(), onSeleccionar: vi.fn() };
+    const { rerender } = render(<PanelPropiedades {...props} seleccion={["A"]} />);
+    fireEvent.change(campoDescripcion(), { target: { value: "Cambiada" } });
+    rerender(<PanelPropiedades {...props} seleccion={["B"]} />);
+    expect(campoDescripcion().value).toBe("Segunda");
+    fireEvent.blur(campoDescripcion());
+    expect(onAplicar).not.toHaveBeenCalled();
+  });
+
+  it("también en un elemento bloqueado (es solo una etiqueta)", () => {
+    const m = montar(escena(forma("A", 0, 0, 100, 60, { bloqueado: true })), ["A"]);
+    expect(document.querySelector("[data-propiedades-bloqueado]")).toBeTruthy();
+    fireEvent.change(campoDescripcion(), { target: { value: "Descrita" } });
+    fireEvent.blur(campoDescripcion());
+    expect(m.resultado().elementos[0]?.descripcion).toBe("Descrita");
+  });
+
+  it("respeta el largo máximo del campo y tiene su ayuda ⓘ", () => {
+    montar(base(), ["A"]);
+    expect(campoDescripcion().maxLength).toBe(500);
+    expect(boton("Ayuda: Descripción para lectores de pantalla")).toBeTruthy();
+  });
+});

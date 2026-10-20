@@ -254,3 +254,15 @@ export const ocultarCapa = (escena: Escena, id: string, valor: boolean): Escena 
 export const bloquearCapa = (escena: Escena, id: string, valor: boolean): Escena => bloquear(escena, [id], valor);
 /** Un nombre en blanco quita el nombre propio (vuelve el descriptivo). */
 export const renombrarCapa = (escena: Escena, id: string, nombre: string): Escena => actualizar(escena, [id], { nombre: nombre.trim() });
+
+// ─── Descripción para lectores de pantalla (W9) ───────────────────────────────
+
+/** El único elemento con geometría que hay elegido (ni varios, ni un grupo): es al que se le escribe su descripción. */
+export function elementoUnico(escena: Escena, seleccion: readonly string[]): Hoja | null {
+  if (seleccion.length !== 1) return null;
+  const e = escena.elementos.find((x) => x.id === seleccion[0]);
+  return e && esHoja(e) ? e : null;
+}
+
+/** Un texto en blanco quita la descripción. Se puede escribir también en un elemento bloqueado (es solo una etiqueta). */
+export const fijarDescripcion = (escena: Escena, id: string, texto: string): Escena => actualizar(escena, [id], { descripcion: texto.trim() });

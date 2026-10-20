@@ -4,6 +4,8 @@ import {
   SOMBRA_POR_DEFECTO,
   bloquearCapa,
   capasDe,
+  elementoUnico,
+  fijarDescripcion,
   fijarContorno,
   fijarGeometria,
   fijarOpacidad,
@@ -266,5 +268,33 @@ describe("capas", () => {
     for (const r of [ordenarCapa(e, "C", "frente"), ocultarCapa(e, "L", true), bloquearCapa(e, "A", true), renombrarCapa(e, "B", "Z"), fijarGeometria(e, ["C"], "x", 5.555)]) expect(normalizarEscena(r)).toEqual(r);
     expect(getForma(e, "A")).toBeDefined();
     expect((get(e, "L") as Linea).tipo).toBe("linea");
+  });
+});
+
+describe("descripción para lectores de pantalla", () => {
+  it("elementoUnico: solo con exactamente un elemento con geometría elegido", () => {
+    const e = escena(forma("A", 0, 0), forma("B", 200, 0), grupo("G", ["A", "B"]));
+    expect(elementoUnico(e, ["A"])?.id).toBe("A");
+    expect(elementoUnico(e, ["A", "B"])).toBeNull();
+    expect(elementoUnico(e, ["G"])).toBeNull();
+    expect(elementoUnico(e, [])).toBeNull();
+    expect(elementoUnico(e, ["nada"])).toBeNull();
+  });
+  it("fijarDescripcion guarda el texto recortado; en blanco la quita", () => {
+    const e = escena(forma("A", 0, 0), linea("L", [[0, 0], [10, 10]]));
+    const con = fijarDescripcion(e, "A", "  Caja de entrada  ");
+    expect(get(con, "A").descripcion).toBe("Caja de entrada");
+    expect(get(fijarDescripcion(con, "A", "   "), "A").descripcion).toBeUndefined();
+    expect(get(fijarDescripcion(e, "L", "Flecha hacia la salida"), "L").descripcion).toBe("Flecha hacia la salida");
+  });
+  it("se puede escribir en un elemento bloqueado y el resultado sigue siendo una escena válida", () => {
+    const e = escena(forma("A", 0, 0, 100, 60, { bloqueado: true }));
+    const r = fijarDescripcion(e, "A", "Bloqueada pero descrita");
+    expect(get(r, "A").descripcion).toBe("Bloqueada pero descrita");
+    expect(normalizarEscena(r)).toEqual(r);
+  });
+  it("respeta el largo máximo", () => {
+    const e = escena(forma("A", 0, 0));
+    expect((get(fijarDescripcion(e, "A", "x".repeat(900)), "A").descripcion ?? "").length).toBe(500);
   });
 });
