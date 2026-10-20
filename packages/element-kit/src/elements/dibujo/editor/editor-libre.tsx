@@ -55,6 +55,7 @@ import {
   type AreaDeTexto,
   type Herramienta,
 } from "./herramientas.js";
+import { BarraEstado } from "./barra-estado.js";
 import { CapaAsasDeConector, CapaPuertos } from "./conectores-capa.js";
 import {
   agarreEn,
@@ -267,6 +268,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   /** Puerto de cada punto de la línea que se está dibujando (alineado con `enCurso`). */
   const conexionesCurso = useRef<Array<Conexion | undefined>>([]);
   const edicionRef = useRef<Edicion | null>(null);
+  /** La barra de estado deja acá su manejador de la posición del cursor: mover el puntero no repinta el editor. */
+  const cursorEstado = useRef<((p: Punto | null) => void) | null>(null);
 
   const historial = useRef(new Historial({ tope: 100 }));
   const ventanaRef = useRef<HTMLDivElement | null>(null);
@@ -284,6 +287,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const lineaElegida = useMemo(() => lineaUnica(escena, seleccion), [escena, seleccion]);
   // Una sola línea elegida muestra las asas del conector (extremos y puntos intermedios), no las del marco: coincidirían en las puntas.
   const marco = useMemo(() => (lineaElegida ? null : marcoDeSeleccion(escenaRutas, seleccion)), [escenaRutas, seleccion, lineaElegida]);
+  // La barra de estado informa también de una línea sola (el marco de las asas no la cuenta).
+  const marcoEstado = useMemo(() => marcoDeSeleccion(escenaRutas, seleccion), [escenaRutas, seleccion]);
 
   // ─── Panel de propiedades (W8) ──────────────────────────────────────────────
   // Los deslizadores y el selector de color dan vista previa sin tocar el historial y entran como UNA entrada al soltar.
@@ -624,6 +629,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const alMover = (e: PunteroReact<SVGSVGElement>): void => {
     const a = accion.current;
     const pantalla = aPantalla(e);
+    cursorEstado.current?.(pantallaAEscena(vivo.current.vista, pantalla));
     if (!a) {
       // Sin arrastre: cambia el cursor según la herramienta y lo que haya debajo; una línea a medio hacer sigue al cursor.
       const { escena: actual, seleccion: sel, vista: v, herramienta: h, enCurso: curso } = vivo.current;
@@ -905,7 +911,6 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   };
   // Los grupos no cuentan: son una agrupación de elementos que ya se cuentan.
   const cantidad = escena.elementos.filter((x) => x.tipo !== "grupo").length;
-  const hay = seleccion.length > 0;
   const puedeDeshacer = historial.current.puedeDeshacer;
   const puedeRehacer = historial.current.puedeRehacer;
   const contextoCinta: ContextoComando = { escena, seleccion, herramienta, puedeDeshacer, puedeRehacer, zoom: vista.zoom, cuadricula, imantar };
@@ -963,6 +968,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           onPointerMove={alMover}
           onPointerUp={alSoltar}
           onPointerCancel={alCancelarPuntero}
+          onPointerLeave={() => cursorEstado.current?.(null)}
           onDoubleClick={alDobleClic}
         >
           <g transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
@@ -1016,13 +1022,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       </ZonaRedimensionable>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t bg-card px-3 py-1 text-[11px] text-muted-foreground">
-        <span data-dibujo-estado="">
-          {cantidad === 0 ? "Lienzo vacío" : `${cantidad} ${cantidad === 1 ? "elemento" : "elementos"}`}
-          {hay ? ` · ${seleccion.length} ${seleccion.length === 1 ? "seleccionado" : "seleccionados"}` : ""}
-        </span>
-        <span>{ayudaDeHerramienta(herramienta, enCurso)}</span>
-      </div>
+      <BarraEstado
+        cantidad={cantidad}
+        seleccionados={seleccion.length}
+        marco={marcoEstado}
+        zoom={vista.zoom}
+        cuadricula={cuadricula}
+        imantar={imantar}
+        ayuda={ayudaDeHerramienta(herramienta, enCurso)}
+        onOrden={ejecutarOrden}
+        onZoom={(z) => acercar(z / vivo.current.vista.zoom)}
+        cursorRef={cursorEstado}
+      />
 
       <p id={ayudaId} className="sr-only">
         Flechas mueven lo seleccionado una unidad; con Mayús, diez. Tab recorre los elementos. Ctrl+Z deshace, Ctrl+Y rehace. Supr elimina. Escape quita la selección y, sin selección, cierra el editor.
