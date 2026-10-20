@@ -96,6 +96,7 @@ import {
   sinConectoresQueSiguen,
   type GestoConector,
 } from "./conectores.js";
+import { BotonExportar } from "./exportar-panel.js";
 import { Paleta } from "./paleta.js";
 import { PanelPropiedades } from "./propiedades-panel.js";
 import { TextoEnSitio } from "./texto-en-sitio.js";
@@ -1032,7 +1033,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         <BotonBarra etiqueta="Imantar a otros elementos" onClick={() => setImantar((v) => !v)} activo={imantar}>
           <Magnet />
         </BotonBarra>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <BotonExportar escena={escena} {...(titulo ? { titulo } : {})} />
           <Button type="button" size="sm" onClick={cerrar} data-dibujo-listo="">
             <Check /> Listo
           </Button>
