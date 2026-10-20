@@ -220,8 +220,7 @@ export type WidgetTipo =
   | 'galeria'
   | 'stepper'
   | 'sello'
-  | 'qr-sesion'
-  | 'dibujo';
+  | 'qr-sesion';
 
 /** Enumeración de `WidgetTipo` en orden estable (E7.2 — vino de `widget-registry.ts`). */
 export const WIDGET_TIPOS: readonly WidgetTipo[] = [
@@ -248,7 +247,6 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
   'stepper',
   'sello',
   'qr-sesion',
-  'dibujo',
 ] as const;
 
 /**
@@ -256,7 +254,7 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
  * `Block` viejo: el editor los despacha por el registry y todos llevan `x/y/ancho/alto` en el
  * bloque raíz.
  */
-export const WIDGET_TIPOS_SOLO_REGISTRY = ['callout', 'galeria', 'stepper', 'sello', 'qr-sesion', 'dibujo'] as const;
+export const WIDGET_TIPOS_SOLO_REGISTRY = ['callout', 'galeria', 'stepper', 'sello', 'qr-sesion'] as const;
 
 export type WidgetTipoSoloRegistry = (typeof WIDGET_TIPOS_SOLO_REGISTRY)[number];
 

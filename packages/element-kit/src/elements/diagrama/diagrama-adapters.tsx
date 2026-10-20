@@ -35,6 +35,7 @@ export function DiagramaViewer({
     <LegacyDiagramaViewer
       block={estado}
       isThumbnail={config.isThumbnail === true}
+      {...(config.emitir ? { emitir: config.emitir } : {})}
     />
   );
 }

@@ -2,12 +2,19 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { normalizarEscena, type Escena } from "@lumina/drawing";
 import { elementosAccesibles, ListaAccesible } from "./accesibilidad.js";
-import { dibujoDefinition } from "./dibujo-definition.js";
-import type { DibujoConfig, DibujoEstado } from "./dibujo-types.js";
+import { diagramaDefinition } from "../../../elements/diagrama/diagrama-definition.js";
+import type { DiagramaConfig, DiagramaEstado } from "../../../elements/diagrama/diagrama-types.js";
+import { createDefaultFlujoBlock } from "../diagrama-defaults.js";
 
 afterEach(() => cleanup());
 
-const forma = (id: string, x: number, y: number, extra: Record<string, unknown> = {}) => ({ id, tipo: "forma", forma: "rectangulo", transformacion: { x, y, ancho: 100, alto: 60, rotacion: 0 }, ...extra });
+const forma = (id: string, x: number, y: number, extra: Record<string, unknown> = {}) => ({
+  id,
+  tipo: "forma",
+  forma: "rectangulo",
+  transformacion: { x, y, ancho: 100, alto: 60, rotacion: 0 },
+  ...extra,
+});
 
 const escena = (): Escena =>
   normalizarEscena({
@@ -23,9 +30,9 @@ const escena = (): Escena =>
     ],
   });
 
-const estado = (): DibujoEstado => ({ ...dibujoDefinition.crearPorDefecto(), titulo: "Mi dibujo", escena: escena() });
-const Viewer = dibujoDefinition.Viewer;
-const montar = (config: DibujoConfig = {}) => render(<Viewer estado={estado()} config={config} />);
+const estado = (): DiagramaEstado => ({ ...createDefaultFlujoBlock({ id: "d1" }), titulo: "Mi dibujo", escena: escena() }) as unknown as DiagramaEstado;
+const Viewer = diagramaDefinition.Viewer;
+const montar = (config: DiagramaConfig = {}) => render(<Viewer estado={estado()} config={config} />);
 const elemento = (id: string): Element => {
   const n = document.querySelector(`[data-elemento-id="${id}"]`);
   if (!n) throw new Error(`No se dibuja ${id}`);
@@ -33,8 +40,8 @@ const elemento = (id: string): Element => {
 };
 
 describe("eventos que declara y emite", () => {
-  it("la definición declara clic y parte_clic", () => {
-    expect(dibujoDefinition.eventos).toEqual(["clic", "parte_clic"]);
+  it("la definición declara `clic` (parte_clic se emite pero aún no se declara: el editor de reglas no sabe elegir partes de un dibujo)", () => {
+    expect(diagramaDefinition.eventos).toEqual(["clic"]);
   });
 
   it("un clic sobre un elemento emite `clic` y `parte_clic` con el id de ese elemento, en ese orden", () => {
@@ -54,6 +61,13 @@ describe("eventos que declara y emite", () => {
     }
   });
 
+  it("un diagrama clásico (sin dibujo libre) emite `clic` y nunca `parte_clic`", () => {
+    const emitir = vi.fn();
+    const { container } = render(<Viewer estado={createDefaultFlujoBlock({ id: "clasico" }) as DiagramaEstado} config={{ emitir }} />);
+    fireEvent.click(container.querySelector("figure") as Element);
+    expect(emitir.mock.calls).toEqual([["clic"]]);
+  });
+
   it("un clic en el fondo del dibujo emite solo `clic`", () => {
     const emitir = vi.fn();
     const { container } = montar({ emitir });
@@ -64,7 +78,7 @@ describe("eventos que declara y emite", () => {
   it("sin motor (sin `emitir`) no emite nada, no falla y no ofrece botones ni cursor de clic", () => {
     const { container } = montar({});
     expect(() => fireEvent.click(elemento("A").querySelector("path") as Element)).not.toThrow();
-    expect(container.querySelector("[data-dibujo-interactivo]")).toBeNull();
+    expect(container.querySelector("[data-diagrama-interactivo]")).toBeNull();
     expect(container.querySelectorAll("[data-dibujo-lista-accesible] button")).toHaveLength(0);
   });
 
@@ -78,7 +92,7 @@ describe("eventos que declara y emite", () => {
 
   it("con motor, los elementos se ven clicables", () => {
     const { container } = montar({ emitir: vi.fn() });
-    expect(container.querySelector("[data-dibujo-interactivo]")?.className).toContain("cursor-pointer");
+    expect(container.querySelector("[data-diagrama-interactivo]")?.className).toContain("cursor-pointer");
   });
 
   it("un elemento oculto no se dibuja, así que no se puede tocar", () => {
@@ -116,7 +130,16 @@ describe("lista de elementos para lectores de pantalla", () => {
       elementos: [
         forma("A", 20, 20, { nombre: "Uno" }),
         forma("B", 400, 20, { nombre: "Dos" }),
-        { id: "L", tipo: "linea", puntos: [{ x: 120, y: 50 }, { x: 400, y: 50 }], origen: { elementoId: "A", puerto: 1 }, destino: { elementoId: "B", puerto: 3 } },
+        {
+          id: "L",
+          tipo: "linea",
+          puntos: [
+            { x: 120, y: 50 },
+            { x: 400, y: 50 },
+          ],
+          origen: { elementoId: "A", puerto: 1 },
+          destino: { elementoId: "B", puerto: 3 },
+        },
       ],
     });
     expect(elementosAccesibles(e).map((x) => x.id)).toEqual(["A", "L", "B"]);

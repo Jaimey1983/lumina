@@ -3,7 +3,7 @@
 // de `@lumina/drawing` y la rasterización y descarga de `diagrama-export.ts` (se importan, no se copian).
 
 import { escenaASvg, normalizarEscena, type Escena } from "@lumina/drawing";
-import { descargarBlob, nombreArchivo, svgAPng } from "../../blocks/diagrama/diagrama-export.js";
+import { descargarBlob, nombreArchivo, svgAPng } from "../diagrama-export.js";
 
 export type FormatoEscena = "svg" | "png";
 export type TemaEscena = "claro" | "oscuro";
