@@ -48,25 +48,53 @@ export function CapaPuertos({
  * La forma que va a recibir lo que se arrastra (el extremo de un conector, otra forma o una línea que se dibuja),
  * resaltada entera —borde y relleno suave—, además del puerto: así se ve a cuál se va a pegar antes de soltar.
  * Dibuja el contorno real de la forma (con su giro), no su caja.
+ *
+ * `modo`: `conecta` (verde, sólido) cuando al soltar se va a pegar o a crear un conector; `solapa` (azul, a rayas
+ * y más suave) cuando solo se está pasando por encima de la forma y soltar no conectará nada.
  */
-export function CapaDestino({ escena, vista, formaId }: { escena: Escena; vista: Vista; formaId: string | null }): ReactElement | null {
+export function CapaDestino({ escena, vista, formaId, modo = "conecta" }: { escena: Escena; vista: Vista; formaId: string | null; modo?: "conecta" | "solapa" }): ReactElement | null {
   const f = formaId === null ? undefined : escena.elementos.find((e): e is Forma => e.id === formaId && e.tipo === "forma");
   if (!f) return null;
   const t = f.transformacion;
   const mover = `translate(${t.x} ${t.y})${t.rotacion === 0 ? "" : ` rotate(${t.rotacion} ${t.ancho / 2} ${t.alto / 2})`}`;
+  const conecta = modo === "conecta";
   return (
-    <g data-capa="destino" pointerEvents="none" transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
+    <g data-capa="destino" data-modo={modo} pointerEvents="none" transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
       <path
         d={trazadoForma(f.forma, t.ancho, t.alto, { parametros: f.parametros, radio: f.estilo.radio })}
         transform={mover}
-        fill={COLOR_PEGADO}
-        fillOpacity={0.12}
-        stroke={COLOR_PEGADO}
-        strokeWidth={2.5}
+        fill={conecta ? COLOR_PEGADO : COLOR}
+        fillOpacity={conecta ? 0.12 : 0.06}
+        stroke={conecta ? COLOR_PEGADO : COLOR}
+        strokeWidth={conecta ? 2.5 : 1.5}
+        strokeDasharray={conecta ? undefined : "5 4"}
         vectorEffect="non-scaling-stroke"
         strokeLinejoin="round"
         data-destino={f.id}
       />
+    </g>
+  );
+}
+
+/** El conector que se crearía al soltar, de puerto a puerto, a rayas y con punta de flecha (vista previa de Y7). */
+export function CapaConexionPrevia({ vista, previa }: { vista: Vista; previa: { desde: Punto; hasta: Punto } | null }): ReactElement | null {
+  if (!previa) return null;
+  const a = escenaAPantalla(vista, previa.desde);
+  const b = escenaAPantalla(vista, previa.hasta);
+  const largo = Math.hypot(b.x - a.x, b.y - a.y);
+  // Punta de flecha en el extremo final, en la dirección del tramo.
+  const ux = largo > 0 ? (b.x - a.x) / largo : 0;
+  const uy = largo > 0 ? (b.y - a.y) / largo : 1;
+  const punta = [
+    `${b.x},${b.y}`,
+    `${b.x - ux * 10 + uy * 5},${b.y - uy * 10 - ux * 5}`,
+    `${b.x - ux * 10 - uy * 5},${b.y - uy * 10 + ux * 5}`,
+  ].join(" ");
+  return (
+    <g data-capa="conexion-previa" pointerEvents="none">
+      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={COLOR_PEGADO} strokeWidth={2} strokeDasharray="6 4" strokeLinecap="round" />
+      <circle cx={a.x} cy={a.y} r={4} fill={COLOR_PEGADO} />
+      <polygon points={punta} fill={COLOR_PEGADO} />
     </g>
   );
 }

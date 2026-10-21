@@ -58,16 +58,17 @@ import {
   type Herramienta,
 } from "./herramientas.js";
 import { BarraEstado } from "./barra-estado.js";
-import { CapaAsasDeConector, CapaDestino, CapaPuertos } from "./conectores-capa.js";
+import { CapaAsasDeConector, CapaConexionPrevia, CapaDestino, CapaPuertos } from "./conectores-capa.js";
 import {
   agarreEn,
   aConexion,
   avanzarConector,
+  conectarAlSoltar,
   iniciarConector,
+  intencionDeArrastre,
   lineaUnica,
   lineasElegidas,
   formaConPuertosVisibles,
-  formaDestinoDeArrastre,
   quitarPuntoIntermedio,
   radioDePuertoPx,
   resolverPuntoDeLinea,
@@ -120,6 +121,8 @@ type Accion = {
   ultimo: Punto;
   /** Elemento que estaba bajo el cursor al apretar (para elegirlo al soltar sin haber arrastrado). */
   hit?: string;
+  /** Solo al mover formas: la forma por la que se tomó el arrastre (si conecta al soltar, es la «hija»). */
+  agarrada?: string;
   shift: boolean;
 };
 
@@ -169,6 +172,12 @@ export function describirSeleccion(escena: Escena, seleccion: readonly string[])
   if (elegidos.length === 1 && primero) return `${describirElemento(primero)}, seleccionado.`;
   return `${elegidos.length} elementos seleccionados.`;
 }
+
+/** Cómo se llama un elemento para el aviso a lectores de pantalla («Rectángulo «Título»»). */
+const nombreDe = (escena: Escena, id: string): string => {
+  const e = escena.elementos.find((x) => x.id === id);
+  return e ? describirElemento(e) : "Elemento";
+};
 
 const porVista = (vista: Vista, puntos: readonly Punto[]): string => puntos.map((p) => escenaAPantalla(vista, p)).map((p) => `${p.x},${p.y}`).join(" ");
 
@@ -277,6 +286,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [formaHover, setFormaHover] = useState<string | null>(null);
   /** Forma sobre la que va lo que se está arrastrando (otra forma): se resalta entera. */
   const [destinoArrastre, setDestinoArrastre] = useState<string | null>(null);
+  /** `conecta` si al soltar ahora se crearía un conector (halo de un puerto o Alt); `solapa` si solo se pasa por encima. */
+  const [destinoModo, setDestinoModo] = useState<"conecta" | "solapa">("solapa");
+  /** El conector que se crearía al soltar, de puerto a puerto. */
+  const [conexionPrevia, setConexionPrevia] = useState<{ desde: Punto; hasta: Punto } | null>(null);
   /** `PointerEvent.pointerType` del último puntero: con el dedo, los puertos atraen desde más lejos. */
   const tipoPuntero = useRef<string>("mouse");
   /** Lo mismo como estado, para que los puertos se dibujen más grandes en cuanto el puntero es un dedo. */
@@ -637,6 +650,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     const asa = actualMarco ? asaEn(actualMarco, p, v.zoom) : null;
     let gesto: Gesto | null = null;
     let hit: string | undefined;
+    // La forma que se toma (aunque esté dentro de un grupo): si el arrastre acaba sobre otra forma, esta es la que se conecta.
+    const agarrada = elementoEn(rutas, p, { tolerancia: 6 / v.zoom, entrarEnGrupos: true });
     if (asa) {
       gesto = asa === "rotar" ? iniciarRotar(actual, sel, p) : iniciarRedimensionar(actual, sel, asa, p);
     } else {
@@ -658,7 +673,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         if (!e.shiftKey && sel.includes(bajo) && sel.length > 1) hit = bajo;
       }
     }
-    accion.current = { modo: "gesto", gesto, activo: false, origen: pantalla, ultimo: pantalla, ...(hit !== undefined ? { hit } : {}), shift: e.shiftKey };
+    accion.current = { modo: "gesto", gesto, activo: false, origen: pantalla, ultimo: pantalla, ...(hit !== undefined ? { hit } : {}), ...(agarrada !== undefined ? { agarrada } : {}), shift: e.shiftKey };
     capturar(e);
   };
 
@@ -750,8 +765,17 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setGuias(r.guias);
     setRecuadro(r.recuadro ?? null);
     if (r.seleccion) setSeleccion(r.seleccion);
-    // Al mover formas se resalta entera la que hay debajo del puntero (sin contar lo que se mueve).
-    setDestinoArrastre(a.gesto.tipo === "mover" ? formaDestinoDeArrastre(a.gesto.base, pantallaAEscena(v, pantalla), v.zoom, a.gesto.ids) : null);
+    // Al mover formas se resalta entera la que hay debajo del puntero (sin contar lo que se mueve) y, si al soltar
+    // se conectaría (halo de un puerto o Alt), se ve el conector que se crearía. Si no, soltar solo mueve.
+    if (a.gesto.tipo === "mover") {
+      const i = intencionDeArrastre(sincronizarConectores(r.escena), pantallaAEscena(v, pantalla), v.zoom, a.gesto.ids, a.agarrada, e.altKey, radioDePuertoPx(tipoPuntero.current));
+      setDestinoArrastre(i.destino);
+      setDestinoModo(i.conecta ? "conecta" : "solapa");
+      setConexionPrevia(i.previa);
+    } else {
+      setDestinoArrastre(null);
+      setConexionPrevia(null);
+    }
   };
 
   const alSoltar = (e: PunteroReact<SVGSVGElement>): void => {
@@ -759,6 +783,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     accion.current = null;
     liberar(e);
     setDestinoArrastre(null);
+    setConexionPrevia(null);
     setGuias([]);
     setRecuadro(null);
     const base = vivo.current.herramienta.tipo === "seleccionar" ? "default" : vivo.current.herramienta.tipo === "texto" ? "text" : "crosshair";
@@ -806,11 +831,32 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       }
       return;
     }
-    const final = vivo.current.escena;
+    let final = vivo.current.escena;
+    let anuncioFinal: string | null = null;
+    // Soltar una forma sobre el halo de un puerto de otra (o con Alt) las conecta: el movimiento y el conector son UNA entrada de historial.
+    if (a.gesto?.tipo === "mover") {
+      const { vista: v, cuadricula: grilla, imantar: iman } = vivo.current;
+      const puntoSuelta = pantallaAEscena(v, aPantalla(e));
+      // La escena de `vivo` es la de la última pintura de React, que con el ratón rápido puede ir un movimiento por detrás:
+      // se recalcula el arrastre hasta el punto exacto en que se suelta, y de ahí salen la posición final y los puertos.
+      final = sincronizarConectores(
+        avanzarGesto(a.gesto, puntoSuelta, { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey }, { guias: iman, zoom: v.zoom, ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}) }).escena,
+      );
+      setEscena(final);
+      const i = intencionDeArrastre(final, puntoSuelta, v.zoom, a.gesto.ids, a.agarrada, e.altKey, radioDePuertoPx(tipoPuntero.current));
+      if (i.conecta && i.destino !== null && a.agarrada !== undefined) {
+        const conectada = conectarAlSoltar(final, i.destino, a.agarrada);
+        if (conectada !== final) {
+          final = conectada;
+          setEscena(final);
+          anuncioFinal = `${nombreDe(final, a.agarrada)} conectada a ${nombreDe(final, i.destino)}.`;
+        }
+      }
+    }
     const registrado = historial.current.terminarGesto(final);
     setVersionHistorial((n) => n + 1);
     if (registrado) {
-      setAnuncio(describirSeleccion(final, vivo.current.seleccion));
+      setAnuncio(anuncioFinal ?? describirSeleccion(final, vivo.current.seleccion));
       onCambio(final);
     }
   };
@@ -819,6 +865,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     const a = accion.current;
     accion.current = null;
     setDestinoArrastre(null);
+    setConexionPrevia(null);
     setGuias([]);
     setRecuadro(null);
     setPrevia(null);
@@ -1051,7 +1098,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} />
           {lineaElegida ? <CapaAsasDeConector escena={escena} linea={lineaElegida} vista={vista} /> : null}
           <CapaPuertos escena={escena} vista={vista} formasElegidas={formasConPuertos} todas={herramienta.tipo === "linea" || arrastrandoExtremo} objetivo={objetivoPuerto} tactil={tactil} />
-          <CapaDestino escena={escena} vista={vista} formaId={objetivoPuerto?.elementoId ?? destinoArrastre} />
+          <CapaDestino escena={escena} vista={vista} formaId={objetivoPuerto?.elementoId ?? destinoArrastre} modo={objetivoPuerto ? "conecta" : destinoModo} />
+          <CapaConexionPrevia vista={vista} previa={conexionPrevia} />
           <CapaGuias guias={guias} vista={vista} />
           <CapaPrevia previa={previa} vista={vista} />
           {recuadro ? (

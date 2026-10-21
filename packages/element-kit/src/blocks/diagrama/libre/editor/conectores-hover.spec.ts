@@ -112,7 +112,12 @@ describe("formaDestinoDeArrastre", () => {
     expect(formaDestinoDeArrastre(e, { x: 150, y: 130 }, 1, ["g"])).toBe("fondo");
   });
 
-  it("no cuenta lo bloqueado, lo oculto ni las líneas", () => {
+  it("una línea encima de la forma no la tapa: el destino es la forma de debajo", () => {
+    const e = escena(forma("A", 100, 100), forma("B", 400, 100), linea("L", [[450, 100], [450, 160]]));
+    expect(formaDestinoDeArrastre(e, { x: 450, y: 130 }, 1, ["A"])).toBe("B");
+  });
+
+  it("no cuenta lo bloqueado, lo oculto ni las líneas sueltas", () => {
     const e = escena(forma("A", 100, 100), forma("fija", 400, 100, 100, 60, { bloqueado: true }), forma("oculta", 400, 300, 100, 60, { oculto: true }), linea("L", [[600, 100], [700, 100]]));
     expect(formaDestinoDeArrastre(e, { x: 450, y: 130 }, 1, ["A"])).toBeNull();
     expect(formaDestinoDeArrastre(e, { x: 450, y: 330 }, 1, ["A"])).toBeNull();
