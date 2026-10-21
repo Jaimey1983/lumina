@@ -6,10 +6,15 @@
 
 import {
   actualizar,
+  agregar,
   cambiarEstilo,
+  elementoEn,
   insertarVia,
   moverVia,
   puertoCercano,
+  puertosDeEscena,
+  puertosParaConectar,
+  puntoDePuerto,
   puntoMedio,
   quitarVia,
   sincronizarConectores,
@@ -18,6 +23,7 @@ import {
   type Conexion,
   type Escena,
   type Extremo,
+  type Forma,
   type Linea,
   type Punto,
   type PuertoCercano,
@@ -27,6 +33,8 @@ import { bloqueadosEfectivos } from "./asas.js";
 
 /** Distancia (píxeles de pantalla) a la que un puerto atrae a un extremo. */
 export const RADIO_PUERTO_PX = 14;
+/** Lo mismo con el dedo: la yema es mucho menos precisa que el puntero (y tapa lo que toca). */
+export const RADIO_PUERTO_TACTIL_PX = 24;
 /** Tolerancia (píxeles de pantalla) para agarrar una asa del conector. */
 export const TOLERANCIA_AGARRE_PX = 9;
 /** Radio de las esquinas redondeadas de un conector ortogonal. */
@@ -90,6 +98,8 @@ export interface EntradaConector {
   zoom: number;
   /** Ctrl: sin imán de puertos. */
   sinImanDePuertos: boolean;
+  /** Radio de atracción de los puertos en píxeles de pantalla (mayor con el dedo). Por defecto, `RADIO_PUERTO_PX`. */
+  radioPx?: number;
 }
 
 export interface ResultadoConector {
@@ -100,7 +110,7 @@ export interface ResultadoConector {
 
 export function avanzarConector(g: GestoConector, e: EntradaConector): ResultadoConector {
   if (g.tipo === "extremo") {
-    const radio = e.sinImanDePuertos ? 0 : RADIO_PUERTO_PX / e.zoom;
+    const radio = e.sinImanDePuertos ? 0 : (e.radioPx ?? RADIO_PUERTO_PX) / e.zoom;
     const cerca = radio > 0 ? puertoCercano(g.base, e.puntero, radio) : null;
     const r = soltarExtremo(g.base, g.id, g.cual, cerca ? e.puntero : e.imantado, { radio: cerca ? radio : 0 });
     return { escena: sincronizarConectores(r.escena), puerto: r.puerto };
@@ -128,11 +138,166 @@ export function resolverPuntoDeLinea(
   escena: Escena,
   puntero: Punto,
   imantado: Punto,
-  opciones: { zoom: number; sinImanDePuertos: boolean; restringir?: (p: Punto) => Punto },
+  opciones: { zoom: number; sinImanDePuertos: boolean; radioPx?: number; restringir?: (p: Punto) => Punto },
 ): PuntoDeLinea {
-  const cerca = opciones.sinImanDePuertos ? null : puertoCercano(escena, puntero, RADIO_PUERTO_PX / opciones.zoom);
+  const cerca = opciones.sinImanDePuertos ? null : puertoCercano(escena, puntero, (opciones.radioPx ?? RADIO_PUERTO_PX) / opciones.zoom);
   if (cerca) return { punto: { ...cerca.punto }, puerto: cerca };
   return { punto: opciones.restringir ? opciones.restringir(imantado) : imantado, puerto: null };
+}
+
+/** Radio de atracción de los puertos según el tipo de puntero del navegador (`PointerEvent.pointerType`). */
+export const radioDePuertoPx = (tipoPuntero: string | undefined): number => (tipoPuntero === "touch" ? RADIO_PUERTO_TACTIL_PX : RADIO_PUERTO_PX);
+
+// ─── Puertos al pasar el cursor y forma destino (Y6) ──────────────────────────
+
+/** Los ids pedidos más, si alguno es un grupo, todos sus descendientes. */
+function conHijos(escena: Escena, ids: readonly string[]): Set<string> {
+  const salida = new Set<string>();
+  const porId = new Map(escena.elementos.map((e) => [e.id, e]));
+  const sumar = (id: string): void => {
+    if (salida.has(id)) return;
+    salida.add(id);
+    const e = porId.get(id);
+    if (e?.tipo === "grupo") e.hijos.forEach(sumar);
+  };
+  ids.forEach(sumar);
+  return salida;
+}
+
+const esFormaElegible = (escena: Escena, id: string | undefined): id is string => {
+  if (id === undefined) return false;
+  const e = escena.elementos.find((x) => x.id === id);
+  return e?.tipo === "forma" && !bloqueadosEfectivos(escena).has(id);
+};
+
+/**
+ * Forma cuyos puertos se muestran con el cursor encima (herramienta de seleccionar), o `null`. Es la forma de
+ * más arriba bajo el puntero —no una línea ni un texto que la tape—, siempre visible y desbloqueada.
+ *
+ * Con histéresis: los puertos están en el borde de la forma, y para llegar a uno el cursor sale de ella. Si
+ * `anterior` sigue siendo válida y el puntero está a menos de `radioPx` de alguno de sus puertos, se conserva;
+ * si no, los puertos desaparecerían justo antes de poder tocarlos (parpadeo).
+ */
+export function formaConPuertosVisibles(escena: Escena, punto: Punto, zoom: number, anterior: string | null, radioPx: number = RADIO_PUERTO_PX): string | null {
+  if (anterior !== null && esFormaElegible(escena, anterior)) {
+    const cerca = puertosDeEscena(escena).some((p) => p.elementoId === anterior && Math.hypot(p.punto.x - punto.x, p.punto.y - punto.y) <= radioPx / zoom);
+    if (cerca) return anterior;
+  }
+  const bajo = elementoEn(escena, punto, { tolerancia: 6 / zoom, entrarEnGrupos: true });
+  return esFormaElegible(escena, bajo) ? bajo : null;
+}
+
+/**
+ * La escena sin lo que se arrastra (ni los hijos de un grupo que se arrastra) y sin líneas: para buscar qué forma
+ * hay debajo. Las líneas no cuentan: un conector que sale de un puerto pasa justo por donde se suelta para
+ * colgar otra caja de ese padre, y no debe taparlo.
+ */
+function sinArrastradas(escena: Escena, arrastrados: readonly string[]): Escena {
+  const fuera = conHijos(escena, arrastrados);
+  return {
+    ...escena,
+    elementos: escena.elementos
+      .filter((e) => !fuera.has(e.id) && e.tipo !== "linea")
+      .map((e) => (e.tipo === "grupo" ? { ...e, hijos: e.hijos.filter((h) => !fuera.has(h)) } : e)),
+  };
+}
+
+/**
+ * Forma que sería el destino de lo que se arrastra: la de más arriba bajo el puntero sin contar lo que se
+ * mueve (ni los hijos de un grupo que se mueve). Es una forma visible y desbloqueada, o `null`.
+ */
+export function formaDestinoDeArrastre(escena: Escena, punto: Punto, zoom: number, arrastrados: readonly string[]): string | null {
+  const resto = sinArrastradas(escena, arrastrados);
+  const bajo = elementoEn(resto, punto, { tolerancia: 6 / zoom, entrarEnGrupos: true });
+  return esFormaElegible(resto, bajo) ? bajo : null;
+}
+
+// ─── Conectar al soltar una forma sobre otra (Y7, DY4) ────────────────────────
+// Al arrastrar una forma sobre otra, soltar solo la mueve (se solapan). Conecta únicamente si el puntero cae
+// sobre el halo de un puerto de la de debajo, o con `Alt` apretada; antes de soltar se ve qué va a pasar.
+// La de debajo es el «padre» (el origen del conector) y la que se arrastró, la «hija» (su destino): así
+// una caja nueva soltada sobre un título cuelga de él.
+
+/**
+ * La forma cuyo puerto está a menos de `radioPx` (píxeles de pantalla) del puntero —el halo que arma la
+ * conexión—, sin contar lo que se arrastra. Puede estar fuera de la forma: los puertos están en el borde y el
+ * puntero también puede quedar un poco más allá. Con dos a la misma distancia, la de más arriba.
+ */
+export function formaEnHalo(escena: Escena, punto: Punto, zoom: number, arrastrados: readonly string[], radioPx: number = RADIO_PUERTO_PX): string | null {
+  const resto = sinArrastradas(escena, arrastrados);
+  const elegibles = new Set(resto.elementos.filter((e) => esFormaElegible(resto, e.id)).map((e) => e.id));
+  let mejor: { id: string; distancia: number } | null = null;
+  for (const p of puertosDeEscena(resto)) {
+    if (!elegibles.has(p.elementoId)) continue;
+    const distancia = Math.hypot(p.punto.x - punto.x, p.punto.y - punto.y);
+    if (distancia > radioPx / zoom) continue;
+    if (!mejor || distancia <= mejor.distancia) mejor = { id: p.elementoId, distancia };
+  }
+  return mejor ? mejor.id : null;
+}
+
+/** ¿Ya hay un conector que va de `padreId` a `hijaId`? (el sentido contrario no cuenta) */
+export const existeConector = (escena: Escena, padreId: string, hijaId: string): boolean =>
+  escena.elementos.some((e) => e.tipo === "linea" && e.origen?.elementoId === padreId && e.destino?.elementoId === hijaId);
+
+export interface IntencionDeSoltar {
+  /** Forma sobre la que va lo que se arrastra (se resalta), o `null`. */
+  destino: string | null;
+  /** Si al soltar ahora se crearía un conector. */
+  conecta: boolean;
+  /** El conector que se crearía, de puerto a puerto (para la vista previa). */
+  previa: { desde: Punto; hasta: Punto } | null;
+}
+
+/**
+ * Qué pasaría si se soltara ahora. `escena` es la actual (con lo arrastrado ya movido), `agarrada` la forma por
+ * la que se tomó el arrastre (la «hija»: con varias formas elegidas, solo esa se conecta). No hay conexión si
+ * no hay una hija que sea forma entre lo arrastrado, si ya existe ese conector o si no se arma (ni halo ni Alt).
+ */
+export function intencionDeArrastre(
+  escena: Escena,
+  punto: Punto,
+  zoom: number,
+  arrastrados: readonly string[],
+  agarrada: string | undefined,
+  alt: boolean,
+  radioPx: number = RADIO_PUERTO_PX,
+): IntencionDeSoltar {
+  // El halo de un puerto manda (aunque el puntero esté un poco fuera de la forma); si no, la forma que hay debajo.
+  const enHalo = formaEnHalo(escena, punto, zoom, arrastrados, radioPx);
+  const destino = enHalo ?? formaDestinoDeArrastre(escena, punto, zoom, arrastrados);
+  const sinConexion: IntencionDeSoltar = { destino, conecta: false, previa: null };
+  if (destino === null || agarrada === undefined) return sinConexion;
+  if (enHalo === null && !alt) return sinConexion;
+  if (!conHijos(escena, arrastrados).has(agarrada) || !esFormaElegible(escena, agarrada)) return sinConexion;
+  if (existeConector(escena, destino, agarrada)) return sinConexion;
+  const par = puertosParaConectar(escena, destino, agarrada);
+  const padre = escena.elementos.find((e): e is Forma => e.id === destino && e.tipo === "forma");
+  const hija = escena.elementos.find((e): e is Forma => e.id === agarrada && e.tipo === "forma");
+  if (!par || !padre || !hija) return sinConexion;
+  return { destino, conecta: true, previa: { desde: puntoDePuerto(padre, par.origen.puerto), hasta: puntoDePuerto(hija, par.destino.puerto) } };
+}
+
+/**
+ * La escena con un conector nuevo del padre a la hija (en ángulo recto y con flecha), pegado a los puertos que
+ * mejor se miran. Devuelve la misma escena si no se puede o si ya existe ese conector.
+ */
+export function conectarAlSoltar(escena: Escena, padreId: string, hijaId: string): Escena {
+  if (existeConector(escena, padreId, hijaId)) return escena;
+  const par = puertosParaConectar(escena, padreId, hijaId);
+  const padre = escena.elementos.find((e): e is Forma => e.id === padreId && e.tipo === "forma");
+  const hija = escena.elementos.find((e): e is Forma => e.id === hijaId && e.tipo === "forma");
+  if (!par || !padre || !hija) return escena;
+  const r = agregar(escena, {
+    tipo: "linea",
+    puntos: [puntoDePuerto(padre, par.origen.puerto), puntoDePuerto(hija, par.destino.puerto)],
+    trazado: "ortogonal",
+    inicio: "ninguno",
+    fin: "flecha",
+    origen: par.origen,
+    destino: par.destino,
+  });
+  return r.id === "" ? escena : sincronizarConectores(r.escena);
 }
 
 export const aConexion = (p: PuertoCercano | null): Conexion | undefined => (p ? { elementoId: p.elementoId, puerto: p.puerto } : undefined);

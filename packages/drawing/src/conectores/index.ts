@@ -45,3 +45,4 @@ export {
   type OpcionesSoltar,
   type ResultadoSoltar,
 } from './conectar.js';
+export { puertosParaConectar, type ParDePuertos } from './enlazar.js';
