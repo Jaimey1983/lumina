@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { puertosDeEscena, type Escena, type Linea, type Punto, type PuertoCercano } from "@lumina/drawing";
+import { puertosDeEscena, trazadoForma, type Escena, type Forma, type Linea, type Punto, type PuertoCercano } from "@lumina/drawing";
 import { agarresDeConector } from "./conectores.js";
 import { escenaAPantalla, type Vista } from "./vista.js";
 
@@ -15,6 +15,7 @@ export function CapaPuertos({
   formasElegidas,
   todas,
   objetivo,
+  tactil = false,
 }: {
   escena: Escena;
   vista: Vista;
@@ -23,6 +24,8 @@ export function CapaPuertos({
   /** Mostrar los puertos de todas las formas (con la herramienta de línea o arrastrando un extremo). */
   todas: boolean;
   objetivo: PuertoCercano | null;
+  /** Con el dedo los puertos se dibujan más grandes (y se captan desde más lejos). */
+  tactil?: boolean;
 }): ReactElement | null {
   const puertos = puertosDeEscena(escena).filter((p) => todas || formasElegidas.has(p.elementoId));
   if (puertos.length === 0 && !objetivo) return null;
@@ -34,9 +37,36 @@ export function CapaPuertos({
         return activo ? (
           <circle key={`${p.elementoId}:${p.puerto}`} cx={s.x} cy={s.y} r={7} fill={COLOR_PEGADO} fillOpacity={0.35} stroke={COLOR_PEGADO} strokeWidth={2} data-puerto={`${p.elementoId}:${p.puerto}`} data-puerto-activo="" />
         ) : (
-          <circle key={`${p.elementoId}:${p.puerto}`} cx={s.x} cy={s.y} r={3.5} fill="#fff" stroke={COLOR} strokeWidth={1.25} data-puerto={`${p.elementoId}:${p.puerto}`} />
+          <circle key={`${p.elementoId}:${p.puerto}`} cx={s.x} cy={s.y} r={tactil ? 6 : 3.5} fill="#fff" stroke={COLOR} strokeWidth={1.25} data-puerto={`${p.elementoId}:${p.puerto}`} />
         );
       })}
+    </g>
+  );
+}
+
+/**
+ * La forma que va a recibir lo que se arrastra (el extremo de un conector, otra forma o una línea que se dibuja),
+ * resaltada entera —borde y relleno suave—, además del puerto: así se ve a cuál se va a pegar antes de soltar.
+ * Dibuja el contorno real de la forma (con su giro), no su caja.
+ */
+export function CapaDestino({ escena, vista, formaId }: { escena: Escena; vista: Vista; formaId: string | null }): ReactElement | null {
+  const f = formaId === null ? undefined : escena.elementos.find((e): e is Forma => e.id === formaId && e.tipo === "forma");
+  if (!f) return null;
+  const t = f.transformacion;
+  const mover = `translate(${t.x} ${t.y})${t.rotacion === 0 ? "" : ` rotate(${t.rotacion} ${t.ancho / 2} ${t.alto / 2})`}`;
+  return (
+    <g data-capa="destino" pointerEvents="none" transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
+      <path
+        d={trazadoForma(f.forma, t.ancho, t.alto, { parametros: f.parametros, radio: f.estilo.radio })}
+        transform={mover}
+        fill={COLOR_PEGADO}
+        fillOpacity={0.12}
+        stroke={COLOR_PEGADO}
+        strokeWidth={2.5}
+        vectorEffect="non-scaling-stroke"
+        strokeLinejoin="round"
+        data-destino={f.id}
+      />
     </g>
   );
 }

@@ -58,7 +58,7 @@ import {
   type Herramienta,
 } from "./herramientas.js";
 import { BarraEstado } from "./barra-estado.js";
-import { CapaAsasDeConector, CapaPuertos } from "./conectores-capa.js";
+import { CapaAsasDeConector, CapaDestino, CapaPuertos } from "./conectores-capa.js";
 import {
   agarreEn,
   aConexion,
@@ -66,7 +66,10 @@ import {
   iniciarConector,
   lineaUnica,
   lineasElegidas,
+  formaConPuertosVisibles,
+  formaDestinoDeArrastre,
   quitarPuntoIntermedio,
+  radioDePuertoPx,
   resolverPuntoDeLinea,
   sinConectoresQueSiguen,
   type GestoConector,
@@ -270,6 +273,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [edicion, setEdicion] = useState<Edicion | null>(null);
   const [objetivoPuerto, setObjetivoPuerto] = useState<PuertoCercano | null>(null);
   const [arrastrandoExtremo, setArrastrandoExtremo] = useState(false);
+  /** Forma bajo el cursor (herramienta de seleccionar): sus puertos se ven sin tener que elegirla. */
+  const [formaHover, setFormaHover] = useState<string | null>(null);
+  /** Forma sobre la que va lo que se está arrastrando (otra forma): se resalta entera. */
+  const [destinoArrastre, setDestinoArrastre] = useState<string | null>(null);
+  /** `PointerEvent.pointerType` del último puntero: con el dedo, los puertos atraen desde más lejos. */
+  const tipoPuntero = useRef<string>("mouse");
+  /** Lo mismo como estado, para que los puertos se dibujen más grandes en cuanto el puntero es un dedo. */
+  const [tactil, setTactil] = useState(false);
   /** Puerto de cada punto de la línea que se está dibujando (alineado con `enCurso`). */
   const conexionesCurso = useRef<Array<Conexion | undefined>>([]);
   const edicionRef = useRef<Edicion | null>(null);
@@ -497,6 +508,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     return resolverPuntoDeLinea(actual, crudo, imantarPunto(crudo, ctrl), {
       zoom: v.zoom,
       sinImanDePuertos: ctrl,
+      radioPx: radioDePuertoPx(tipoPuntero.current),
       ...(shift && desde ? { restringir: (p: Punto) => restringirAngulo(desde, p) } : {}),
     });
   };
@@ -588,6 +600,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const alApretar = (e: PunteroReact<SVGSVGElement>): void => {
     finVistaPanel();
     svgRef.current?.focus();
+    tipoPuntero.current = e.pointerType || "mouse";
+    setTactil(tipoPuntero.current === "touch");
+    setFormaHover(null);
     const pantalla = aPantalla(e);
     if (e.button === 1 || (e.button === 0 && espacio.current)) {
       accion.current = { modo: "pan", gesto: null, activo: true, origen: pantalla, ultimo: pantalla, shift: false };
@@ -651,10 +666,15 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     const a = accion.current;
     const pantalla = aPantalla(e);
     cursorEstado.current?.(pantallaAEscena(vivo.current.vista, pantalla));
+    if (e.pointerType) {
+      tipoPuntero.current = e.pointerType;
+      setTactil(e.pointerType === "touch");
+    }
     if (!a) {
       // Sin arrastre: cambia el cursor según la herramienta y lo que haya debajo; una línea a medio hacer sigue al cursor.
       const { escena: actual, seleccion: sel, vista: v, herramienta: h, enCurso: curso } = vivo.current;
       if (h.tipo !== "seleccionar") {
+        setFormaHover(null);
         setCursor(espacio.current ? "grab" : h.tipo === "texto" ? "text" : "crosshair");
         if (h.tipo === "linea") {
           // El puerto que atrae al punto se resalta, también antes de apretar.
@@ -666,6 +686,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         return;
       }
       const puntoEscena = pantallaAEscena(v, pantalla);
+      // Con el cursor sobre una forma se ven sus puertos (con histéresis para poder llegar a uno sin que se apaguen).
+      setFormaHover((previa) => formaConPuertosVisibles(actual, puntoEscena, v.zoom, previa, radioDePuertoPx(tipoPuntero.current)));
       const lineaSel = lineaUnica(actual, sel);
       const sobreAgarre = lineaSel ? agarreEn(actual, lineaSel, puntoEscena, v.zoom) : null;
       const m = lineaSel ? null : marcoDeSeleccion(escenaConRutas(actual), sel);
@@ -706,7 +728,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       }
       const { vista: v } = vivo.current;
       const crudo = pantallaAEscena(v, pantalla);
-      const r = avanzarConector(a.conector, { puntero: crudo, imantado: imantarPunto(crudo, e.ctrlKey || e.metaKey, [a.conector.id]), zoom: v.zoom, sinImanDePuertos: e.ctrlKey || e.metaKey });
+      const r = avanzarConector(a.conector, { puntero: crudo, imantado: imantarPunto(crudo, e.ctrlKey || e.metaKey, [a.conector.id]), zoom: v.zoom, sinImanDePuertos: e.ctrlKey || e.metaKey, radioPx: radioDePuertoPx(tipoPuntero.current) });
       setEscena(r.escena);
       fijarObjetivo(r.puerto);
       return;
@@ -728,12 +750,15 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setGuias(r.guias);
     setRecuadro(r.recuadro ?? null);
     if (r.seleccion) setSeleccion(r.seleccion);
+    // Al mover formas se resalta entera la que hay debajo del puntero (sin contar lo que se mueve).
+    setDestinoArrastre(a.gesto.tipo === "mover" ? formaDestinoDeArrastre(a.gesto.base, pantallaAEscena(v, pantalla), v.zoom, a.gesto.ids) : null);
   };
 
   const alSoltar = (e: PunteroReact<SVGSVGElement>): void => {
     const a = accion.current;
     accion.current = null;
     liberar(e);
+    setDestinoArrastre(null);
     setGuias([]);
     setRecuadro(null);
     const base = vivo.current.herramienta.tipo === "seleccionar" ? "default" : vivo.current.herramienta.tipo === "texto" ? "text" : "crosshair";
@@ -793,6 +818,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const alCancelarPuntero = (): void => {
     const a = accion.current;
     accion.current = null;
+    setDestinoArrastre(null);
     setGuias([]);
     setRecuadro(null);
     setPrevia(null);
@@ -934,6 +960,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
 
   // ─── Estado de los botones ──────────────────────────────────────────────────
   const formasElegidas = useMemo(() => new Set(escena.elementos.filter((x) => x.tipo === "forma" && seleccion.includes(x.id)).map((x) => x.id)), [escena, seleccion]);
+  // Los puertos se ven en las formas elegidas y en la que tiene el cursor encima.
+  const formasConPuertos = useMemo(() => (formaHover === null || formasElegidas.has(formaHover) ? formasElegidas : new Set([...formasElegidas, formaHover])), [formasElegidas, formaHover]);
   const lineasConector = useMemo(() => lineasElegidas(escena, seleccion), [escena, seleccion]);
   const cambiarConector = (nueva: Escena): void => {
     const { escena: actual, seleccion: sel } = vivo.current;
@@ -1000,7 +1028,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           onPointerMove={alMover}
           onPointerUp={alSoltar}
           onPointerCancel={alCancelarPuntero}
-          onPointerLeave={() => cursorEstado.current?.(null)}
+          onPointerLeave={() => {
+            cursorEstado.current?.(null);
+            setFormaHover(null);
+          }}
           onDoubleClick={alDobleClic}
         >
           <g transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
@@ -1019,7 +1050,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           ) : null}
           <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} />
           {lineaElegida ? <CapaAsasDeConector escena={escena} linea={lineaElegida} vista={vista} /> : null}
-          <CapaPuertos escena={escena} vista={vista} formasElegidas={formasElegidas} todas={herramienta.tipo === "linea" || arrastrandoExtremo} objetivo={objetivoPuerto} />
+          <CapaPuertos escena={escena} vista={vista} formasElegidas={formasConPuertos} todas={herramienta.tipo === "linea" || arrastrandoExtremo} objetivo={objetivoPuerto} tactil={tactil} />
+          <CapaDestino escena={escena} vista={vista} formaId={objetivoPuerto?.elementoId ?? destinoArrastre} />
           <CapaGuias guias={guias} vista={vista} />
           <CapaPrevia previa={previa} vista={vista} />
           {recuadro ? (

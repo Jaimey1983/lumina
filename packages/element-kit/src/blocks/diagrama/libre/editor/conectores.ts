@@ -7,9 +7,11 @@
 import {
   actualizar,
   cambiarEstilo,
+  elementoEn,
   insertarVia,
   moverVia,
   puertoCercano,
+  puertosDeEscena,
   puntoMedio,
   quitarVia,
   sincronizarConectores,
@@ -27,6 +29,8 @@ import { bloqueadosEfectivos } from "./asas.js";
 
 /** Distancia (píxeles de pantalla) a la que un puerto atrae a un extremo. */
 export const RADIO_PUERTO_PX = 14;
+/** Lo mismo con el dedo: la yema es mucho menos precisa que el puntero (y tapa lo que toca). */
+export const RADIO_PUERTO_TACTIL_PX = 24;
 /** Tolerancia (píxeles de pantalla) para agarrar una asa del conector. */
 export const TOLERANCIA_AGARRE_PX = 9;
 /** Radio de las esquinas redondeadas de un conector ortogonal. */
@@ -90,6 +94,8 @@ export interface EntradaConector {
   zoom: number;
   /** Ctrl: sin imán de puertos. */
   sinImanDePuertos: boolean;
+  /** Radio de atracción de los puertos en píxeles de pantalla (mayor con el dedo). Por defecto, `RADIO_PUERTO_PX`. */
+  radioPx?: number;
 }
 
 export interface ResultadoConector {
@@ -100,7 +106,7 @@ export interface ResultadoConector {
 
 export function avanzarConector(g: GestoConector, e: EntradaConector): ResultadoConector {
   if (g.tipo === "extremo") {
-    const radio = e.sinImanDePuertos ? 0 : RADIO_PUERTO_PX / e.zoom;
+    const radio = e.sinImanDePuertos ? 0 : (e.radioPx ?? RADIO_PUERTO_PX) / e.zoom;
     const cerca = radio > 0 ? puertoCercano(g.base, e.puntero, radio) : null;
     const r = soltarExtremo(g.base, g.id, g.cual, cerca ? e.puntero : e.imantado, { radio: cerca ? radio : 0 });
     return { escena: sincronizarConectores(r.escena), puerto: r.puerto };
@@ -128,11 +134,61 @@ export function resolverPuntoDeLinea(
   escena: Escena,
   puntero: Punto,
   imantado: Punto,
-  opciones: { zoom: number; sinImanDePuertos: boolean; restringir?: (p: Punto) => Punto },
+  opciones: { zoom: number; sinImanDePuertos: boolean; radioPx?: number; restringir?: (p: Punto) => Punto },
 ): PuntoDeLinea {
-  const cerca = opciones.sinImanDePuertos ? null : puertoCercano(escena, puntero, RADIO_PUERTO_PX / opciones.zoom);
+  const cerca = opciones.sinImanDePuertos ? null : puertoCercano(escena, puntero, (opciones.radioPx ?? RADIO_PUERTO_PX) / opciones.zoom);
   if (cerca) return { punto: { ...cerca.punto }, puerto: cerca };
   return { punto: opciones.restringir ? opciones.restringir(imantado) : imantado, puerto: null };
+}
+
+/** Radio de atracción de los puertos según el tipo de puntero del navegador (`PointerEvent.pointerType`). */
+export const radioDePuertoPx = (tipoPuntero: string | undefined): number => (tipoPuntero === "touch" ? RADIO_PUERTO_TACTIL_PX : RADIO_PUERTO_PX);
+
+// ─── Puertos al pasar el cursor y forma destino (Y6) ──────────────────────────
+
+const esFormaElegible = (escena: Escena, id: string | undefined): id is string => {
+  if (id === undefined) return false;
+  const e = escena.elementos.find((x) => x.id === id);
+  return e?.tipo === "forma" && !bloqueadosEfectivos(escena).has(id);
+};
+
+/**
+ * Forma cuyos puertos se muestran con el cursor encima (herramienta de seleccionar), o `null`. Es la forma de
+ * más arriba bajo el puntero —no una línea ni un texto que la tape—, siempre visible y desbloqueada.
+ *
+ * Con histéresis: los puertos están en el borde de la forma, y para llegar a uno el cursor sale de ella. Si
+ * `anterior` sigue siendo válida y el puntero está a menos de `radioPx` de alguno de sus puertos, se conserva;
+ * si no, los puertos desaparecerían justo antes de poder tocarlos (parpadeo).
+ */
+export function formaConPuertosVisibles(escena: Escena, punto: Punto, zoom: number, anterior: string | null, radioPx: number = RADIO_PUERTO_PX): string | null {
+  if (anterior !== null && esFormaElegible(escena, anterior)) {
+    const cerca = puertosDeEscena(escena).some((p) => p.elementoId === anterior && Math.hypot(p.punto.x - punto.x, p.punto.y - punto.y) <= radioPx / zoom);
+    if (cerca) return anterior;
+  }
+  const bajo = elementoEn(escena, punto, { tolerancia: 6 / zoom, entrarEnGrupos: true });
+  return esFormaElegible(escena, bajo) ? bajo : null;
+}
+
+/**
+ * Forma que sería el destino de lo que se arrastra: la de más arriba bajo el puntero sin contar lo que se
+ * mueve (ni los hijos de un grupo que se mueve). Es una forma visible y desbloqueada, o `null`.
+ */
+export function formaDestinoDeArrastre(escena: Escena, punto: Punto, zoom: number, arrastrados: readonly string[]): string | null {
+  const fuera = new Set<string>();
+  const porId = new Map(escena.elementos.map((e) => [e.id, e]));
+  const excluir = (id: string): void => {
+    if (fuera.has(id)) return;
+    fuera.add(id);
+    const e = porId.get(id);
+    if (e?.tipo === "grupo") e.hijos.forEach(excluir);
+  };
+  arrastrados.forEach(excluir);
+  const resto: Escena = {
+    ...escena,
+    elementos: escena.elementos.filter((e) => !fuera.has(e.id)).map((e) => (e.tipo === "grupo" ? { ...e, hijos: e.hijos.filter((h) => !fuera.has(h)) } : e)),
+  };
+  const bajo = elementoEn(resto, punto, { tolerancia: 6 / zoom, entrarEnGrupos: true });
+  return esFormaElegible(resto, bajo) ? bajo : null;
 }
 
 export const aConexion = (p: PuertoCercano | null): Conexion | undefined => (p ? { elementoId: p.elementoId, puerto: p.puerto } : undefined);
