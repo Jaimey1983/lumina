@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactElement } from "react";
 import { LIMITES, type Contorno, type Escena, type Relleno, type Sombra } from "@lumina/drawing";
 import { CollapsibleSection, type CollapsibleSectionProps } from "@lumina/ui/collapsible-section";
 import { FieldHelp } from "@lumina/ui/field-help";
-import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Italic, Underline } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Italic, PanelRightClose, Underline } from "lucide-react";
 import { CampoNumero, Conmutador, Deslizador, Fila, Opciones, FilaColor } from "./propiedades-campos.js";
 import { PanelCapas } from "./propiedades-capas.js";
 import {
@@ -39,6 +39,8 @@ export interface PanelPropiedadesProps {
   onVista: (cambio: (e: Escena) => Escena) => void;
   onFinVista: () => void;
   onSeleccionar: (ids: string[], sumar: boolean) => void;
+  /** Pliega el panel a un riel (lo da la zona redimensionable que lo envuelve). */
+  onPlegar?: () => void;
 }
 
 const FUENTES: ReadonlyArray<{ valor: string; nombre: string }> = [
@@ -112,7 +114,7 @@ function CampoGrid(props: Parameters<typeof CampoNumero>[0]): ReactElement {
 
 const porcentaje = (n: number): string => `${Math.round(n * 100)}%`;
 
-export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinVista, onSeleccionar }: PanelPropiedadesProps): ReactElement {
+export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinVista, onSeleccionar, onPlegar }: PanelPropiedadesProps): ReactElement {
   const todas = hojasDeSeleccion(escena, seleccion);
   const editables = hojasEditables(escena, seleccion);
   const bloqueadas = todas.length > 0 && editables.length === 0;
@@ -164,11 +166,25 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
     <aside
       aria-label="Propiedades"
       data-dibujo-propiedades=""
-      className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-card text-card-foreground"
+      className="flex w-full min-w-0 flex-col overflow-y-auto border-l bg-card text-card-foreground"
       onKeyDown={(e) => e.stopPropagation()}
       onKeyUp={(e) => e.stopPropagation()}
     >
-      <div className="border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Propiedades</div>
+      <div className="flex items-center justify-between border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Propiedades
+        {onPlegar ? (
+          <button
+            type="button"
+            aria-label="Plegar propiedades"
+            title="Plegar propiedades"
+            data-zona-alternar=""
+            className="flex size-6 cursor-pointer items-center justify-center rounded-md outline-hidden hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4"
+            onClick={onPlegar}
+          >
+            <PanelRightClose aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
 
       {todas.length === 0 ? (
         <p className="px-3 py-3 text-xs text-muted-foreground" data-propiedades-vacio="">

@@ -2,9 +2,7 @@
 
 import type { ReactElement } from "react";
 import { puertosDeEscena, type Escena, type Linea, type Punto, type PuertoCercano } from "@lumina/drawing";
-import { Button } from "@lumina/ui/button";
-import { CornerDownRight, Minus, Spline } from "lucide-react";
-import { agarresDeConector, cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, valorComun } from "./conectores.js";
+import { agarresDeConector } from "./conectores.js";
 import { escenaAPantalla, type Vista } from "./vista.js";
 
 const COLOR = "#2563eb";
@@ -59,52 +57,5 @@ export function CapaAsasDeConector({ escena, linea, vista }: { escena: Escena; l
         return <circle key={`i${i}`} cx={s.x} cy={s.y} r={4} fill="#fff" fillOpacity={0.85} stroke={COLOR} strokeWidth={1.25} strokeDasharray="2 2" data-asa-conector={`insertar-${a.tramo}`} />;
       })}
     </g>
-  );
-}
-
-const selectClase = "h-8 rounded-md border bg-background px-2 text-xs";
-
-/** Barra flotante con lo propio de un conector: trazado, esquinas y extremos. Cada cambio es una sola entrada de historial. */
-export function BarraConector({ escena, lineas, onCambiar }: { escena: Escena; lineas: readonly Linea[]; onCambiar: (nueva: Escena) => void }): ReactElement | null {
-  if (lineas.length === 0) return null;
-  const ids = lineas.map((l) => l.id);
-  const trazado = valorComun(lineas, (l) => l.trazado);
-  const redondeadas = valorComun(lineas, (l) => l.estilo.radio > 0);
-  const inicio = valorComun(lineas, (l) => l.inicio);
-  const fin = valorComun(lineas, (l) => l.fin);
-  const boton = (valor: "recto" | "ortogonal" | "curvo", etiqueta: string, icono: ReactElement): ReactElement => (
-    <Button key={valor} type="button" size="icon" variant={trazado === valor ? "secondary" : "ghost"} className="size-8" title={etiqueta} aria-label={etiqueta} aria-pressed={trazado === valor} onClick={() => onCambiar(cambiarTrazado(escena, ids, valor))}>
-      {icono}
-    </Button>
-  );
-  const selector = (cual: "inicio" | "fin", valor: string | null): ReactElement => (
-    <label className="flex items-center gap-1 text-xs text-muted-foreground">
-      {cual === "inicio" ? "Inicio" : "Final"}
-      <select className={selectClase} value={valor ?? ""} aria-label={cual === "inicio" ? "Extremo inicial" : "Extremo final"} onChange={(e) => onCambiar(cambiarExtremo(escena, ids, cual, e.target.value as (typeof EXTREMOS_OPCIONES)[number]["valor"]))}>
-        {valor === null ? <option value="" disabled>Mixto</option> : null}
-        {EXTREMOS_OPCIONES.map((o) => (
-          <option key={o.valor} value={o.valor}>
-            {o.etiqueta}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-  return (
-    <div role="toolbar" aria-label="Propiedades del conector" data-barra-conector="" className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg border bg-card px-2 py-1 shadow-md" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-      <span className="text-xs font-medium">{lineas.length > 1 ? `${lineas.length} conectores` : "Conector"}</span>
-      <div role="group" aria-label="Trazado" className="flex">
-        {boton("recto", "Recto", <Minus />)}
-        {boton("ortogonal", "En ángulo recto", <CornerDownRight />)}
-        {boton("curvo", "Curvo", <Spline />)}
-      </div>
-      {trazado === "ortogonal" || trazado === null ? (
-        <Button type="button" size="sm" variant={redondeadas ? "secondary" : "ghost"} className="h-8 text-xs" aria-pressed={redondeadas === true} title="Esquinas redondeadas" onClick={() => onCambiar(cambiarEsquinas(escena, ids, redondeadas !== true))}>
-          Esquinas redondeadas
-        </Button>
-      ) : null}
-      {selector("inicio", inicio)}
-      {selector("fin", fin)}
-    </div>
   );
 }

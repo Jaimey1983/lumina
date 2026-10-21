@@ -32,42 +32,14 @@ import {
   type EntradaElemento,
   type Escena,
   type Guia,
-  type ModoAlineacion,
-  type ModoOrden,
   type Punto,
   type PuertoCercano,
 } from "@lumina/drawing";
-import { Button } from "@lumina/ui/button";
-import { Separator } from "@lumina/ui/separator";
-import {
-  AlignCenterHorizontal,
-  AlignCenterVertical,
-  AlignEndHorizontal,
-  AlignEndVertical,
-  AlignHorizontalSpaceBetween,
-  AlignStartHorizontal,
-  AlignStartVertical,
-  AlignVerticalSpaceBetween,
-  BringToFront,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Grid3x3,
-  Group,
-  Magnet,
-  Maximize,
-  Redo2,
-  SendToBack,
-  Trash2,
-  Undo2,
-  Ungroup,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
 import { NodosSvg } from "../dibujo-render.js";
 import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
-import { depurarSeleccion, ejecutarComando, ordenDeTecla, type Comando, type EstadoEditor, type NombreHerramienta } from "./comandos.js";
+import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO } from "./cinta-editor.js";
+import { depurarSeleccion, ejecutarComando, ordenDeTecla, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
+import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
 import {
   SELECCIONAR,
   TEXTO_NUEVO,
@@ -83,7 +55,8 @@ import {
   type AreaDeTexto,
   type Herramienta,
 } from "./herramientas.js";
-import { BarraConector, CapaAsasDeConector, CapaPuertos } from "./conectores-capa.js";
+import { BarraEstado } from "./barra-estado.js";
+import { CapaAsasDeConector, CapaPuertos } from "./conectores-capa.js";
 import {
   agarreEn,
   aConexion,
@@ -97,8 +70,8 @@ import {
   type GestoConector,
 } from "./conectores.js";
 import { BotonExportar } from "./exportar-panel.js";
-import { Paleta } from "./paleta.js";
 import { PanelPropiedades } from "./propiedades-panel.js";
+import { ZonaRedimensionable } from "./zona-redimensionable.js";
 import { TextoEnSitio } from "./texto-en-sitio.js";
 import {
   avanzarGesto,
@@ -109,7 +82,7 @@ import {
   seleccionAlHacerClic,
   type Gesto,
 } from "./gestos.js";
-import { ZOOM_MAX, ZOOM_MIN, ajustarAVentana, desplazar, escenaAPantalla, pantallaAEscena, zoomEn, type Vista } from "./vista.js";
+import { ajustarAVentana, desplazar, escenaAPantalla, pantallaAEscena, zoomEn, type Vista } from "./vista.js";
 
 const COLOR_SELECCION = "#2563eb";
 const COLOR_GUIA = "#db2777";
@@ -276,24 +249,6 @@ function CapaGuias({ guias, vista }: { guias: readonly Guia[]; vista: Vista }): 
   );
 }
 
-function BotonBarra({ etiqueta, atajo, onClick, disabled, activo, children }: { etiqueta: string; atajo?: string; onClick: () => void; disabled?: boolean; activo?: boolean; children: ReactElement }): ReactElement {
-  return (
-    <Button
-      type="button"
-      variant={activo ? "secondary" : "ghost"}
-      size="icon"
-      className="size-8"
-      title={atajo ? `${etiqueta} (${atajo})` : etiqueta}
-      aria-label={etiqueta}
-      aria-pressed={activo === undefined ? undefined : activo}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      {children}
-    </Button>
-  );
-}
-
 export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar, enfocarAlAbrir = true }: EditorLibreProps): ReactElement {
   const [escena, setEscena] = useState<Escena>(() => sincronizarConectores(normalizarEscena(escenaInicial)));
   const [seleccion, setSeleccion] = useState<string[]>([]);
@@ -314,6 +269,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   /** Puerto de cada punto de la línea que se está dibujando (alineado con `enCurso`). */
   const conexionesCurso = useRef<Array<Conexion | undefined>>([]);
   const edicionRef = useRef<Edicion | null>(null);
+  /** La barra de estado deja acá su manejador de la posición del cursor: mover el puntero no repinta el editor. */
+  const cursorEstado = useRef<((p: Punto | null) => void) | null>(null);
 
   const historial = useRef(new Historial({ tope: 100 }));
   const ventanaRef = useRef<HTMLDivElement | null>(null);
@@ -331,6 +288,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const lineaElegida = useMemo(() => lineaUnica(escena, seleccion), [escena, seleccion]);
   // Una sola línea elegida muestra las asas del conector (extremos y puntos intermedios), no las del marco: coincidirían en las puntas.
   const marco = useMemo(() => (lineaElegida ? null : marcoDeSeleccion(escenaRutas, seleccion)), [escenaRutas, seleccion, lineaElegida]);
+  // La barra de estado informa también de una línea sola (el marco de las asas no la cuenta).
+  const marcoEstado = useMemo(() => marcoDeSeleccion(escenaRutas, seleccion), [escenaRutas, seleccion]);
 
   // ─── Panel de propiedades (W8) ──────────────────────────────────────────────
   // Los deslizadores y el selector de color dan vista previa sin tocar el historial y entran como UNA entrada al soltar.
@@ -671,6 +630,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const alMover = (e: PunteroReact<SVGSVGElement>): void => {
     const a = accion.current;
     const pantalla = aPantalla(e);
+    cursorEstado.current?.(pantallaAEscena(vivo.current.vista, pantalla));
     if (!a) {
       // Sin arrastre: cambia el cursor según la herramienta y lo que haya debajo; una línea a medio hacer sigue al cursor.
       const { escena: actual, seleccion: sel, vista: v, herramienta: h, enCurso: curso } = vivo.current;
@@ -851,29 +811,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (id !== undefined) abrirEdicion(id);
   };
 
-  // ─── Teclado ────────────────────────────────────────────────────────────────
-  const alTeclear = (e: TeclaReact<HTMLDivElement>): void => {
-    // Nada de lo que se teclea aquí debe llegar al editor de diapositivas (Supr borraría el bloque, Ctrl+Z deshace la clase…).
-    e.stopPropagation();
-    const objetivo = e.target as HTMLElement;
-    if (objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.isContentEditable) return;
-    if (e.key === " " && (objetivo as Element) === svgRef.current) {
-      espacio.current = true;
-      setCursor("grab");
-      e.preventDefault();
-      return;
-    }
-    const orden = ordenDeTecla(e);
-    if (!orden) return;
-    // Tab, Enter y las letras de herramienta solo valen desde el lienzo; en la barra siguen siendo las teclas de siempre.
-    if ((orden.tipo === "siguiente" || orden.tipo === "aceptar" || orden.tipo === "herramienta") && (objetivo as Element) !== svgRef.current) return;
-    // Mientras se arrastra, Escape cancela el gesto.
-    if (orden.tipo === "cerrar" && accion.current?.activo) {
-      e.preventDefault();
-      alCancelarPuntero();
-      return;
-    }
-    e.preventDefault();
+  // ─── Órdenes ────────────────────────────────────────────────────────────────
+  // Un botón de la cinta y un atajo de teclado piden lo mismo (registro único de comandos, DY3): una `Orden`.
+  const ejecutarOrden = (orden: Orden): void => {
     switch (orden.tipo) {
       case "deshacer":
         deshacer();
@@ -883,6 +823,24 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         return;
       case "herramienta":
         elegirPorNombre(orden.herramienta);
+        return;
+      case "herramienta-forma":
+        elegirHerramienta({ tipo: "forma", forma: orden.forma });
+        return;
+      case "zoom":
+        acercar(orden.factor);
+        return;
+      case "ajustar-vista":
+        ajustar();
+        return;
+      case "cuadricula":
+        setCuadricula((v) => !v);
+        return;
+      case "imantar":
+        setImantar((v) => !v);
+        return;
+      case "terminar":
+        cerrar();
         return;
       case "aceptar": {
         const { enCurso: curso, herramienta: h } = vivo.current;
@@ -909,6 +867,33 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
   };
 
+  // ─── Teclado ────────────────────────────────────────────────────────────────
+  const alTeclear = (e: TeclaReact<HTMLDivElement>): void => {
+    // Nada de lo que se teclea aquí debe llegar al editor de diapositivas (Supr borraría el bloque, Ctrl+Z deshace la clase…).
+    e.stopPropagation();
+    const objetivo = e.target as HTMLElement;
+    if (objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.tagName === "SELECT" || objetivo.isContentEditable) return;
+    if (e.key === " " && (objetivo as Element) === svgRef.current) {
+      espacio.current = true;
+      setCursor("grab");
+      e.preventDefault();
+      return;
+    }
+    const orden = ordenDeTecla(e);
+    if (!orden) return;
+    // Tab, Enter y las letras de herramienta solo valen desde el lienzo; en la cinta siguen siendo las teclas de siempre.
+    const soloLienzo = orden.tipo === "siguiente" || orden.tipo === "aceptar" || comandoDeTecla(e)?.soloLienzo === true;
+    if (soloLienzo && (objetivo as Element) !== svgRef.current) return;
+    // Mientras se arrastra, Escape cancela el gesto.
+    if (orden.tipo === "cerrar" && accion.current?.activo) {
+      e.preventDefault();
+      alCancelarPuntero();
+      return;
+    }
+    e.preventDefault();
+    ejecutarOrden(orden);
+  };
+
   const alSoltarTecla = (e: TeclaReact<HTMLDivElement>): void => {
     e.stopPropagation();
     if (e.key === " ") {
@@ -925,15 +910,20 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (nueva !== actual) confirmar(actual, { escena: nueva, seleccion: sel });
     svgRef.current?.focus();
   };
-  const hay = seleccion.length > 0;
-  const varios = seleccion.length > 1;
   // Los grupos no cuentan: son una agrupación de elementos que ya se cuentan.
   const cantidad = escena.elementos.filter((x) => x.tipo !== "grupo").length;
-  const hayGrupo = escena.elementos.some((x) => x.tipo === "grupo" && seleccion.includes(x.id));
   const puedeDeshacer = historial.current.puedeDeshacer;
   const puedeRehacer = historial.current.puedeRehacer;
-  const alinear = (modo: ModoAlineacion): void => void ejecutar({ tipo: "alinear", modo });
-  const orden = (modo: ModoOrden): void => void ejecutar({ tipo: "orden", modo });
+  const contextoCinta: ContextoComando = { escena, seleccion, herramienta, puedeDeshacer, puedeRehacer, zoom: vista.zoom, cuadricula, imantar };
+
+  // Al elegir un conector se muestra su pestaña contextual, pero solo si el usuario estaba en Inicio: no le quita la pestaña a quien trabaja en otra.
+  const [pestana, setPestana] = useState(PESTANA_INICIO);
+  const habiaConectores = useRef(false);
+  const hayConectores = lineasConector.length > 0;
+  useEffect(() => {
+    if (hayConectores && !habiaConectores.current) setPestana((p) => (p === PESTANA_INICIO ? PESTANA_CONECTOR : p));
+    habiaConectores.current = hayConectores;
+  }, [hayConectores]);
 
   // El cursor base sigue a la herramienta (el movimiento del puntero lo afina sobre las asas).
   useEffect(() => {
@@ -955,94 +945,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       onClick={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
     >
-      <div role="toolbar" aria-label="Herramientas del dibujo" className="flex flex-wrap items-center gap-1 border-b bg-card px-3 py-1.5">
-        <BotonBarra etiqueta="Deshacer" atajo="Ctrl+Z" onClick={deshacer} disabled={!puedeDeshacer}>
-          <Undo2 />
-        </BotonBarra>
-        <BotonBarra etiqueta="Rehacer" atajo="Ctrl+Y" onClick={rehacer} disabled={!puedeRehacer}>
-          <Redo2 />
-        </BotonBarra>
-        <Separator orientation="vertical" className="mx-1 h-6" />
-        <BotonBarra etiqueta="Duplicar" atajo="Ctrl+D" onClick={() => void ejecutar({ tipo: "duplicar" })} disabled={!hay}>
-          <Copy />
-        </BotonBarra>
-        <BotonBarra etiqueta="Eliminar" atajo="Supr" onClick={() => void ejecutar({ tipo: "eliminar" })} disabled={!hay}>
-          <Trash2 />
-        </BotonBarra>
-        <Separator orientation="vertical" className="mx-1 h-6" />
-        <BotonBarra etiqueta="Agrupar" atajo="Ctrl+G" onClick={() => void ejecutar({ tipo: "agrupar" })} disabled={!varios}>
-          <Group />
-        </BotonBarra>
-        <BotonBarra etiqueta="Desagrupar" atajo="Ctrl+Mayús+G" onClick={() => void ejecutar({ tipo: "desagrupar" })} disabled={!hayGrupo}>
-          <Ungroup />
-        </BotonBarra>
-        <Separator orientation="vertical" className="mx-1 h-6" />
-        <BotonBarra etiqueta="Traer al frente" atajo="Ctrl+Mayús+]" onClick={() => orden("frente")} disabled={!hay}>
-          <BringToFront />
-        </BotonBarra>
-        <BotonBarra etiqueta="Subir un nivel" atajo="Ctrl+]" onClick={() => orden("subir")} disabled={!hay}>
-          <ChevronUp />
-        </BotonBarra>
-        <BotonBarra etiqueta="Bajar un nivel" atajo="Ctrl+[" onClick={() => orden("bajar")} disabled={!hay}>
-          <ChevronDown />
-        </BotonBarra>
-        <BotonBarra etiqueta="Enviar al fondo" atajo="Ctrl+Mayús+[" onClick={() => orden("fondo")} disabled={!hay}>
-          <SendToBack />
-        </BotonBarra>
-        <Separator orientation="vertical" className="mx-1 h-6" />
-        <BotonBarra etiqueta="Alinear a la izquierda" onClick={() => alinear("izquierda")} disabled={!hay}>
-          <AlignStartVertical />
-        </BotonBarra>
-        <BotonBarra etiqueta="Centrar horizontalmente" onClick={() => alinear("centro")} disabled={!hay}>
-          <AlignCenterVertical />
-        </BotonBarra>
-        <BotonBarra etiqueta="Alinear a la derecha" onClick={() => alinear("derecha")} disabled={!hay}>
-          <AlignEndVertical />
-        </BotonBarra>
-        <BotonBarra etiqueta="Alinear arriba" onClick={() => alinear("arriba")} disabled={!hay}>
-          <AlignStartHorizontal />
-        </BotonBarra>
-        <BotonBarra etiqueta="Centrar verticalmente" onClick={() => alinear("medio")} disabled={!hay}>
-          <AlignCenterHorizontal />
-        </BotonBarra>
-        <BotonBarra etiqueta="Alinear abajo" onClick={() => alinear("abajo")} disabled={!hay}>
-          <AlignEndHorizontal />
-        </BotonBarra>
-        <BotonBarra etiqueta="Distribuir horizontalmente" onClick={() => void ejecutar({ tipo: "distribuir", eje: "horizontal" })} disabled={seleccion.length < 3}>
-          <AlignHorizontalSpaceBetween />
-        </BotonBarra>
-        <BotonBarra etiqueta="Distribuir verticalmente" onClick={() => void ejecutar({ tipo: "distribuir", eje: "vertical" })} disabled={seleccion.length < 3}>
-          <AlignVerticalSpaceBetween />
-        </BotonBarra>
-        <Separator orientation="vertical" className="mx-1 h-6" />
-        <BotonBarra etiqueta="Alejar" onClick={() => acercar(1 / 1.25)} disabled={vista.zoom <= ZOOM_MIN}>
-          <ZoomOut />
-        </BotonBarra>
-        <span className="min-w-12 text-center text-xs tabular-nums text-muted-foreground" data-dibujo-zoom="">
-          {Math.round(vista.zoom * 100)}%
-        </span>
-        <BotonBarra etiqueta="Acercar" onClick={() => acercar(1.25)} disabled={vista.zoom >= ZOOM_MAX}>
-          <ZoomIn />
-        </BotonBarra>
-        <BotonBarra etiqueta="Ajustar a la ventana" onClick={ajustar}>
-          <Maximize />
-        </BotonBarra>
-        <BotonBarra etiqueta="Cuadrícula" onClick={() => setCuadricula((v) => !v)} activo={cuadricula}>
-          <Grid3x3 />
-        </BotonBarra>
-        <BotonBarra etiqueta="Imantar a otros elementos" onClick={() => setImantar((v) => !v)} activo={imantar}>
-          <Magnet />
-        </BotonBarra>
-        <div className="ml-auto flex items-center gap-2">
-          <BotonExportar escena={escena} {...(titulo ? { titulo } : {})} />
-          <Button type="button" size="sm" onClick={cerrar} data-dibujo-listo="">
-            <Check /> Listo
-          </Button>
-        </div>
-      </div>
+      <CintaEditor
+        contexto={contextoCinta}
+        lineas={lineasConector}
+        pestana={pestana}
+        onPestana={setPestana}
+        onOrden={ejecutarOrden}
+        onCambiarConector={cambiarConector}
+        onSalirALienzo={() => svgRef.current?.focus()}
+        acciones={<BotonExportar escena={escena} {...(titulo ? { titulo } : {})} />}
+      />
 
       <div className="flex min-h-0 flex-1">
-      <Paleta herramienta={herramienta} onElegir={elegirHerramienta} />
       <div ref={ventanaRef} className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-muted/50">
         <svg
           ref={svgRef}
@@ -1056,6 +970,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           onPointerMove={alMover}
           onPointerUp={alSoltar}
           onPointerCancel={alCancelarPuntero}
+          onPointerLeave={() => cursorEstado.current?.(null)}
           onDoubleClick={alDobleClic}
         >
           <g transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
@@ -1093,7 +1008,6 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
             />
           ) : null}
         </svg>
-        <BarraConector escena={escena} lineas={lineasConector} onCambiar={cambiarConector} />
         {edicion ? (
           <TextoEnSitio
             area={edicion.area}
@@ -1105,16 +1019,23 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           />
         ) : null}
       </div>
-      <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} />
+      <ZonaRedimensionable etiqueta="Propiedades" clave="dibujo-panel">
+        {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} />}
+      </ZonaRedimensionable>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t bg-card px-3 py-1 text-[11px] text-muted-foreground">
-        <span data-dibujo-estado="">
-          {cantidad === 0 ? "Lienzo vacío" : `${cantidad} ${cantidad === 1 ? "elemento" : "elementos"}`}
-          {hay ? ` · ${seleccion.length} ${seleccion.length === 1 ? "seleccionado" : "seleccionados"}` : ""}
-        </span>
-        <span>{ayudaDeHerramienta(herramienta, enCurso)}</span>
-      </div>
+      <BarraEstado
+        cantidad={cantidad}
+        seleccionados={seleccion.length}
+        marco={marcoEstado}
+        zoom={vista.zoom}
+        cuadricula={cuadricula}
+        imantar={imantar}
+        ayuda={ayudaDeHerramienta(herramienta, enCurso)}
+        onOrden={ejecutarOrden}
+        onZoom={(z) => acercar(z / vivo.current.vista.zoom)}
+        cursorRef={cursorEstado}
+      />
 
       <p id={ayudaId} className="sr-only">
         Flechas mueven lo seleccionado una unidad; con Mayús, diez. Tab recorre los elementos. Ctrl+Z deshace, Ctrl+Y rehace. Supr elimina. Escape quita la selección y, sin selección, cierra el editor.
