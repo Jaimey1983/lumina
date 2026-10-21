@@ -11,8 +11,8 @@ import { DIAGRAMA_NODE_TYPES } from './diagrama-shape-node.js';
 import { layoutCebolla, layoutEmbudo, layoutPiramide } from './layout-pedagogico.js';
 import type { GraphConnectAttempt, GraphNodePositionPatch } from '@lumina/editor-shared/graph-editor';
 import { normalizarEscena } from '@lumina/drawing';
-import { EditorLibreModal } from '../../elements/dibujo/editor/editor-libre-modal.js';
-import { DibujoSvg } from '../../widgets/dibujo/dibujo-render.js';
+import { EditorLibreModal } from './libre/editor/editor-libre-modal.js';
+import { DibujoSvg } from './libre/dibujo-render.js';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@lumina/ui/lib/utils';
 

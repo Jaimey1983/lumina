@@ -49,7 +49,7 @@ import {
   type DireccionLayout,
 } from './diagrama-dagre.js';
 import { NOMBRE_CONJUNTO_MAX, sanitizeEstilo } from './diagrama-defaults.js';
-import { descargarBlob, exportarDiagrama, nombreArchivo, svgAPng, type FormatoExportacion, type TemaExportacion } from './diagrama-export.js';
+import { exportarDiagrama, type FormatoExportacion, type TemaExportacion } from './diagrama-export.js';
 import { layoutCebolla, layoutEmbudo, layoutPiramide } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
@@ -73,9 +73,11 @@ import {
   createDefaultEmpatiaBlock,
 } from './diagrama-defaults.js';
 import { PALETAS_DIAGRAMA, aplicarPaletaADiagrama } from './diagrama-temas.js';
-import { escenaASvg, normalizarEscena, type Escena } from '@lumina/drawing';
-import { EditorLibreModal } from '../../elements/dibujo/editor/editor-libre-modal.js';
+import { normalizarEscena, type Escena } from '@lumina/drawing';
+import { EditorLibreModal } from './libre/editor/editor-libre-modal.js';
 import { diagramaAEscena } from './diagrama-escena.js';
+import { PLANTILLAS_EDITABLES } from './libre/plantillas.js';
+import { BotonExportar } from './libre/editor/exportar-panel.js';
 
 interface DiagramaPropertiesProps {
   block: DiagramaBlock;
@@ -647,6 +649,15 @@ function DiagramaPropertiesClasico({
     commitChange(newBlock, true);
   };
 
+  const handleLoadEditable = (plantillaId: string) => {
+    const plantilla = PLANTILLAS_EDITABLES.find((p) => p.id === plantillaId);
+    if (!plantilla) return;
+    commitChange(
+      plantilla.crear({ id: localBlock.id, x: localBlock.x, y: localBlock.y, ancho: localBlock.ancho, alto: localBlock.alto }),
+      true,
+    );
+  };
+
   const handleGenerateOutline = () => {
     if (!grafoBlock || !outlineText.trim()) return;
 
@@ -1161,6 +1172,33 @@ function DiagramaPropertiesClasico({
         </CollapsibleSection>
       )}
 
+      {/* W10: plantillas básicas que nacen como dibujo libre, totalmente modificables */}
+      <CollapsibleSection
+        title="Plantillas editables"
+        icon={PenTool}
+        defaultOpen={false}
+        storageKey="diagrama.plantillas-editables"
+        badge={PLANTILLAS_EDITABLES.length}
+        className="border-t border-border pt-3"
+      >
+        <p className="mb-1.5 text-[10px] leading-snug text-muted-foreground">
+          Empiezas con un dibujo listo y cambias lo que quieras: formas, flechas, conectores y texto.
+        </p>
+        <div className="grid grid-cols-2 gap-1.5" data-diagrama-plantillas-editables="">
+          {PLANTILLAS_EDITABLES.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => handleLoadEditable(tpl.id)}
+              className="flex flex-col items-start rounded border border-border/70 bg-card/60 p-2 text-left hover:bg-primary/5 hover:border-primary/50 transition-all"
+            >
+              <span className="font-semibold text-foreground text-[11px]">{tpl.label}</span>
+              <span className="text-[9px] text-muted-foreground line-clamp-1">{tpl.descripcion}</span>
+            </button>
+          ))}
+        </div>
+      </CollapsibleSection>
+
       {/* Plantillas Pedagógicas — colapsada por defecto (ver plantillasOpen) */}
       <CollapsibleSection
         title="Plantillas Pedagógicas"
@@ -1487,8 +1525,6 @@ function DiagramaPropertiesEscena({
   const [titulo, setTitulo] = useState(block.titulo ?? '');
   const [descripcion, setDescripcion] = useState(block.descripcionAccesible ?? '');
   const [confirmando, setConfirmando] = useState(false);
-  const [exportando, setExportando] = useState<FormatoExportacion | null>(null);
-  const [exportError, setExportError] = useState<string | null>(null);
   const temporizador = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -1520,22 +1556,6 @@ function DiagramaPropertiesEscena({
       const { escena: _descartada, ...resto } = b as DiagramaBlock;
       return resto as Block;
     });
-  };
-
-  const exportar = async (formato: FormatoExportacion) => {
-    if (exportando) return;
-    setExportando(formato);
-    setExportError(null);
-    try {
-      const escena: Escena = { ...normalizarEscena(block.escena), fondo: normalizarEscena(block.escena).fondo ?? '#FFFFFF' };
-      const { svg, ancho, alto } = escenaASvg(escena, { modo: 'claro', titulo: titulo || 'Diagrama' });
-      const blob = formato === 'svg' ? new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }) : await svgAPng(svg, ancho, alto);
-      descargarBlob(blob, nombreArchivo({ titulo }, formato));
-    } catch (error) {
-      setExportError(error instanceof Error ? error.message : 'No se pudo exportar el dibujo.');
-    } finally {
-      setExportando(null);
-    }
   };
 
   return (
@@ -1586,15 +1606,7 @@ function DiagramaPropertiesEscena({
 
       <div className="space-y-2 border-t border-border pt-3">
         <div className="font-semibold text-foreground">Descargar</div>
-        <div className="flex gap-2">
-          <Button type="button" size="sm" variant="outline" disabled={exportando !== null} onClick={() => void exportar('svg')} className="h-7 flex-1 text-xs">
-            <Download /> SVG
-          </Button>
-          <Button type="button" size="sm" variant="outline" disabled={exportando !== null} onClick={() => void exportar('png')} className="h-7 flex-1 text-xs">
-            <Download /> PNG
-          </Button>
-        </div>
-        {exportError ? <p className="text-[10px] text-destructive">{exportError}</p> : null}
+        <BotonExportar escena={normalizarEscena(block.escena)} {...(titulo ? { titulo } : {})} {...(descripcion ? { descripcion } : {})} />
       </div>
 
       <div className="space-y-2 border-t border-border pt-3">

@@ -40,9 +40,11 @@ export interface CintaEditorProps {
   onCambiarConector: (nueva: Escena) => void;
   /** F6 más allá de la cinta: el foco vuelve al lienzo. */
   onSalirALienzo: () => void;
+  /** Acciones propias del editor que van junto a «Listo» (hoy, «Exportar», de W9, con su propio desplegable). */
+  acciones?: ReactNode;
 }
 
-export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onCambiarConector, onSalirALienzo }: CintaEditorProps): ReactElement {
+export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onCambiarConector, onSalirALienzo, acciones }: CintaEditorProps): ReactElement {
   /** Botón de un comando del registro. */
   const boton = (id: string, size: "large" | "medium" | "small" = "medium", icono?: ReactNode): ReactElement => {
     const def = comando(id);
@@ -213,7 +215,10 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onC
         </QuickAccessBar>
       }
       trailing={
-        <RibbonButton label={listo.etiqueta} size="medium" icon={listo.icono ? <listo.icono /> : undefined} data-dibujo-listo="" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => onOrden(listo.orden)} />
+        <>
+          {acciones}
+          <RibbonButton label={listo.etiqueta} size="medium" icon={listo.icono ? <listo.icono /> : undefined} data-dibujo-listo="" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => onOrden(listo.orden)} />
+        </>
       }
     />
   );

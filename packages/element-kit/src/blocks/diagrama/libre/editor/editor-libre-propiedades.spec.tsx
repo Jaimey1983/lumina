@@ -409,3 +409,29 @@ describe("deslizadores", () => {
     expect(m.onCambio).not.toHaveBeenCalled();
   });
 });
+
+describe("descripción para lectores de pantalla en el editor", () => {
+  const campoDescripcion = (): HTMLTextAreaElement => un([...document.querySelectorAll<HTMLTextAreaElement>("textarea")].filter((t) => t.getAttribute("aria-label") === "Descripción para lectores de pantalla"), "descripción");
+
+  it("escribirla y salir del campo es UNA entrada, se ve como <title> del elemento y se deshace", () => {
+    const m = montar(base());
+    clic(m, 150, 130);
+    fireEvent.change(campoDescripcion(), { target: { value: "Caja roja de inicio" } });
+    expect(m.onCambio).not.toHaveBeenCalled();
+    fireEvent.blur(campoDescripcion());
+    expect(m.onCambio).toHaveBeenCalledTimes(1);
+    expect(m.ultima().elementos.find((x) => x.id === "A")?.descripcion).toBe("Caja roja de inicio");
+    expect(forma_("A")?.querySelector("title")?.textContent).toBe("Caja roja de inicio");
+    deshacer(m);
+    expect(forma_("A")?.querySelector("title")?.textContent).toBe("Caja A"); // vuelve al nombre
+  });
+
+  it("lo que se teclea en el campo no toca el editor (Supr no borra la forma)", () => {
+    const m = montar(base());
+    clic(m, 150, 130);
+    fireEvent.keyDown(campoDescripcion(), { key: "Delete" });
+    fireEvent.keyDown(campoDescripcion(), { key: "Escape" });
+    expect(forma_("A")).not.toBeNull();
+    expect(m.onCambio).not.toHaveBeenCalled();
+  });
+});

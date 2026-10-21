@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactElement } from "react";
-import type { Contorno, Escena, Relleno, Sombra } from "@lumina/drawing";
+import { useEffect, useState, type ReactElement } from "react";
+import { LIMITES, type Contorno, type Escena, type Relleno, type Sombra } from "@lumina/drawing";
 import { CollapsibleSection, type CollapsibleSectionProps } from "@lumina/ui/collapsible-section";
 import { FieldHelp } from "@lumina/ui/field-help";
 import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Italic, PanelRightClose, Underline } from "lucide-react";
@@ -12,7 +12,9 @@ import {
   conRadio,
   conRelleno,
   conSombra,
+  elementoUnico,
   fijarContorno,
+  fijarDescripcion,
   fijarGeometria,
   fijarOpacidad,
   fijarRadio,
@@ -82,6 +84,25 @@ function Seccion({ children, ...props }: CollapsibleSectionProps): ReactElement 
   );
 }
 
+/** Descripción para lectores de pantalla del elemento elegido: se guarda al salir del campo (una sola entrada de historial). */
+function CampoDescripcion({ id, valor, onGuardar }: { id: string; valor: string; onGuardar: (texto: string) => void }): ReactElement {
+  const [borrador, setBorrador] = useState(valor);
+  useEffect(() => setBorrador(valor), [id, valor]);
+  return (
+    <textarea
+      aria-label="Descripción para lectores de pantalla"
+      className="min-h-16 w-full resize-y rounded-md border bg-background px-2 py-1.5 text-xs outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+      value={borrador}
+      maxLength={LIMITES.descripcion}
+      placeholder="Cuenta con palabras qué es o qué hace este elemento."
+      onChange={(e) => setBorrador(e.target.value)}
+      onBlur={() => {
+        if (borrador.trim() !== valor.trim()) onGuardar(borrador);
+      }}
+    />
+  );
+}
+
 function CampoGrid(props: Parameters<typeof CampoNumero>[0]): ReactElement {
   return (
     <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
@@ -134,6 +155,7 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
   const fuente = et("fuente");
   const fuenteConocida = fuente && !fuente.mixto && FUENTES.some((f) => f.valor === fuente.valor);
 
+  const unico = elementoUnico(escena, seleccion);
   const geometria = leerGeometria(escena, seleccion);
   const geometriaBloqueada = bloqueadas;
   const campoGeo = (campo: CampoGeometria) => (n: number) => onAplicar((e) => fijarGeometria(e, seleccion, campo, n));
@@ -483,6 +505,22 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
                 onVista={(color) => onVista((e) => fijarTexto(e, editables, { color }))}
                 onFin={onFinVista}
               />
+            </div>
+          </Seccion>
+        </div>
+      ) : null}
+
+      {unico ? (
+        <div className="border-t px-3">
+          <Seccion title="Accesibilidad" storageKey="dibujo-accesibilidad" defaultOpen>
+            <div className="space-y-2">
+              <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                Descripción de este elemento
+                <FieldHelp label="Descripción para lectores de pantalla">
+                  <p>Lo que oye una persona que no ve el dibujo. Se exporta como título del elemento en el SVG y se lee en la lista de elementos del dibujo. Si la dejas en blanco se usa el nombre del elemento o su texto.</p>
+                </FieldHelp>
+              </p>
+              <CampoDescripcion id={unico.id} valor={unico.descripcion ?? ""} onGuardar={(texto) => onAplicar((e) => fijarDescripcion(e, unico.id, texto))} />
             </div>
           </Seccion>
         </div>

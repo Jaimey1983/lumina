@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { esColorValido } from "@lumina/drawing";
 import { Slider, SliderThumb } from "@lumina/ui/slider";
-import { PALETAS_DIAGRAMA } from "../../../blocks/diagrama/diagrama-temas.js";
+import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import type { Valor } from "./propiedades.js";
 
 const claseCampo = "h-8 w-full rounded-md border bg-background px-2 text-xs outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
