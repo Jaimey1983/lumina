@@ -26,7 +26,7 @@ describe("cinta del editor", () => {
 
   it("todos los comandos que antes tenían botón siguen teniéndolo, cada uno en su pestaña (ningún botón desaparece)", () => {
     montar();
-    const sinBoton = new Set(["seleccionar-todo", "listo"]);
+    const sinBoton = new Set(["seleccionar-todo", "listo", "buscar-comando"]);
     const faltan: string[] = [];
     for (const nombre of ["Inicio", "Insertar", "Organizar", "Vista"]) {
       irAPestana(nombre);
@@ -36,7 +36,7 @@ describe("cinta del editor", () => {
     for (const c of COMANDOS) if (!sinBoton.has(c.id)) faltan.push(c.id);
     expect(faltan).toEqual([]);
     // Deshacer y Rehacer están siempre a la vista (barra de acceso rápido) y «Listo» a la derecha de las pestañas.
-    expect(within(screen.getByRole("toolbar", { name: "Acceso rápido" })).getAllByRole("button").map((b) => b.getAttribute("data-comando"))).toEqual(["deshacer", "rehacer"]);
+    expect(within(screen.getByRole("toolbar", { name: "Acceso rápido" })).getAllByRole("button").map((b) => b.getAttribute("data-comando"))).toEqual(["buscar-comando", "deshacer", "rehacer"]);
     expect(document.querySelector("[data-dibujo-listo]")).toBeTruthy();
   });
 

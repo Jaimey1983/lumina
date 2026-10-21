@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { depurarSeleccion, ejecutarComando, elegibles, ordenDeTecla, type TeclaEvento } from "./comandos.js";
+import { ATAJOS_DE_NAVEGACION, depurarSeleccion, ejecutarComando, elegibles, ordenDeTecla, type TeclaEvento } from "./comandos.js";
 import { escena, forma, getForma, grupo, ids } from "./util-pruebas.js";
 
 const tecla = (key: string, extra: Partial<TeclaEvento> = {}): TeclaEvento => ({ key, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...extra });
@@ -123,5 +123,20 @@ describe("ejecutarComando", () => {
 
   it("depurarSeleccion descarta ids que ya no existen", () => {
     expect(depurarSeleccion(base, ["a", "zzz", "c"])).toEqual(["a", "c"]);
+  });
+
+  it("ATAJOS_DE_NAVEGACION coincide con ordenDeTecla en las teclas que aplica", () => {
+    for (const fila of ATAJOS_DE_NAVEGACION) {
+      if (!fila.tecla || !fila.tipoOrden) continue;
+      const orden = ordenDeTecla(fila.tecla);
+      expect(orden?.tipo).toBe(fila.tipoOrden);
+      if (orden?.tipo === "mover" && fila.ordenExtra && "dx" in fila.ordenExtra) {
+        if (fila.ordenExtra.dx !== undefined) expect(orden.dx).toBe(fila.ordenExtra.dx);
+        if (fila.ordenExtra.dy !== undefined) expect(orden.dy).toBe(fila.ordenExtra.dy);
+      }
+      if (orden?.tipo === "siguiente" && fila.ordenExtra && "atras" in fila.ordenExtra) {
+        expect(orden.atras).toBe(fila.ordenExtra.atras);
+      }
+    }
   });
 });

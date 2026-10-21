@@ -37,7 +37,9 @@ import {
 } from "@lumina/drawing";
 import { NodosSvg } from "../dibujo-render.js";
 import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
+import { BuscadorComandos } from "./buscador-comandos.js";
 import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO } from "./cinta-editor.js";
+import { PanelAtajos } from "./panel-atajos.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
 import {
@@ -257,6 +259,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [recuadro, setRecuadro] = useState<{ x: number; y: number; ancho: number; alto: number } | null>(null);
   const [cuadricula, setCuadricula] = useState(false);
   const [imantar, setImantar] = useState(true);
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false);
+  const [atajosAbiertos, setAtajosAbiertos] = useState(false);
   const [cursor, setCursor] = useState("default");
   const [anuncio, setAnuncio] = useState("");
   const [, setVersionHistorial] = useState(0);
@@ -282,6 +286,22 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   // Estado «actual» para los manejadores de eventos (evita cierres con valores viejos).
   const vivo = useRef({ escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso });
   vivo.current = { escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso };
+
+  // El panel de propiedades detiene la propagación del teclado; Ctrl+K debe abrir el buscador igual desde sus campos.
+  useEffect(() => {
+    const abrirBuscador = (e: KeyboardEvent): void => {
+      if (e.key !== "k" && e.key !== "K") return;
+      if (!e.ctrlKey && !e.metaKey) return;
+      const raiz = (e.target as Element | null)?.closest?.("[data-dibujo-editor]");
+      if (!raiz) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setAtajosAbiertos(false);
+      setBuscadorAbierto(true);
+    };
+    window.addEventListener("keydown", abrirBuscador, true);
+    return () => window.removeEventListener("keydown", abrirBuscador, true);
+  }, []);
 
   // Las líneas en ángulo recto o curvas no van en línea recta entre sus extremos: lo que se ve (cajas, clics) se calcula sobre su recorrido real.
   const escenaRutas = useMemo(() => escenaConRutas(escena), [escena]);
@@ -839,6 +859,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       case "imantar":
         setImantar((v) => !v);
         return;
+      case "buscar-comando":
+        setAtajosAbiertos(false);
+        setBuscadorAbierto(true);
+        return;
+      case "ver-atajos":
+        setBuscadorAbierto(false);
+        setAtajosAbiertos(true);
+        return;
       case "terminar":
         cerrar();
         return;
@@ -872,7 +900,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     // Nada de lo que se teclea aquí debe llegar al editor de diapositivas (Supr borraría el bloque, Ctrl+Z deshace la clase…).
     e.stopPropagation();
     const objetivo = e.target as HTMLElement;
-    if (objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.tagName === "SELECT" || objetivo.isContentEditable) return;
+    const esCampo = objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.tagName === "SELECT" || objetivo.isContentEditable;
+    if (buscadorAbierto || atajosAbiertos) return;
+    if (esCampo) return;
     if (e.key === " " && (objetivo as Element) === svgRef.current) {
       espacio.current = true;
       setCursor("grab");
@@ -1043,6 +1073,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       <div aria-live="polite" role="status" className="sr-only" data-dibujo-anuncio="">
         {anuncio}
       </div>
+      <BuscadorComandos
+        abierto={buscadorAbierto}
+        onCerrar={() => setBuscadorAbierto(false)}
+        contexto={contextoCinta}
+        ejecutarOrden={ejecutarOrden}
+        focoLienzo={() => svgRef.current?.focus()}
+      />
+      <PanelAtajos abierto={atajosAbiertos} onCerrar={() => setAtajosAbiertos(false)} focoLienzo={() => svgRef.current?.focus()} />
     </div>
   );
 }

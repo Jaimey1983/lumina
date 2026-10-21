@@ -31,6 +31,8 @@ import {
   Spline,
   Trash2,
   Type,
+  Keyboard,
+  Search,
   Undo2,
   Ungroup,
   ZoomIn,
@@ -164,6 +166,8 @@ export const COMANDOS: readonly DefinicionComando[] = [
   { id: "ajustar-vista", etiqueta: "Ajustar a la ventana", icono: Maximize, grupo: "vista", orden: { tipo: "ajustar-vista" } },
   { id: "cuadricula", etiqueta: "Cuadrícula", icono: Grid3x3, grupo: "vista", orden: { tipo: "cuadricula" }, activo: (c) => c.cuadricula },
   { id: "imantar", etiqueta: "Imantar a otros elementos", icono: Magnet, grupo: "vista", orden: { tipo: "imantar" }, activo: (c) => c.imantar },
+  { id: "buscar-comando", etiqueta: "Buscar comando", icono: Search, grupo: "vista", atajos: [ctrl("k")], orden: { tipo: "buscar-comando" } },
+  { id: "atajos", etiqueta: "Atajos de teclado", icono: Keyboard, grupo: "vista", atajos: [{ tecla: "?", shift: true }], orden: { tipo: "ver-atajos" } },
 
   // Cierre
   { id: "listo", etiqueta: "Listo", icono: Check, grupo: "cierre", orden: { tipo: "terminar" } },
@@ -202,10 +206,18 @@ export function comandoDeTecla(e: TeclaEvento): DefinicionComando | null {
 
 const NOMBRE_TECLA: Record<string, string> = { Delete: "Supr", Backspace: "Retroceso" };
 
-/** El atajo en texto para mostrar («Ctrl+Mayús+G»), o `undefined` si el comando no tiene. */
-export function textoDeAtajo(def: DefinicionComando): string | undefined {
-  const a = def.atajos?.[0];
-  if (!a) return undefined;
+function textoDeUnAtajo(a: Atajo): string {
   const tecla = NOMBRE_TECLA[a.tecla] ?? (a.tecla.length === 1 ? a.tecla.toUpperCase() : a.tecla);
   return [a.ctrl ? "Ctrl" : null, a.shift ? "Mayús" : null, a.alt ? "Alt" : null, tecla].filter(Boolean).join("+");
+}
+
+/** Todas las combinaciones en texto (la cinta muestra solo la primera vía `textoDeAtajo`). */
+export function textosDeAtajos(def: DefinicionComando): string[] {
+  if (!def.atajos?.length) return [];
+  return def.atajos.map(textoDeUnAtajo);
+}
+
+/** El atajo en texto para mostrar («Ctrl+Mayús+G»), o `undefined` si el comando no tiene. */
+export function textoDeAtajo(def: DefinicionComando): string | undefined {
+  return textosDeAtajos(def)[0];
 }

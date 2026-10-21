@@ -10,12 +10,54 @@ import type { ReactElement, ReactNode } from "react";
 import { formasPorGrupo, trazadoForma, type Escena, type Linea, type TipoForma } from "@lumina/drawing";
 import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup } from "@lumina/ui/ribbon";
 import { CornerDownRight, Minus, Spline } from "lucide-react";
-import { comando, estadoComando, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
+import { COMANDOS, comando, estadoComando, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { Orden } from "./comandos.js";
 import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, valorComun } from "./conectores.js";
 
 export const PESTANA_INICIO = "inicio";
 export const PESTANA_CONECTOR = "conector";
+
+/** Orden de secciones en el panel de atajos (Y5); una sola fuente con la cinta. */
+export const ORDEN_PESTANAS_ATAJOS = ["Historial", "Inicio", "Insertar", "Organizar", "Vista", "Edición general", "Navegación y ratón"] as const;
+
+const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
+  deshacer: "Historial",
+  rehacer: "Historial",
+  seleccionar: "Inicio",
+  linea: "Inicio",
+  flecha: "Inicio",
+  texto: "Inicio",
+  duplicar: "Inicio",
+  eliminar: "Inicio",
+  agrupar: "Organizar",
+  desagrupar: "Organizar",
+  "orden-frente": "Organizar",
+  "orden-subir": "Organizar",
+  "orden-bajar": "Organizar",
+  "orden-fondo": "Organizar",
+  "alinear-izquierda": "Organizar",
+  "alinear-centro": "Organizar",
+  "alinear-derecha": "Organizar",
+  "alinear-arriba": "Organizar",
+  "alinear-medio": "Organizar",
+  "alinear-abajo": "Organizar",
+  "distribuir-horizontal": "Organizar",
+  "distribuir-vertical": "Organizar",
+  alejar: "Vista",
+  acercar: "Vista",
+  "ajustar-vista": "Vista",
+  cuadricula: "Vista",
+  imantar: "Vista",
+  "buscar-comando": "Edición general",
+  atajos: "Vista",
+  "seleccionar-todo": "Edición general",
+};
+
+/** Pestaña de la cinta donde vive cada comando (para el panel de atajos). */
+export const PESTANA_POR_COMANDO: Readonly<Record<string, string>> = {
+  ...BASE_PESTANA_POR_COMANDO,
+  ...Object.fromEntries(COMANDOS.filter((c) => c.id.startsWith("forma-")).map((c) => [c.id, "Insertar"])),
+};
 
 const ANCHO_MINIATURA = 30;
 const ALTO_MINIATURA = 22;
@@ -170,6 +212,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onC
           <RibbonGroup label="Ayudas">
             {boton("cuadricula", "large")}
             {boton("imantar", "large")}
+            {boton("atajos", "medium")}
           </RibbonGroup>
         </>
       ),
@@ -210,6 +253,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onC
       onNavigateOut={onSalirALienzo}
       quickAccess={
         <QuickAccessBar label="Acceso rápido">
+          {boton("buscar-comando", "small")}
           {boton("deshacer", "small")}
           {boton("rehacer", "small")}
         </QuickAccessBar>
