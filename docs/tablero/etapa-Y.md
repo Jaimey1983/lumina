@@ -99,8 +99,8 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 - **Cierre:** ninguno.
 
 #### Y8 — Asas «+» de hijo rápido
-- **Operador:** Claude Code
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** [en curso: Cursor]
 - **Precondición:** Y7 `hecho`.
 - **Alcance — PUEDE tocar:** `editor/` (nuevo `asas-hijo.tsx` y `hijo-rapido.ts` puro; `editor-libre.tsx` para montar la capa), `packages/drawing/src/operaciones/` (solo `crearHijo(escena, formaId, lado)` puro), specs.
 - **Entregable:** al elegir **una** forma aparecen cuatro flechas «+» en sus lados. **Clic** → crea una forma del mismo estilo y tamaño, en esa dirección a distancia fija, ya conectada y con el texto en edición. **Arrastrar** a una forma existente → conecta; a un espacio vacío → crea la forma nueva en el punto y la conecta. No aparecen en elementos bloqueados, líneas ni selección múltiple. Pruebas: la forma nueva queda conectada al puerto del lado correcto, no se superpone con otra existente (se desplaza hasta un hueco), una sola entrada de historial, texto en edición al crear. Verificación: la de Y2.
