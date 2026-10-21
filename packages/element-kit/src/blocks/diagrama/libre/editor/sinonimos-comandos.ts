@@ -1,0 +1,33 @@
+// Sinónimos de búsqueda por id de comando (Y5). La etiqueta oficial sigue en el registro; acá solo ayudas al buscador.
+
+/** Palabras alternativas por comando (minúsculas, sin acentos en el mapa; la consulta se normaliza igual). */
+export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> = {
+  "alinear-izquierda": ["alinear"],
+  "alinear-centro": ["alinear"],
+  "alinear-derecha": ["alinear"],
+  "alinear-arriba": ["alinear"],
+  "alinear-medio": ["alinear"],
+  "alinear-abajo": ["alinear"],
+  eliminar: ["borrar", "quitar", "suprimir"],
+  duplicar: ["copiar", "clonar"],
+  agrupar: ["juntar", "unir"],
+  desagrupar: ["separar", "desunir"],
+  "orden-frente": ["capa", "apilar", "frente"],
+  "orden-subir": ["capa", "apilar", "frente"],
+  "orden-bajar": ["capa", "apilar", "fondo"],
+  "orden-fondo": ["capa", "apilar", "fondo"],
+  acercar: ["zoom", "ampliar", "lupa"],
+  alejar: ["zoom", "reducir", "lupa"],
+  "ajustar-vista": ["zoom", "lupa"],
+  cuadricula: ["rejilla"],
+  imantar: ["iman", "magnetico"],
+  flecha: ["flecha"],
+  "forma-flecha-derecha": ["flecha"],
+  "forma-flecha-izquierda": ["flecha"],
+  "forma-flecha-doble": ["flecha"],
+  "forma-rectangulo": ["caja", "cuadro"],
+  "forma-rectangulo-redondeado": ["caja", "cuadro"],
+  listo: ["terminar", "cerrar", "guardar"],
+  deshacer: ["atras"],
+  rehacer: ["adelante"],
+};

@@ -52,7 +52,9 @@ export type Orden =
   | { tipo: "imantar" }
   /** «Listo»: cierra el editor y devuelve la escena (a diferencia de Escape, que primero suelta lo que haya). */
   | { tipo: "terminar" }
-  | { tipo: "aceptar" };
+  | { tipo: "aceptar" }
+  | { tipo: "buscar-comando" }
+  | { tipo: "ver-atajos" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
@@ -142,6 +144,23 @@ export interface TeclaEvento {
 /** Paso de las flechas, en unidades de escena. Con Mayús es más grande. */
 export const PASO_FLECHA = 1;
 export const PASO_FLECHA_MAYUS = 10;
+
+/** Atajos que no son comandos del registro; deben coincidir con `ordenDeTecla` donde aplique (prueba en comandos.spec). */
+export const ATAJOS_DE_NAVEGACION: readonly {
+  descripcion: string;
+  etiquetaTeclas: string;
+  tecla?: TeclaEvento;
+  tipoOrden?: Orden["tipo"];
+  ordenExtra?: Partial<Pick<Extract<Orden, { tipo: "mover" }>, "dx" | "dy">> | Partial<Pick<Extract<Orden, { tipo: "siguiente" }>, "atras">>;
+}[] = [
+  { descripcion: "Mover selección 1 unidad", etiquetaTeclas: "Flechas", tecla: { key: "ArrowRight", ctrlKey: false, metaKey: false, shiftKey: false, altKey: false }, tipoOrden: "mover", ordenExtra: { dx: PASO_FLECHA, dy: 0 } },
+  { descripcion: "Mover selección 10 unidades", etiquetaTeclas: "Mayús + flechas", tecla: { key: "ArrowDown", ctrlKey: false, metaKey: false, shiftKey: true, altKey: false }, tipoOrden: "mover", ordenExtra: { dy: PASO_FLECHA_MAYUS } },
+  { descripcion: "Recorrer elementos", etiquetaTeclas: "Tab / Mayús+Tab", tecla: { key: "Tab", ctrlKey: false, metaKey: false, shiftKey: false, altKey: false }, tipoOrden: "siguiente", ordenExtra: { atras: false } },
+  { descripcion: "Aceptar línea en curso", etiquetaTeclas: "Enter", tecla: { key: "Enter", ctrlKey: false, metaKey: false, shiftKey: false, altKey: false }, tipoOrden: "aceptar" },
+  { descripcion: "Cancelar / cerrar / deseleccionar", etiquetaTeclas: "Escape", tecla: { key: "Escape", ctrlKey: false, metaKey: false, shiftKey: false, altKey: false }, tipoOrden: "cerrar" },
+  { descripcion: "Desplazar el lienzo", etiquetaTeclas: "Espacio + arrastrar" },
+  { descripcion: "Zoom con la rueda", etiquetaTeclas: "Ctrl + rueda" },
+];
 
 /**
  * Orden que pide una tecla, o `null` si la tecla no significa nada para el editor. Los comandos
