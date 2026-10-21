@@ -3,9 +3,11 @@
 // con colores ya resueltos (un archivo suelto no tiene variables CSS). Las
 // medidas de los nodos son estimaciones de las que dibuja el lienzo.
 
+import { trazadoForma } from '@lumina/drawing';
 import type { DiagramaGrafoBlock, DiagramaNodo, DiagramaNodoForma } from '@lumina/types/slide';
 
 import { diagramaToGraphModel } from './diagrama-bridge.js';
+import { EQUIVALENCIAS, radioDeForma } from './diagrama-formas.js';
 import { resolverEstiloDiagrama } from './diagrama-temas.js';
 
 export type TemaExportacion = 'claro' | 'oscuro';
@@ -148,45 +150,11 @@ export function medirNodo(n: DiagramaNodo): Caja {
 
 // ─── Dibujo de nodos ──────────────────────────────────────────────────────────
 
-// TODO(W10): esta geometría está duplicada en `@lumina/drawing` (`packages/drawing/src/formas/catalogo.ts`);
-// borrar `formaSvg` cuando W10 apoye la exportación del diagrama en el paquete nuevo.
 function formaSvg(forma: DiagramaNodoForma, c: Caja, relleno: string, borde: string): string {
-  const { x, y, ancho: w, alto: h } = c;
-  const attrs = `fill="${relleno}" stroke="${borde}" stroke-width="2"`;
-  const pts = (puntos: Array<[number, number]>) =>
-    `<polygon points="${puntos.map(([px, py]) => `${redondear(px)},${redondear(py)}`).join(' ')}" ${attrs}/>`;
-
-  switch (forma) {
-    case 'rect':
-      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" ${attrs}/>`;
-    case 'pill':
-    case 'chip':
-      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" ${attrs}/>`;
-    case 'root':
-      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" ${attrs}/>`;
-    case 'diamond':
-      return pts([[x + w / 2, y], [x + w, y + h / 2], [x + w / 2, y + h], [x, y + h / 2]]);
-    case 'ellipse':
-      return `<ellipse cx="${redondear(x + w / 2)}" cy="${redondear(y + h / 2)}" rx="${redondear(w / 2)}" ry="${redondear(h / 2)}" ${attrs}/>`;
-    case 'circle':
-      return `<ellipse cx="${redondear(x + w / 2)}" cy="${redondear(y + h / 2)}" rx="${redondear(w / 2)}" ry="${redondear(h / 2)}" ${attrs}/>`;
-    case 'hexagon': {
-      const k = w * 0.16;
-      return pts([[x + k, y], [x + w - k, y], [x + w, y + h / 2], [x + w - k, y + h], [x + k, y + h], [x, y + h / 2]]);
-    }
-    case 'parallelogram': {
-      const k = w * 0.12;
-      return pts([[x + k, y], [x + w, y], [x + w - k, y + h], [x, y + h]]);
-    }
-    case 'trapezoid':
-      return pts([[x + w * 0.04, y], [x + w * 0.96, y], [x + w, y + h], [x, y + h]]);
-    case 'inverted-trapezoid':
-      return pts([[x, y], [x + w, y], [x + w * 0.96, y + h], [x + w * 0.04, y + h]]);
-    case 'triangle':
-      return pts([[x + w / 2, y], [x + w, y + h], [x, y + h]]);
-    default:
-      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" ${attrs}/>`;
-  }
+  // El círculo del diagrama siempre se exportó como elipse que llena su caja; se conserva (la escena usa el círculo inscrito).
+  const eq = forma === 'circle' ? { forma: 'elipse' as const } : (EQUIVALENCIAS[forma] ?? EQUIVALENCIAS.rounded);
+  const d = trazadoForma(eq.forma, c.ancho, c.alto, { parametros: eq.parametros, radio: radioDeForma(eq, c.alto) });
+  return `<path d="${d}" transform="translate(${redondear(c.x)} ${redondear(c.y)})" fill="${relleno}" stroke="${borde}" stroke-width="2"/>`;
 }
 
 function textoNodo(n: DiagramaNodo, c: Caja, colorTexto: string, colorSuave: string): string {

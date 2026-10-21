@@ -35,7 +35,7 @@ import {
   type Punto,
   type PuertoCercano,
 } from "@lumina/drawing";
-import { NodosSvg } from "../../../widgets/dibujo/dibujo-render.js";
+import { NodosSvg } from "../dibujo-render.js";
 import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
 import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO } from "./cinta-editor.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
@@ -69,6 +69,7 @@ import {
   sinConectoresQueSiguen,
   type GestoConector,
 } from "./conectores.js";
+import { BotonExportar } from "./exportar-panel.js";
 import { PanelPropiedades } from "./propiedades-panel.js";
 import { ZonaRedimensionable } from "./zona-redimensionable.js";
 import { TextoEnSitio } from "./texto-en-sitio.js";
@@ -952,6 +953,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         onOrden={ejecutarOrden}
         onCambiarConector={cambiarConector}
         onSalirALienzo={() => svgRef.current?.focus()}
+        acciones={<BotonExportar escena={escena} {...(titulo ? { titulo } : {})} />}
       />
 
       <div className="flex min-h-0 flex-1">

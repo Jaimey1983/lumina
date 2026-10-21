@@ -15,7 +15,6 @@ import {
   ListCollapse,
   MessageSquare,
   MousePointer2,
-  PenTool,
   QrCode,
   PanelTop,
   RotateCw,
@@ -193,24 +192,9 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     rowClassName: 'hover:bg-slate-50/90 dark:hover:bg-slate-950/25',
     iconClassName: 'text-slate-700 dark:text-slate-300',
   },
-  dibujo: {
-    group: 'lienzo',
-    Icon: PenTool,
-    rowClassName: 'hover:bg-sky-50/90 dark:hover:bg-sky-950/25',
-    iconClassName: 'text-sky-600 dark:text-sky-400',
-  },
 };
 
-/**
- * Tipos registrados que no se ofrecen en el panel. `dibujo` es andamiaje de la
- * etapa W (el editor de dibujo vive dentro del bloque `diagrama`, DW11); se
- * retira del todo en W10.
- */
-const TIPOS_OCULTOS_DEL_PANEL: readonly WidgetTipo[] = ['dibujo'];
-
-export const WIDGET_PANEL_ITEMS: WidgetPanelItem[] = WIDGET_TIPOS.filter(
-  (type) => !TIPOS_OCULTOS_DEL_PANEL.includes(type),
-).map((type) => ({
+export const WIDGET_PANEL_ITEMS: WidgetPanelItem[] = WIDGET_TIPOS.map((type) => ({
   type,
   label: widgetLabel(type),
   ...WIDGET_PANEL_META[type],

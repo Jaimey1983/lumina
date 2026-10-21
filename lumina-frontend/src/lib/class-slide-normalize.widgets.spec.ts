@@ -259,4 +259,39 @@ describe('widget hydrate + persist (PR A)', () => {
     }
     expect((bloques[2]?.configuracion?.pasos as unknown[]).length).toBeGreaterThan(0);
   });
+
+  it('W10: un dibujo guardado con el tipo transitorio `dibujo` se abre como diagrama con su escena, en su lugar', () => {
+    const crudo = {
+      id: 'dib-1',
+      tipo: 'dibujo',
+      x: 5,
+      y: 6,
+      ancho: 70,
+      alto: 50,
+      titulo: 'Mi dibujo',
+      escena: { elementos: [{ tipo: 'forma', id: 'a', forma: 'elipse', texto: 'Hola', transformacion: { x: 10, y: 10, ancho: 100, alto: 60, rotacion: 0 } }] },
+    };
+    const [bloque] = (classSlideToRendererSlide(apiSlide([crudo])).bloques ?? []) as unknown as Array<{
+      tipo: string;
+      id?: string;
+      x: number;
+      y: number;
+      ancho: number;
+      alto: number;
+      titulo?: string;
+      escena?: { elementos: Array<{ id: string; texto?: string }> };
+    }>;
+
+    expect(bloque?.tipo).toBe('diagrama');
+    expect(bloque?.id).toBe('dib-1');
+    expect([bloque?.x, bloque?.y, bloque?.ancho, bloque?.alto]).toEqual([5, 6, 70, 50]);
+    expect(bloque?.titulo).toBe('Mi dibujo');
+    expect(bloque?.escena?.elementos.map((e) => [e.id, e.texto])).toEqual([['a', 'Hola']]);
+  });
+
+  it('W10: un diagrama de siempre (sin escena) se hidrata igual que antes: no gana escena', () => {
+    const [bloque] = (classSlideToRendererSlide(apiSlide([{ id: 'd-1', tipo: 'diagrama', subtipo: 'flujo', modo: 'contenido', soloLecturaEnViewer: true, nodos: [{ id: 'n1', etiqueta: 'Inicio', x: 0, y: 0 }], aristas: [] }])).bloques ?? []) as unknown as Array<Record<string, unknown>>;
+    expect(bloque?.tipo).toBe('diagrama');
+    expect('escena' in (bloque ?? {})).toBe(false);
+  });
 });
