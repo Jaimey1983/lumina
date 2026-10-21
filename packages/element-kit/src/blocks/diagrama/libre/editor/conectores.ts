@@ -6,13 +6,14 @@
 
 import {
   actualizar,
-  agregar,
   cambiarEstilo,
   elementoEn,
   insertarVia,
   moverVia,
   puertoCercano,
   puertosDeEscena,
+  conectarFormas,
+  existeConector,
   puertosParaConectar,
   puntoDePuerto,
   puntoMedio,
@@ -236,9 +237,7 @@ export function formaEnHalo(escena: Escena, punto: Punto, zoom: number, arrastra
   return mejor ? mejor.id : null;
 }
 
-/** ¿Ya hay un conector que va de `padreId` a `hijaId`? (el sentido contrario no cuenta) */
-export const existeConector = (escena: Escena, padreId: string, hijaId: string): boolean =>
-  escena.elementos.some((e) => e.tipo === "linea" && e.origen?.elementoId === padreId && e.destino?.elementoId === hijaId);
+export { existeConector };
 
 export interface IntencionDeSoltar {
   /** Forma sobre la que va lo que se arrastra (se resalta), o `null`. */
@@ -278,27 +277,8 @@ export function intencionDeArrastre(
   return { destino, conecta: true, previa: { desde: puntoDePuerto(padre, par.origen.puerto), hasta: puntoDePuerto(hija, par.destino.puerto) } };
 }
 
-/**
- * La escena con un conector nuevo del padre a la hija (en ángulo recto y con flecha), pegado a los puertos que
- * mejor se miran. Devuelve la misma escena si no se puede o si ya existe ese conector.
- */
-export function conectarAlSoltar(escena: Escena, padreId: string, hijaId: string): Escena {
-  if (existeConector(escena, padreId, hijaId)) return escena;
-  const par = puertosParaConectar(escena, padreId, hijaId);
-  const padre = escena.elementos.find((e): e is Forma => e.id === padreId && e.tipo === "forma");
-  const hija = escena.elementos.find((e): e is Forma => e.id === hijaId && e.tipo === "forma");
-  if (!par || !padre || !hija) return escena;
-  const r = agregar(escena, {
-    tipo: "linea",
-    puntos: [puntoDePuerto(padre, par.origen.puerto), puntoDePuerto(hija, par.destino.puerto)],
-    trazado: "ortogonal",
-    inicio: "ninguno",
-    fin: "flecha",
-    origen: par.origen,
-    destino: par.destino,
-  });
-  return r.id === "" ? escena : sincronizarConectores(r.escena);
-}
+/** La escena con un conector nuevo del padre a la hija (delega al motor puro). */
+export const conectarAlSoltar = conectarFormas;
 
 export const aConexion = (p: PuertoCercano | null): Conexion | undefined => (p ? { elementoId: p.elementoId, puerto: p.puerto } : undefined);
 
