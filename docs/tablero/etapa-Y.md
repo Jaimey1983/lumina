@@ -68,8 +68,8 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 - **Cierre:** ninguno.
 
 #### Y5 — Buscador de comandos (`Ctrl+K`) y panel de atajos (`?`)
-- **Operador:** Claude Code
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** [en curso: Cursor]
 - **Precondición:** Y2 `hecho` (usa el registro de comandos, DY3).
 - **Alcance — PUEDE tocar:** `editor/` (nuevo `buscador-comandos.tsx` y `panel-atajos.tsx`; `editor-libre.tsx` solo para abrirlos), specs.
 - **Entregable:** `Ctrl+K` abre un cuadro de búsqueda sobre el registro (por etiqueta y sinónimos en español, p. ej. «alinear», «borrar» → eliminar), muestra el atajo y deshabilitados con su motivo; `Enter` ejecuta. `?` abre la lista de atajos agrupada por pestaña, generada del registro (nunca escrita a mano). Ambos son diálogos accesibles con foco atrapado y retorno de foco. Pruebas: búsqueda con acentos y sin ellos, ejecutar un comando, comando deshabilitado no ejecuta, el panel de atajos coincide con el registro. Verificación: la de Y2.
