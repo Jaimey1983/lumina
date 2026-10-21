@@ -24,10 +24,15 @@ import {
   elementoEn,
   escenaConRutas,
   esquinas,
+  conectarFormas,
+  crearHijo,
+  crearHijoEn,
+  existeConector,
   normalizarEscena,
   sincronizarConectores,
   trazadoForma,
   type Conexion,
+  type Lado,
   type Elemento,
   type EntradaElemento,
   type Escena,
@@ -59,6 +64,8 @@ import {
 } from "./herramientas.js";
 import { BarraEstado } from "./barra-estado.js";
 import { CapaAsasDeConector, CapaConexionPrevia, CapaDestino, CapaPuertos } from "./conectores-capa.js";
+import { CapaAsasHijo, CapaFantasmaHijo } from "./asas-hijo.js";
+import { asaHijoEn, formaConAsasHijo, previaConexionHijo, type ContextoAsasHijo } from "./hijo-rapido.js";
 import {
   agarreEn,
   aConexion,
@@ -69,6 +76,7 @@ import {
   lineaUnica,
   lineasElegidas,
   formaConPuertosVisibles,
+  formaDestinoDeArrastre,
   quitarPuntoIntermedio,
   radioDePuertoPx,
   resolverPuntoDeLinea,
@@ -108,8 +116,10 @@ export interface EditorLibreProps {
 }
 
 type Accion = {
-  modo: "pan" | "gesto" | "crear" | "conector";
+  modo: "pan" | "gesto" | "crear" | "conector" | "hijo";
   gesto: Gesto | null;
+  /** Solo en modo `hijo`: asa «+» desde la que se arrastra. */
+  hijo?: { padreId: string; lado: Lado; base: Escena };
   /** Solo en modo `conector`: arrastre de un extremo o de un punto intermedio de una línea. */
   conector?: GestoConector;
   /** Solo al crear una línea: puerto al que se pegó el primer punto. */
@@ -290,6 +300,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [destinoModo, setDestinoModo] = useState<"conecta" | "solapa">("solapa");
   /** El conector que se crearía al soltar, de puerto a puerto. */
   const [conexionPrevia, setConexionPrevia] = useState<{ desde: Punto; hasta: Punto } | null>(null);
+  /** Centro de la forma fantasma al arrastrar un «+» al vacío. */
+  const [fantasmaHijo, setFantasmaHijo] = useState<{ padreId: string; centro: Punto } | null>(null);
+  /** Oculta las asas «+» mientras hay un gesto de puntero en curso. */
+  const [gestoEnCurso, setGestoEnCurso] = useState(false);
   /** `PointerEvent.pointerType` del último puntero: con el dedo, los puertos atraen desde más lejos. */
   const tipoPuntero = useRef<string>("mouse");
   /** Lo mismo como estado, para que los puertos se dibujen más grandes en cuanto el puntero es un dedo. */
@@ -532,14 +546,17 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setEdicion(e);
   }, []);
 
-  const abrirEdicion = (id: string): void => {
-    const { escena: actual } = vivo.current;
-    const el = actual.elementos.find((x) => x.id === id);
-    if (!el || bloqueadosEfectivosDe(actual).has(id)) return;
-    const area = areaDeTexto(actual, el);
+  const abrirEdicionEn = (id: string, escenaBase: Escena): void => {
+    const el = escenaBase.elementos.find((x) => x.id === id);
+    if (!el || bloqueadosEfectivosDe(escenaBase).has(id)) return;
+    const area = areaDeTexto(escenaBase, el);
     if (!area) return;
     setSeleccion([id]);
     fijarEdicion({ id, area, valor: area.texto });
+  };
+
+  const abrirEdicion = (id: string): void => {
+    abrirEdicionEn(id, vivo.current.escena);
   };
 
   const abrirEdicionNueva = (caja: { x: number; y: number; ancho: number; alto: number }): void => {
@@ -637,10 +654,20 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       return;
     }
     const p = pantallaAEscena(v, pantalla);
-    // Una línea elegida: sus extremos y puntos intermedios se agarran antes que cualquier otra cosa.
+    const ctxAsasHijo: ContextoAsasHijo = { escena: actual, herramienta: h, seleccion: sel, gestoEnCurso: false, edicionAbierta: edicionRef.current !== null };
+    const padreAsas = formaConAsasHijo(ctxAsasHijo);
+    const ladoHijo = padreAsas ? asaHijoEn(actual, padreAsas, p, v.zoom, tipoPuntero.current === "touch") : null;
+    if (padreAsas && ladoHijo) {
+      setGestoEnCurso(true);
+      accion.current = { modo: "hijo", gesto: null, hijo: { padreId: padreAsas, lado: ladoHijo, base: actual }, activo: false, origen: pantalla, ultimo: pantalla, shift: e.shiftKey };
+      capturar(e);
+      return;
+    }
+    // Una línea elegida: sus extremos y puntos intermedios se agarran antes que las asas de tamaño.
     const lineaSel = lineaUnica(actual, sel);
     const agarre = lineaSel ? agarreEn(actual, lineaSel, p, v.zoom) : null;
     if (lineaSel && agarre) {
+      setGestoEnCurso(true);
       accion.current = { modo: "conector", gesto: null, conector: iniciarConector(actual, lineaSel.id, agarre), activo: false, origen: pantalla, ultimo: pantalla, shift: e.shiftKey };
       capturar(e);
       return;
@@ -673,6 +700,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         if (!e.shiftKey && sel.includes(bajo) && sel.length > 1) hit = bajo;
       }
     }
+    if (gesto) setGestoEnCurso(true);
     accion.current = { modo: "gesto", gesto, activo: false, origen: pantalla, ultimo: pantalla, ...(hit !== undefined ? { hit } : {}), ...(agarrada !== undefined ? { agarrada } : {}), shift: e.shiftKey };
     capturar(e);
   };
@@ -734,6 +762,26 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       }
       return;
     }
+    if (a.modo === "hijo" && a.hijo) {
+      if (!a.activo) {
+        if (Math.hypot(pantalla.x - a.origen.x, pantalla.y - a.origen.y) < UMBRAL_ARRASTRE_PX) return;
+        a.activo = true;
+      }
+      const { escena: actual, vista: v } = vivo.current;
+      const punto = pantallaAEscena(v, pantalla);
+      const dest = formaDestinoDeArrastre(actual, punto, v.zoom, [a.hijo.padreId]);
+      if (dest && dest !== a.hijo.padreId) {
+        setFantasmaHijo(null);
+        setDestinoArrastre(dest);
+        setDestinoModo("conecta");
+        setConexionPrevia(previaConexionHijo(actual, a.hijo.padreId, dest, null));
+      } else {
+        setDestinoArrastre(null);
+        setFantasmaHijo({ padreId: a.hijo.padreId, centro: punto });
+        setConexionPrevia(previaConexionHijo(actual, a.hijo.padreId, null, punto));
+      }
+      return;
+    }
     if (a.modo === "conector" && a.conector) {
       if (!a.activo) {
         if (Math.hypot(pantalla.x - a.origen.x, pantalla.y - a.origen.y) < UMBRAL_ARRASTRE_PX) return;
@@ -781,14 +829,47 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const alSoltar = (e: PunteroReact<SVGSVGElement>): void => {
     const a = accion.current;
     accion.current = null;
+    setGestoEnCurso(false);
     liberar(e);
     setDestinoArrastre(null);
     setConexionPrevia(null);
+    setFantasmaHijo(null);
     setGuias([]);
     setRecuadro(null);
     const base = vivo.current.herramienta.tipo === "seleccionar" ? "default" : vivo.current.herramienta.tipo === "texto" ? "text" : "crosshair";
     setCursor(espacio.current ? "grab" : base);
     if (!a || a.modo === "pan") return;
+    if (a.modo === "hijo" && a.hijo) {
+      const { vista: v } = vivo.current;
+      const puntoSuelta = pantallaAEscena(v, aPantalla(e));
+      const antes = a.hijo.base;
+      if (!a.activo) {
+        const r = crearHijo(antes, a.hijo.padreId, a.hijo.lado);
+        if (r.id === "") return;
+        confirmar(antes, { escena: r.escena, seleccion: [r.id] });
+        setAnuncio(`${nombreDe(r.escena, r.id)} agregado y conectado a ${nombreDe(r.escena, a.hijo.padreId)}.`);
+        abrirEdicionEn(r.id, r.escena);
+        return;
+      }
+      const dest = formaDestinoDeArrastre(antes, puntoSuelta, v.zoom, [a.hijo.padreId]);
+      if (dest && dest !== a.hijo.padreId) {
+        if (existeConector(antes, a.hijo.padreId, dest)) {
+          setAnuncio(`Ya hay un conector de ${nombreDe(antes, a.hijo.padreId)} a ${nombreDe(antes, dest)}.`);
+          return;
+        }
+        const nueva = conectarFormas(antes, a.hijo.padreId, dest);
+        if (nueva === antes) return; // sin puertos que unir: no hay nada que confirmar ni que anunciar
+        confirmar(antes, { escena: nueva, seleccion: [dest] });
+        setAnuncio(`${nombreDe(nueva, dest)} conectada a ${nombreDe(nueva, a.hijo.padreId)}.`);
+        return;
+      }
+      const r = crearHijoEn(antes, a.hijo.padreId, puntoSuelta);
+      if (r.id === "") return;
+      confirmar(antes, { escena: r.escena, seleccion: [r.id] });
+      setAnuncio(`${nombreDe(r.escena, r.id)} agregado y conectado a ${nombreDe(r.escena, a.hijo.padreId)}.`);
+      abrirEdicionEn(r.id, r.escena);
+      return;
+    }
     if (a.modo === "crear") {
       const { vista: v, herramienta: h, enCurso: curso } = vivo.current;
       const inicio = a.inicioEscena as Punto;
@@ -864,8 +945,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const alCancelarPuntero = (): void => {
     const a = accion.current;
     accion.current = null;
+    setGestoEnCurso(false);
     setDestinoArrastre(null);
     setConexionPrevia(null);
+    setFantasmaHijo(null);
     setGuias([]);
     setRecuadro(null);
     setPrevia(null);
@@ -1096,6 +1179,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
             </g>
           ) : null}
           <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} />
+          <CapaAsasHijo escena={escena} vista={vista} herramienta={herramienta} seleccion={seleccion} gestoEnCurso={gestoEnCurso} edicionAbierta={edicion !== null} tactil={tactil} />
+          {fantasmaHijo ? <CapaFantasmaHijo escena={escena} vista={vista} padreId={fantasmaHijo.padreId} centro={fantasmaHijo.centro} /> : null}
           {lineaElegida ? <CapaAsasDeConector escena={escena} linea={lineaElegida} vista={vista} /> : null}
           <CapaPuertos escena={escena} vista={vista} formasElegidas={formasConPuertos} todas={herramienta.tipo === "linea" || arrastrandoExtremo} objetivo={objetivoPuerto} tactil={tactil} />
           <CapaDestino escena={escena} vista={vista} formaId={objetivoPuerto?.elementoId ?? destinoArrastre} modo={objetivoPuerto ? "conecta" : destinoModo} />

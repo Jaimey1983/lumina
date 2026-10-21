@@ -1,7 +1,9 @@
 // ─── Elegir los puertos al conectar dos formas (Y7) ───────────────────────────
 // Dadas dos formas, qué puerto de cada una conviene usar para unirlas. Lógica pura, sin tocar la escena.
 
-import type { Conexion, Escena } from '../tipos.js';
+import { agregar } from '../operaciones/edicion.js';
+import type { Conexion, Escena, Forma } from '../tipos.js';
+import { sincronizarConectores } from './conectar.js';
 import { cantidadDePuertos, formasVisibles, ladoDePuerto, puntoDePuerto, VECTOR_LADO } from './puertos.js';
 
 /**
@@ -58,4 +60,31 @@ export function puertosParaConectar(escena: Escena, origenId: string, destinoId:
     }
   }
   return mejor ? { origen: { elementoId: origenId, puerto: mejor.po }, destino: { elementoId: destinoId, puerto: mejor.pd } } : null;
+}
+
+/** ¿Ya hay un conector que va de `padreId` a `hijaId`? (el sentido contrario no cuenta) */
+export function existeConector(escena: Escena, padreId: string, hijaId: string): boolean {
+  return escena.elementos.some((e) => e.tipo === 'linea' && e.origen?.elementoId === padreId && e.destino?.elementoId === hijaId);
+}
+
+/**
+ * Escena con un conector nuevo del padre a la hija (ortogonal, con flecha), pegado a los puertos que mejor se miran.
+ * Devuelve la misma escena si no se puede o si ya existe ese conector.
+ */
+export function conectarFormas(escena: Escena, padreId: string, hijaId: string): Escena {
+  if (existeConector(escena, padreId, hijaId)) return escena;
+  const par = puertosParaConectar(escena, padreId, hijaId);
+  const padre = escena.elementos.find((e): e is Forma => e.id === padreId && e.tipo === 'forma');
+  const hija = escena.elementos.find((e): e is Forma => e.id === hijaId && e.tipo === 'forma');
+  if (!par || !padre || !hija) return escena;
+  const r = agregar(escena, {
+    tipo: 'linea',
+    puntos: [puntoDePuerto(padre, par.origen.puerto), puntoDePuerto(hija, par.destino.puerto)],
+    trazado: 'ortogonal',
+    inicio: 'ninguno',
+    fin: 'flecha',
+    origen: par.origen,
+    destino: par.destino,
+  });
+  return r.id === '' ? escena : sincronizarConectores(r.escena);
 }
