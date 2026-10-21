@@ -92,7 +92,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 
 #### Y7 — Conectar al soltar una forma sobre otra
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] — tomada con Y6 aún `en revisión`, por decisión del dueño (2026-10-21)
 - **Precondición:** Y6 `hecho` (DY4 ya confirmada por el dueño, 2026-10-20).
 - **Alcance — PUEDE tocar:** `editor/gestos.ts`, `editor/conectores.ts`, `editor/editor-libre.tsx`, `packages/drawing/src/conectores/` (solo un helper puro `puertosParaConectar(escena, origen, destino)` que elige el par de puertos según la posición relativa), specs.
 - **Entregable:** DY4. Al arrastrar una forma (o varias) y soltar con el puntero sobre el halo de otra, o con `Alt` apretada, se crea un conector entre ambas, eligiendo el par de puertos por posición relativa (si cae debajo: del puerto inferior al superior). Vista previa del conector y del destino **antes de soltar**; sin halo ni `Alt`, soltar solo mueve. Una sola entrada de historial (mover + crear). Si ya hay conector entre ambas en ese sentido, no se duplica. Pruebas: elección de puertos en los cuatro cuadrantes y con formas giradas, `Alt` y halo, no crea sin ellos, deshacer deshace todo de una vez, formas bloqueadas no se conectan. Verificación: la de Y2.
