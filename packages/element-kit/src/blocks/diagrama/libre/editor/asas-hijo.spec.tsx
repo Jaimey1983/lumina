@@ -119,6 +119,33 @@ describe("asas «+» de hijo rápido", () => {
     expect(m.ultima().elementos.length).toBeLessThan(conHija.elementos.length);
   });
 
+  it("arrastrar «+» a una forma existente conecta sin crear forma nueva", () => {
+    const e = P();
+    const m = montar(e);
+    m.elegir("P", e);
+    const p = m.mas("P", e, "derecha");
+    const destino = { x: 450, y: 130 };
+    m.apretar(p.x, p.y);
+    m.mover(destino.x, destino.y);
+    m.soltar(destino.x, destino.y);
+    const final = m.ultima();
+    expect(final.elementos.filter((x) => x.tipo === "forma")).toHaveLength(2);
+    expect(final.elementos.filter((x) => x.tipo === "linea")).toHaveLength(1);
+  });
+
+  it("arrastrar «+» al vacío crea en el punto de suelta", () => {
+    const e = escena(forma("P", 100, 100));
+    const m = montar(e);
+    m.elegir("P", e);
+    const p = m.mas("P", e, "abajo");
+    const suelta = { x: 150, y: 320 };
+    m.apretar(p.x, p.y);
+    m.mover(p.x + 6, p.y);
+    m.soltar(suelta.x, suelta.y);
+    const h = m.ultima().elementos.find((x) => x.id !== "P" && x.tipo === "forma") as Forma;
+    expect(h.transformacion.y + h.transformacion.alto / 2).toBeCloseTo(suelta.y, 0);
+  });
+
   it("anuncia en aria-live y cada «+» tiene role=button y aria-label", () => {
     const e = P();
     const m = montar(e);
