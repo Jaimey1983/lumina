@@ -84,7 +84,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 
 #### Y6 — Puertos visibles al pasar el cursor y forma destino resaltada
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y2 `hecho`.
 - **Alcance — PUEDE tocar:** `editor/editor-libre.tsx` (capa de puertos), `editor/conectores-capa.tsx`, `editor/conectores.ts`, specs. **NO** toca `@lumina/drawing`.
 - **Entregable:** con la herramienta **Seleccionar**, al pasar el cursor sobre una forma se muestran sus puertos (hoy solo se ven con Línea/Flecha); al arrastrar un extremo de conector o una forma, la **forma destino se resalta entera** (borde y relleno suave) además del puerto, y el radio de captura crece en pantallas táctiles (≥ 24 px). Pruebas: los puertos aparecen y desaparecen con el cursor sin parpadeo, el resalte sigue a la forma correcta aun girada, no se muestra en elementos bloqueados u ocultos. Verificación: la de Y2.
