@@ -19,12 +19,16 @@ function montar(e: Escena = escena(forma("a", 0, 0))) {
 }
 
 describe("panel de atajos", () => {
-  it("? abre; ? Escape Cerrar y clic fuera cierran; ? en campo de texto no abre", () => {
+  it("? abre y ? cierra", () => {
     const m = montar();
     fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
     expect(m.panel()).toBeTruthy();
     fireEvent.keyDown(screen.getByRole("button", { name: "Cerrar panel" }), { key: "?", shiftKey: true });
     expect(m.panel()).toBeNull();
+  });
+
+  it("Escape, el botón Cerrar y un clic en el fondo cierran, sin cerrar el editor", () => {
+    const m = montar();
     fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
     fireEvent.keyDown(m.panel()!, { key: "Escape" });
     expect(m.panel()).toBeNull();
@@ -32,26 +36,48 @@ describe("panel de atajos", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cerrar panel" }));
     expect(m.panel()).toBeNull();
     fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
-    fireEvent.mouseDown(document.body);
+    fireEvent.click(document.querySelector("[data-atajos-fondo]") as HTMLElement);
     expect(m.panel()).toBeNull();
+    expect(m.onCerrar).not.toHaveBeenCalled();
+  });
 
-    cleanup();
-    const m2 = montar();
-    fireEvent.pointerDown(m2.lienzo, { clientX: 150, clientY: 130, button: 0, pointerId: 1 });
-    fireEvent.pointerUp(m2.lienzo, { clientX: 150, clientY: 130, button: 0, pointerId: 1 });
-    const escenaProp = escena(forma("A", 100, 100, 100, 60));
-    cleanup();
-    const m3 = montar(escenaProp);
+  it("un clic dentro del panel no lo cierra", () => {
+    const m = montar();
+    fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
+    fireEvent.click(within(m.panel()!).getByRole("heading", { name: "Atajos de teclado" }));
+    expect(m.panel()).toBeTruthy();
+  });
+
+  it("? en un campo de texto no lo abre", () => {
+    const m = montar(escena(forma("A", 100, 100, 100, 60)));
     const g = document.querySelector("[data-dibujo-pagina]")?.parentElement?.getAttribute("transform") ?? "";
     const t = /translate\(([-\d.e]+) ([-\d.e]+)\) scale\(([-\d.e]+)\)/.exec(g);
     const px = { clientX: Number(t?.[1]) + 150 * Number(t?.[3]), clientY: Number(t?.[2]) + 130 * Number(t?.[3]) };
-    fireEvent(m3.lienzo, new MouseEvent("pointerdown", { bubbles: true, button: 0, ...px }));
-    fireEvent(m3.lienzo, new MouseEvent("pointerup", { bubbles: true, button: 0, ...px }));
+    fireEvent(m.lienzo, new MouseEvent("pointerdown", { bubbles: true, button: 0, ...px }));
+    fireEvent(m.lienzo, new MouseEvent("pointerup", { bubbles: true, button: 0, ...px }));
     const campo = document.querySelector<HTMLInputElement>('input[aria-label="X"]');
     expect(campo).toBeTruthy();
     campo!.focus();
     fireEvent.keyDown(campo!, { key: "?", shiftKey: true });
-    expect(m3.panel()).toBeNull();
+    expect(m.panel()).toBeNull();
+  });
+
+  it("el foco entra al panel y, al cerrar, vuelve a donde estaba: el lienzo o el botón de la cinta", () => {
+    const m = montar();
+    m.lienzo.focus();
+    fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
+    expect(m.panel()!.contains(document.activeElement)).toBe(true);
+    fireEvent.keyDown(m.panel()!, { key: "Escape" });
+    expect(document.activeElement).toBe(m.lienzo);
+
+    const boton = botonCinta("Atajos de teclado");
+    boton.focus();
+    fireEvent.click(boton);
+    expect(m.panel()).toBeTruthy();
+    expect(m.panel()!.contains(document.activeElement)).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar panel" }));
+    expect(m.panel()).toBeNull();
+    expect(document.activeElement).toBe(boton);
   });
 
   it("coincide con el registro: etiquetas, todas las combinaciones, sin extras", () => {
@@ -79,19 +105,26 @@ describe("panel de atajos", () => {
     expect(seccion.textContent).toMatch(/Ctrl\+Mayús\+Z/);
   });
 
-  it("agrupa por pestaña como la cinta", () => {
+  it("agrupa por pestaña como la cinta: cada comando con atajo aparece bajo la pestaña donde está su botón de verdad", () => {
     const m = montar();
-    fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
-    for (const c of COMANDOS.filter((x) => x.atajos?.length && PESTANA_POR_COMANDO[x.id])) {
-      const pestana = PESTANA_POR_COMANDO[c.id]!;
-      if (pestana === "Navegación y ratón") continue;
-      const grupo = within(m.panel()!).getByRole("group", { name: pestana });
-      expect(grupo.textContent).toContain(c.etiqueta);
+    // Dónde pone cada botón la cinta (la fuente real): se recorren sus pestañas y se anota qué comandos hay en cada una.
+    const pestanaDelBoton = new Map<string, string>();
+    for (const nombre of ["Inicio", "Insertar", "Organizar", "Vista"]) {
+      irAPestana(nombre);
+      for (const el of document.querySelectorAll("[role=tabpanel] [data-comando]")) pestanaDelBoton.set(el.getAttribute("data-comando")!, nombre);
     }
-    irAPestana("Organizar");
-    fireEvent.click(botonCinta("Agrupar"));
-    // el botón existe en Organizar
-    expect(PESTANA_POR_COMANDO.agrupar).toBe("Organizar");
+    // Deshacer y Rehacer viven en la barra de acceso rápido: el panel los agrupa en «Historial».
+    pestanaDelBoton.set("deshacer", "Historial");
+    pestanaDelBoton.set("rehacer", "Historial");
+    fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
+    const conAtajo = COMANDOS.filter((c) => c.atajos?.length && pestanaDelBoton.has(c.id));
+    expect(conAtajo.length).toBeGreaterThan(10);
+    for (const c of conAtajo) {
+      const pestana = pestanaDelBoton.get(c.id)!;
+      expect(PESTANA_POR_COMANDO[c.id], `la tabla dice otra pestaña para ${c.id}`).toBe(pestana);
+      const grupo = within(m.panel()!).getByRole("group", { name: pestana });
+      expect(grupo.textContent, `${c.id} debe estar en «${pestana}»`).toContain(c.etiqueta);
+    }
   });
 
   it("navegación coincide con ATAJOS_DE_NAVEGACION", () => {
@@ -106,18 +139,25 @@ describe("panel de atajos", () => {
 
   it("foco atrapado y aislamiento de teclado", () => {
     const m = montar();
+    m.lienzo.focus();
     fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
     const panel = m.panel() as HTMLElement;
-    const alWindow = vi.fn();
-    window.addEventListener("keydown", alWindow);
     const cerrar = screen.getByRole("button", { name: "Cerrar panel" });
-    cerrar.focus();
+    expect(document.activeElement).toBe(cerrar);
     fireEvent.keyDown(cerrar, { key: "Tab" });
     expect(panel.contains(document.activeElement)).toBe(true);
-    fireEvent.keyDown(cerrar, { key: "Delete" });
+    fireEvent.keyDown(cerrar, { key: "Tab", shiftKey: true });
+    expect(panel.contains(document.activeElement)).toBe(true);
+    // Nada de lo que se teclea en el panel llega a `window` (ni mueve ni borra lo que haya elegido el editor).
+    fireEvent.keyDown(m.lienzo, { key: "Escape" });
+    fireEvent.keyDown(m.lienzo, { key: "?", shiftKey: true });
+    const alWindow = vi.fn();
+    window.addEventListener("keydown", alWindow);
+    const otra = screen.getByRole("button", { name: "Cerrar panel" });
+    for (const key of ["Delete", "Backspace", "ArrowLeft", "Tab"]) fireEvent.keyDown(otra, { key });
+    fireEvent.keyDown(otra, { key: "z", ctrlKey: true });
     window.removeEventListener("keydown", alWindow);
     expect(alWindow).not.toHaveBeenCalled();
-    fireEvent.keyDown(panel, { key: "Escape" });
-    expect(document.activeElement).toBe(m.lienzo);
+    expect(m.onCambio).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@
 
 // Panel de atajos «?» (Y5): listado generado del registro, agrupado como la cinta.
 
-import { useEffect, useMemo, useRef, type KeyboardEvent, type ReactElement } from "react";
+import { useMemo, useRef, type KeyboardEvent, type ReactElement } from "react";
 import { Kbd } from "@lumina/ui/kbd";
 import { COMANDOS, textosDeAtajos, type DefinicionComando } from "./comandos-registro.js";
 import { ATAJOS_DE_NAVEGACION } from "./comandos.js";
@@ -39,25 +39,9 @@ function filasAtajo(def: DefinicionComando): ReactElement {
 
 export function PanelAtajos({ abierto, onCerrar, focoLienzo }: PanelAtajosProps): ReactElement | null {
   const dialogoRef = useRef<HTMLDivElement>(null);
-  const cerrarRef = useRef<HTMLButtonElement>(null);
 
-  useFocoAtrapado({
-    abierto,
-    contenedorRef: dialogoRef,
-    alCerrar: () => {
-      onCerrar();
-      focoLienzo();
-    },
-    focoRespaldo: focoLienzo,
-    alEscape: (e) => {
-      e.stopPropagation();
-      return false;
-    },
-  });
-
-  useEffect(() => {
-    if (abierto) requestAnimationFrame(() => cerrarRef.current?.focus());
-  }, [abierto]);
+  // Escape, el clic fuera y el retorno de foco (a donde estaba antes de abrir) los lleva el hook.
+  useFocoAtrapado({ abierto, contenedorRef: dialogoRef, alCerrar: onCerrar, focoRespaldo: focoLienzo });
 
   const porPestana = useMemo(() => {
     const mapa = new Map<string, DefinicionComando[]>();
@@ -74,34 +58,28 @@ export function PanelAtajos({ abierto, onCerrar, focoLienzo }: PanelAtajosProps)
 
   if (!abierto) return null;
 
+  // `?` cierra el panel (como lo abrió). Se atiende en captura: el hook retiene después el resto de las teclas.
   const alTecla = (e: KeyboardEvent<HTMLDivElement>): void => {
-    e.stopPropagation();
-    if (e.key === "?" && e.shiftKey) {
+    if (e.key === "?") {
       e.preventDefault();
+      e.stopPropagation();
       onCerrar();
-      focoLienzo();
-      return;
-    }
-    if (e.key === "Escape") {
-      e.preventDefault();
-      onCerrar();
-      focoLienzo();
     }
   };
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[110] flex items-center justify-center bg-black/40 p-4">
+    <div className="pointer-events-auto absolute inset-0 z-[110] flex items-center justify-center bg-black/40 p-4" data-atajos-fondo="">
       <div
         ref={dialogoRef}
         role="dialog"
         aria-modal="true"
         aria-label="Atajos de teclado"
-        className="pointer-events-auto flex max-h-[min(85vh,560px)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-lg"
+        className="flex max-h-[min(85vh,560px)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-lg"
         onKeyDownCapture={alTecla}
       >
         <header className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="text-base font-semibold">Atajos de teclado</h2>
-          <button ref={cerrarRef} type="button" className="rounded-md px-3 py-1.5 text-sm hover:bg-accent" onClick={() => { onCerrar(); focoLienzo(); }}>
+          <button type="button" className="rounded-md px-3 py-1.5 text-sm hover:bg-accent" onClick={onCerrar}>
             Cerrar panel
           </button>
         </header>

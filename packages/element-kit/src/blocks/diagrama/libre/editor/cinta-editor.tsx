@@ -48,7 +48,7 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "ajustar-vista": "Vista",
   cuadricula: "Vista",
   imantar: "Vista",
-  "buscar-comando": "Vista",
+  "buscar-comando": "Edición general",
   atajos: "Vista",
   "seleccionar-todo": "Edición general",
 };

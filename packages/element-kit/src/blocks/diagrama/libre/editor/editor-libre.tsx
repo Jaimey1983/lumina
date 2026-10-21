@@ -901,12 +901,6 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     e.stopPropagation();
     const objetivo = e.target as HTMLElement;
     const esCampo = objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.tagName === "SELECT" || objetivo.isContentEditable;
-    if ((e.key === "k" || e.key === "K") && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      setAtajosAbiertos(false);
-      setBuscadorAbierto(true);
-      return;
-    }
     if (buscadorAbierto || atajosAbiertos) return;
     if (esCampo) return;
     if (e.key === " " && (objetivo as Element) === svgRef.current) {
