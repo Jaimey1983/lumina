@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { puntoDePuerto, type Lado } from '../conectores/puertos.js';
 import { TIPOS_FORMA } from '../tipos.js';
 import { cajaDeElemento } from './geometria.js';
-import { crearHijo, crearHijoEn, DISTANCIA_HIJO_POR_DEFECTO } from './hijo.js';
+import { crearHijo, crearHijoEn, DISTANCIA_HIJO_MINIMA, DISTANCIA_HIJO_POR_DEFECTO } from './hijo.js';
 import { escena, forma, getForma, getLinea, grupo, linea, texto } from './util-pruebas.js';
 
 const PUERTO: Record<Lado, number> = { arriba: 0, derecha: 1, abajo: 2, izquierda: 3 };
@@ -95,6 +95,38 @@ describe('crearHijo', () => {
     const l = getLinea(r.escena, r.escena.elementos.find((x) => x.tipo === 'linea')!.id);
     expect(l.origen?.elementoId).toBe('P');
     expect(l.destino?.elementoId).toBe(r.id);
+  });
+
+  it('crearHijoEn no pisa al padre: un punto encima se empuja al lado más cercano hasta la separación mínima', () => {
+    const casos: Array<{ nombre: string; centro: { x: number; y: number }; esperado: { x: number; y: number } }> = [
+      { nombre: 'sobre el padre, algo a la derecha', centro: { x: 170, y: 132 }, esperado: { x: 150 + 50 + 50 + DISTANCIA_HIJO_MINIMA, y: 132 } },
+      { nombre: 'sobre el padre, algo a la izquierda', centro: { x: 130, y: 128 }, esperado: { x: 150 - 100 - DISTANCIA_HIJO_MINIMA, y: 128 } },
+      { nombre: 'sobre el padre, algo abajo', centro: { x: 152, y: 140 }, esperado: { x: 152, y: 130 + 30 + 30 + DISTANCIA_HIJO_MINIMA } },
+      { nombre: 'sobre el padre, algo arriba', centro: { x: 148, y: 120 }, esperado: { x: 148, y: 130 - 60 - DISTANCIA_HIJO_MINIMA } },
+    ];
+    for (const c of casos) {
+      const r = crearHijoEn(padre(), 'P', c.centro);
+      const h = getForma(r.escena, r.id);
+      expect(h.transformacion.x + h.transformacion.ancho / 2, c.nombre).toBeCloseTo(c.esperado.x, 5);
+      expect(h.transformacion.y + h.transformacion.alto / 2, c.nombre).toBeCloseTo(c.esperado.y, 5);
+    }
+  });
+
+  it('crearHijoEn con el punto justo en el centro del padre lo manda a la derecha', () => {
+    const r = crearHijoEn(padre(), 'P', { x: 150, y: 130 });
+    const h = getForma(r.escena, r.id);
+    expect(h.transformacion.x + h.transformacion.ancho / 2).toBeCloseTo(150 + 100 + DISTANCIA_HIJO_MINIMA, 5);
+    expect(h.transformacion.y + h.transformacion.alto / 2).toBeCloseTo(130, 5);
+  });
+
+  it('crearHijoEn deja el punto tal cual si ya queda fuera del padre en algún eje', () => {
+    // A la derecha del límite, y también por debajo: ambos cuentan como «fuera».
+    for (const centro of [{ x: 150 + 100 + DISTANCIA_HIJO_MINIMA, y: 130 }, { x: 150, y: 130 + 60 + DISTANCIA_HIJO_MINIMA }, { x: 400, y: 200 }]) {
+      const r = crearHijoEn(padre(), 'P', centro);
+      const h = getForma(r.escena, r.id);
+      expect(h.transformacion.x + h.transformacion.ancho / 2).toBeCloseTo(centro.x, 5);
+      expect(h.transformacion.y + h.transformacion.alto / 2).toBeCloseTo(centro.y, 5);
+    }
   });
 
   it('devuelve id vacío y la misma referencia si el padre no es válido', () => {

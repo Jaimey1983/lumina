@@ -146,6 +146,63 @@ describe("asas «+» de hijo rápido", () => {
     expect(h.transformacion.y + h.transformacion.alto / 2).toBeCloseTo(suelta.y, 0);
   });
 
+  it("un arrastre corto desde el «+» no deja la hija encima del padre", () => {
+    const e = escena(forma("P", 100, 100));
+    const m = montar(e);
+    m.elegir("P", e);
+    const p = m.mas("P", e, "abajo");
+    m.apretar(p.x, p.y);
+    m.mover(p.x, p.y - 30); // 30 px hacia el padre: el punto cae dentro de su caja
+    m.soltar(p.x, p.y - 30);
+    const f = m.ultima().elementos.find((x) => x.id !== "P" && x.tipo === "forma") as Forma;
+    const t = f.transformacion;
+    const solapa = t.x < 200 && t.x + t.ancho > 100 && t.y < 160 && t.y + t.alto > 100;
+    expect(solapa).toBe(false);
+    expect(m.ultima().elementos.filter((x) => x.tipo === "linea")).toHaveLength(1);
+  });
+
+  it("arrastrar «+» a una forma ya conectada desde el padre no cambia nada y lo dice", () => {
+    const e = escena(forma("P", 100, 100), forma("B", 400, 100), linea("L", [[200, 130], [400, 130]], { origen: { elementoId: "P", puerto: 1 }, destino: { elementoId: "B", puerto: 3 } }));
+    const m = montar(e);
+    m.elegir("P", e);
+    const antes = m.cuenta();
+    const p = m.mas("P", e, "derecha");
+    m.apretar(p.x, p.y);
+    m.mover(450, 130);
+    m.soltar(450, 130);
+    expect(m.cuenta()).toBe(antes);
+    expect(anuncio()).toMatch(/Ya hay un conector/);
+  });
+
+  it("arrastrar «+» sobre una forma bloqueada no la conecta", () => {
+    const e = escena(forma("P", 100, 100), forma("B", 400, 100, 100, 60, { bloqueado: true }));
+    const m = montar(e);
+    m.elegir("P", e);
+    const p = m.mas("P", e, "derecha");
+    m.apretar(p.x, p.y);
+    m.mover(450, 130);
+    m.soltar(450, 130);
+    const lineas = m.ultima().elementos.filter((x) => x.tipo === "linea");
+    expect(lineas.every((l) => l.tipo === "linea" && l.destino?.elementoId !== "B")).toBe(true);
+  });
+
+  it("con el dedo el «+» se acierta desde más lejos que con el ratón", () => {
+    const e = escena(forma("P", 100, 100));
+    const ratón = montar(e);
+    ratón.elegir("P", e);
+    const p = ratón.mas("P", e, "abajo");
+    ratón.apretar(p.x, p.y + 20); // 20 px: fuera de la tolerancia del ratón (14)
+    ratón.soltar(p.x, p.y + 20);
+    expect(ratón.ultima()?.elementos.filter((x) => x.tipo === "forma") ?? []).toHaveLength(0);
+    cleanup();
+    const t = montar(e);
+    t.elegir("P", e);
+    const q = t.mas("P", e, "abajo");
+    t.apretar(q.x, q.y + 20, { pointerType: "touch" }); // dentro de la tolerancia táctil (24)
+    t.soltar(q.x, q.y + 20, { pointerType: "touch" });
+    expect(t.ultima().elementos.filter((x) => x.tipo === "forma")).toHaveLength(2);
+  });
+
   it("anuncia en aria-live y cada «+» tiene role=button y aria-label", () => {
     const e = P();
     const m = montar(e);

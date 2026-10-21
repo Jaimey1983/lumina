@@ -118,11 +118,37 @@ export function crearHijo(escena: Escena, padreId: string, lado: Lado, opciones?
   return crearHijoEn(escena, padreId, centro);
 }
 
-/** Igual que `crearHijo`, pero la hija queda centrada en `centro` (sin buscar hueco). */
+/** Separación mínima entre el borde del padre y el de la hija cuando se coloca a mano (unidades de escena). */
+export const DISTANCIA_HIJO_MINIMA = 24;
+
+/**
+ * Aleja `centro` del padre lo justo para que la hija no lo pise: el lado lo da el eje en que el punto más se aparta
+ * del centro del padre (medido en mitades de caja) y, en ese eje, se exige la separación mínima.
+ */
+function sinPisarAlPadre(cajaPadre: Caja, centro: Punto, ancho: number, alto: number): Punto {
+  const cx = cajaPadre.x + cajaPadre.ancho / 2;
+  const cy = cajaPadre.y + cajaPadre.alto / 2;
+  const dx = centro.x - cx;
+  const dy = centro.y - cy;
+  const medioX = cajaPadre.ancho / 2 + ancho / 2 + DISTANCIA_HIJO_MINIMA;
+  const medioY = cajaPadre.alto / 2 + alto / 2 + DISTANCIA_HIJO_MINIMA;
+  // Ya queda fuera en algún eje: no se toca.
+  if (Math.abs(dx) >= medioX || Math.abs(dy) >= medioY) return centro;
+  if (Math.abs(dx) / medioX >= Math.abs(dy) / medioY) return { x: cx + (dx >= 0 ? medioX : -medioX), y: centro.y };
+  return { x: centro.x, y: cy + (dy >= 0 ? medioY : -medioY) };
+}
+
+/**
+ * Igual que `crearHijo`, pero la hija queda centrada en `centro` (sin buscar hueco). Si ese punto la haría pisar al
+ * padre, se desplaza hacia fuera por el lado más cercano hasta `DISTANCIA_HIJO_MINIMA`.
+ */
 export function crearHijoEn(escena: Escena, padreId: string, centro: Punto): ResultadoCrearHijo {
   const padre = padreValido(escena, padreId);
   if (!padre) return { escena, id: '' };
-  const agregado = agregar(escena, entradaDeHija(padre, centro), { indice: escena.elementos.length });
+  const cajaPadre = cajaDeElemento(escena, padre);
+  if (!cajaPadre) return { escena, id: '' };
+  const colocado = sinPisarAlPadre(cajaPadre, centro, padre.transformacion.ancho, padre.transformacion.alto);
+  const agregado = agregar(escena, entradaDeHija(padre, colocado), { indice: escena.elementos.length });
   if (agregado.id === '') return { escena, id: '' };
   const conectada = conectarFormas(agregado.escena, padreId, agregado.id);
   return { escena: conectada, id: agregado.id };

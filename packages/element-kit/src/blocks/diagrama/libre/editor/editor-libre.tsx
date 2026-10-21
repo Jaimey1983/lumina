@@ -858,6 +858,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           return;
         }
         const nueva = conectarFormas(antes, a.hijo.padreId, dest);
+        if (nueva === antes) return; // sin puertos que unir: no hay nada que confirmar ni que anunciar
         confirmar(antes, { escena: nueva, seleccion: [dest] });
         setAnuncio(`${nombreDe(nueva, dest)} conectada a ${nombreDe(nueva, a.hijo.padreId)}.`);
         return;
