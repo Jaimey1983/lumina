@@ -219,12 +219,12 @@ describe("extremo libre y pegar al más cercano (Y10)", () => {
   });
 
   it("pega el extremo libre al puerto más cercano, no al más lejano", () => {
-    // Destino libre en (210, 130): a 10 px del puerto derecho de A (200,130) y a 190 del izquierdo de B (400,290).
+    // Destino libre en (210, 130): A queda excluida (ya tiene el otro extremo); C (izq. en 260,130) está a 50 px y B (400,290) a 190.
     const e = normalizarEscena(
-      escena(forma("A", 100, 100), forma("B", 400, 260), linea("L", [[200, 130], [210, 130]], { origen: { elementoId: "A", puerto: 1 } })),
+      escena(forma("A", 100, 100), forma("B", 400, 260), forma("C", 260, 100), linea("L", [[200, 130], [210, 130]], { origen: { elementoId: "A", puerto: 1 } })),
     );
     const r = pegarAlMasCercano(e, ["L"]);
-    expect(getLinea(r, "L").destino).toEqual({ elementoId: "A", puerto: 1 });
+    expect(getLinea(r, "L").destino).toEqual({ elementoId: "C", puerto: 3 });
     expect(getLinea(r, "L").origen).toEqual({ elementoId: "A", puerto: 1 });
   });
 
@@ -234,18 +234,20 @@ describe("extremo libre y pegar al más cercano (Y10)", () => {
       escena(
         forma("A", 100, 100),
         forma("B", 400, 100, 100, 60, { bloqueado: true }),
+        forma("C", 700, 100),
         linea("L", [[200, 130], [350, 130]], { origen: { elementoId: "A", puerto: 1 } }),
       ),
     );
-    expect(pegarAlMasCercano(e, ["L"]).elementos.find((x) => x.id === "L")).toMatchObject({ destino: { elementoId: "A", puerto: 1 } });
+    expect(pegarAlMasCercano(e, ["L"]).elementos.find((x) => x.id === "L")).toMatchObject({ destino: { elementoId: "C", puerto: 3 } });
     const oculta = normalizarEscena(
       escena(
         forma("A", 100, 100),
         forma("B", 400, 100, 100, 60, { oculto: true }),
+        forma("C", 700, 100),
         linea("L", [[200, 130], [350, 130]], { origen: { elementoId: "A", puerto: 1 } }),
       ),
     );
-    expect(getLinea(pegarAlMasCercano(oculta, ["L"]), "L").destino).toEqual({ elementoId: "A", puerto: 1 });
+    expect(getLinea(pegarAlMasCercano(oculta, ["L"]), "L").destino).toEqual({ elementoId: "C", puerto: 3 });
   });
 
   it("sin formas elegibles no cambia la escena; tampoco pega a la propia línea", () => {
@@ -261,6 +263,40 @@ describe("extremo libre y pegar al más cercano (Y10)", () => {
     const r = pegarAlMasCercano(e, ["L"]);
     expect(getLinea(r, "L").origen).toEqual({ elementoId: "A", puerto: 1 });
     expect(getLinea(r, "L").destino).toEqual({ elementoId: "B", puerto: 3 });
+  });
+
+  it("no cierra el conector sobre sí mismo: el segundo extremo va a otra forma", () => {
+    // Línea corta pegada a A: sus dos extremos están más cerca de A que de B.
+    const e = normalizarEscena(escena(forma("A", 0, 0), forma("B", 600, 0), linea("L", [[110, 30], [120, 30]])));
+    const r = pegarAlMasCercano(e, ["L"]);
+    expect(getLinea(r, "L").origen?.elementoId).toBe("A");
+    expect(getLinea(r, "L").destino?.elementoId).toBe("B");
+  });
+
+  it("con una sola forma elegible, el segundo extremo se queda libre en vez de cerrarse sobre ella", () => {
+    const e = normalizarEscena(escena(forma("A", 0, 0), linea("L", [[110, 30], [120, 30]])));
+    const r = pegarAlMasCercano(e, ["L"]);
+    expect(getLinea(r, "L").origen?.elementoId).toBe("A");
+    expect(getLinea(r, "L").destino).toBeUndefined();
+  });
+
+  it("no toca el extremo que ya está pegado, aunque su punto quede cerca de otro puerto", () => {
+    // El origen está pegado al puerto 1 de A, pero su punto guardado (150,160) queda junto al puerto 2 (abajo).
+    const e = normalizarEscena(
+      escena(forma("A", 100, 100), forma("C", 700, 100), linea("L", [[150, 160], [350, 130]], { origen: { elementoId: "A", puerto: 1 } })),
+    );
+    const r = pegarAlMasCercano(e, ["L"]);
+    expect(getLinea(r, "L").origen).toEqual({ elementoId: "A", puerto: 1 });
+    expect(getLinea(r, "L").destino).toEqual({ elementoId: "C", puerto: 3 });
+  });
+
+  it("un extremo libre no se pega a la forma que ya tiene el otro extremo", () => {
+    const e = normalizarEscena(
+      escena(forma("A", 0, 0), forma("B", 600, 0), linea("L", [[100, 30], [120, 30]], { origen: { elementoId: "A", puerto: 1 } })),
+    );
+    expect(getLinea(pegarAlMasCercano(e, ["L"]), "L").destino?.elementoId).toBe("B");
+    const sola = normalizarEscena(escena(forma("A", 0, 0), linea("L", [[100, 30], [120, 30]], { origen: { elementoId: "A", puerto: 1 } })));
+    expect(pegarAlMasCercano(sola, ["L"])).toBe(sola);
   });
 });
 

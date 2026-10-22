@@ -118,6 +118,7 @@ describe("Y10 conectores sin huérfanos", () => {
     const e0 = escena(
       forma("A", 100, 100),
       forma("B", 400, 100, 100, 60, { bloqueado: true }),
+      forma("C", 700, 100),
       linea("L", [[200, 130], [350, 130]], { origen: { elementoId: "A", puerto: 1 } }),
     );
     const m = montar(e0);
@@ -128,18 +129,18 @@ describe("Y10 conectores sin huérfanos", () => {
     expect(deshabilitado(boton)).toBe(false);
     fireEvent.click(boton);
     expect(m.historial()).toBe(1);
-    expect(getLinea(m.ultima(), "L").destino).toEqual({ elementoId: "A", puerto: 1 });
+    expect(getLinea(m.ultima(), "L").destino).toEqual({ elementoId: "C", puerto: 3 });
     expect(getLinea(m.ultima(), "L").destino?.elementoId).not.toBe("B");
     fireEvent.keyDown(m.lienzo, { key: "z", ctrlKey: true });
     expect(getLinea(m.ultima(), "L").destino).toBeUndefined();
     fireEvent.keyDown(m.lienzo, { key: "y", ctrlKey: true });
-    expect(getLinea(m.ultima(), "L").destino).toEqual({ elementoId: "A", puerto: 1 });
+    expect(getLinea(m.ultima(), "L").destino).toEqual({ elementoId: "C", puerto: 3 });
   });
 
   it("el comando aparece en el buscador y su habilitado sigue al extremo libre", () => {
     expect(buscarComandos("extremo libre", COMANDOS).some((r) => r.comando.id === "pegar-al-mas-cercano")).toBe(true);
     expect(buscarComandos("pegar", COMANDOS).some((r) => r.comando.id === "pegar-al-mas-cercano")).toBe(true);
-    const e0 = escena(forma("A", 100, 100), linea("L", [[200, 130], [350, 130]], { origen: { elementoId: "A", puerto: 1 } }));
+    const e0 = escena(forma("A", 100, 100), forma("C", 700, 100), linea("L", [[200, 130], [350, 130]], { origen: { elementoId: "A", puerto: 1 } }));
     const m = montar(e0);
     fireEvent.keyDown(m.lienzo, { key: "k", ctrlKey: true });
     const dialogo = screen.getByRole("dialog", { name: "Buscar comando" });
@@ -155,7 +156,7 @@ describe("Y10 conectores sin huérfanos", () => {
     expect(activa.getAttribute("aria-disabled")).not.toBe("true");
     fireEvent.keyDown(within(abierto).getByRole("combobox"), { key: "Enter" });
     expect(m.historial()).toBe(1);
-    expect(getLinea(m.ultima(), "L").destino).toEqual({ elementoId: "A", puerto: 1 });
+    expect(getLinea(m.ultima(), "L").destino).toEqual({ elementoId: "C", puerto: 3 });
     const ctx = (seleccion: string[], esc: Escena) => ({
       escena: esc,
       seleccion,

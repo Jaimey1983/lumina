@@ -302,13 +302,13 @@ export function hayConectorConExtremoLibre(escena: Escena, seleccion: readonly s
 
 /**
  * Puerto más cercano a `punto` de una forma visible y desbloqueada. No considera la propia línea
- * (las líneas no tienen puertos) ni formas bloqueadas u ocultas.
+ * (las líneas no tienen puertos), formas bloqueadas u ocultas ni las de `excluir`.
  */
-export function puertoMasCercanoElegible(escena: Escena, punto: Punto, lineaId: string): PuertoCercano | null {
+export function puertoMasCercanoElegible(escena: Escena, punto: Punto, lineaId: string, excluir: ReadonlySet<string> = new Set()): PuertoCercano | null {
   const bloqueados = bloqueadosEfectivos(escena);
   let mejor: PuertoCercano | null = null;
   for (const p of puertosDeEscena(escena)) {
-    if (p.elementoId === lineaId) continue;
+    if (p.elementoId === lineaId || excluir.has(p.elementoId)) continue;
     if (bloqueados.has(p.elementoId)) continue;
     const distancia = Math.hypot(p.punto.x - punto.x, p.punto.y - punto.y);
     if (!mejor || distancia <= mejor.distancia) mejor = { ...p, distancia };
@@ -318,18 +318,22 @@ export function puertoMasCercanoElegible(escena: Escena, punto: Punto, lineaId: 
 
 /**
  * Pega cada extremo libre de las líneas elegidas al puerto más cercano de una forma visible y
- * desbloqueada. Un solo resultado: sirve como una entrada de historial.
+ * desbloqueada, sin cerrar el conector sobre sí mismo: el extremo libre nunca se pega a la forma a la
+ * que ya está unido el otro extremo (si no hay otra forma elegible, queda libre). Un solo resultado:
+ * sirve como una entrada de historial.
  */
 export function pegarAlMasCercano(escena: Escena, ids: readonly string[]): Escena {
   const lineas = lineasElegidas(escena, ids);
   let actual = escena;
   for (const l of lineas) {
-    const linea = actual.elementos.find((e): e is Linea => e.id === l.id && e.tipo === "linea");
-    if (!linea) continue;
-    for (const cual of extremosLibres(linea)) {
+    for (const cual of ["origen", "destino"] as const) {
+      // Se relee la línea en cada extremo: el primero pegado cambia lo que excluye el segundo.
+      const linea = actual.elementos.find((e): e is Linea => e.id === l.id && e.tipo === "linea");
+      if (!linea || linea[cual] !== undefined) continue;
+      const otro = cual === "origen" ? linea.destino : linea.origen;
       const extremo = cual === "origen" ? linea.puntos[0] : linea.puntos[linea.puntos.length - 1];
       if (!extremo) continue;
-      const cerca = puertoMasCercanoElegible(actual, extremo, linea.id);
+      const cerca = puertoMasCercanoElegible(actual, extremo, linea.id, new Set(otro ? [otro.elementoId] : []));
       if (!cerca) continue;
       actual = conectar(actual, linea.id, cual, { elementoId: cerca.elementoId, puerto: cerca.puerto });
     }
