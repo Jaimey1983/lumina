@@ -273,11 +273,15 @@ describe("asas del conector seleccionado", () => {
     expect(document.querySelectorAll("[data-asa]")).toHaveLength(0);
   });
 
-  it("un extremo suelto se ve sin relleno verde", () => {
+  it("un extremo suelto se ve naranja (libre), no verde", () => {
     const m = montar(escena(linea("L", [[100, 300], [500, 300]])));
     clic(m, 300, 300);
     expect(document.querySelectorAll('[data-pegado="no"]')).toHaveLength(2);
     expect(document.querySelectorAll('[data-pegado="si"]')).toHaveLength(0);
+    expect(document.querySelectorAll("[data-extremo-libre]")).toHaveLength(2);
+    const fill = document.querySelector("[data-extremo-libre]")?.getAttribute("fill");
+    expect(fill).toBe("#ea580c");
+    expect(fill).not.toBe("#16a34a");
   });
 
   it("arrastrar el extremo destino a un puerto de otra forma lo pega, se resalta y es una sola entrada", () => {

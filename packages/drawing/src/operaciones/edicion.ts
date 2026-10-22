@@ -137,13 +137,22 @@ export interface OpcionesDuplicar {
 
 /**
  * Copia los elementos (con sus hijos si son grupos). Las copias quedan al frente, desplazadas.
- * Una línea copiada conserva la conexión solo si la forma a la que estaba unida también se copió.
- * Devuelve los ids de las copias de primer nivel.
+ * Los conectores que unen dos formas que se copian se copian también (aunque no estén elegidos) y
+ * quedan unidos a las copias. Los que salen hacia fuera de la selección no se copian. Una línea
+ * elegida conserva la conexión solo si la forma a la que estaba unida también se copió.
+ * Devuelve los ids de las copias de primer nivel (las pedidas, no los conectores autoincluidos).
  */
 export function duplicar(escena: Escena, ids: Iterable<string>, opciones: OpcionesDuplicar = {}): { escena: Escena; ids: string[] } {
   const raices = sinDescendientes(escena, ids);
   const originales = expandir(escena, raices);
   if (originales.size === 0) return { escena, ids: [] };
+  // Topología interna: un conector entre dos formas que se copian viaja con ellas.
+  for (const e of escena.elementos) {
+    if (e.tipo !== 'linea' || originales.has(e.id)) continue;
+    const o = e.origen?.elementoId;
+    const d = e.destino?.elementoId;
+    if (o && d && originales.has(o) && originales.has(d)) originales.add(e.id);
+  }
   const dx = opciones.desplazamiento?.x ?? 20;
   const dy = opciones.desplazamiento?.y ?? 20;
   const usados = new Set(escena.elementos.map((e) => e.id));

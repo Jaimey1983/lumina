@@ -13,6 +13,7 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   "crear-hijo": ["hijo", "mapa mental", "rama"],
   "crear-hermano": ["hermano", "mapa mental"],
   "conectar-cadena": ["cadena", "enlazar", "secuencia", "flujo"],
+  "pegar-al-mas-cercano": ["pegar", "extremo libre", "huerfano", "conectar extremo"],
   duplicar: ["copiar", "clonar"],
   agrupar: ["juntar", "unir"],
   desagrupar: ["separar", "desunir"],

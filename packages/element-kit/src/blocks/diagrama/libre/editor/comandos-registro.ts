@@ -15,6 +15,7 @@ import {
   AlignStartHorizontal,
   AlignStartVertical,
   AlignVerticalSpaceBetween,
+  Anchor,
   ArrowRight,
   BringToFront,
   Check,
@@ -43,6 +44,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import type { Orden, TeclaEvento } from "./comandos.js";
+import { hayConectorConExtremoLibre, lineasElegidas } from "./conectores.js";
 import { esMismaHerramienta, SELECCIONAR, type Herramienta } from "./herramientas.js";
 import { ZOOM_MAX, ZOOM_MIN } from "./vista.js";
 
@@ -198,6 +200,17 @@ export const COMANDOS: readonly DefinicionComando[] = [
     orden: { tipo: "conectar-cadena", orden: "auto" },
     soloLienzo: true,
     habilitado: dosFormas,
+  },
+  {
+    id: "pegar-al-mas-cercano",
+    etiqueta: "Pegar al más cercano",
+    icono: Anchor,
+    grupo: "edicion",
+    orden: { tipo: "pegar-al-mas-cercano" },
+    habilitado: (c) => {
+      if (lineasElegidas(c.escena, c.seleccion).length === 0) return "Elige un conector";
+      return hayConectorConExtremoLibre(c.escena, c.seleccion) ? true : "El conector no tiene un extremo libre";
+    },
   },
   { id: "seleccionar-todo", etiqueta: "Seleccionar todo", grupo: "edicion", atajos: [ctrl("a")], orden: { tipo: "seleccionar-todo" } },
   { id: "agrupar", etiqueta: "Agrupar", icono: Group, grupo: "edicion", atajos: [ctrl("g", { shift: false })], orden: { tipo: "agrupar" }, habilitado: varios },

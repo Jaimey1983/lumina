@@ -24,6 +24,7 @@ import {
 } from "@lumina/drawing";
 import { bloqueadosEfectivos } from "./asas.js";
 import { comandoDeTecla } from "./comandos-registro.js";
+import { pegarAlMasCercano } from "./conectores.js";
 
 export interface EstadoEditor {
   escena: Escena;
@@ -45,7 +46,8 @@ export type Comando =
   | { tipo: "crear-hijo" }
   | { tipo: "crear-hermano" }
   | { tipo: "eliminar-rama" }
-  | { tipo: "conectar-cadena"; orden: "seleccion" | "espacial" | "auto" };
+  | { tipo: "conectar-cadena"; orden: "seleccion" | "espacial" | "auto" }
+  | { tipo: "pegar-al-mas-cercano" };
 
 /** Padre inmediato por conector entrante (origen→hijo); `null` si no hay. */
 export function padreConectorDe(escena: Escena, hijoId: string): string | null {
@@ -178,6 +180,10 @@ export function ejecutarComando(estado: EstadoEditor, c: Comando): EstadoEditor 
       const formas = c.orden === "espacial" ? ordenEspacialParaCadena(escena, seleccion) : c.orden === "auto" ? ordenParaCadena(escena, seleccion) : filtrarFormasParaCadena(escena, seleccion);
       if (formas.length < 2) return null;
       const nueva = conectarEnCadena(escena, formas);
+      return nueva === escena ? null : { escena: nueva, seleccion };
+    }
+    case "pegar-al-mas-cercano": {
+      const nueva = pegarAlMasCercano(escena, seleccion);
       return nueva === escena ? null : { escena: nueva, seleccion };
     }
   }

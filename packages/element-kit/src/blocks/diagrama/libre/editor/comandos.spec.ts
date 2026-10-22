@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ATAJOS_DE_NAVEGACION, depurarSeleccion, ejecutarComando, elegibles, ordenDeTecla, type TeclaEvento } from "./comandos.js";
-import { escena, forma, getForma, grupo, ids } from "./util-pruebas.js";
+import { escena, forma, getForma, getLinea, grupo, ids, linea } from "./util-pruebas.js";
 
 const tecla = (key: string, extra: Partial<TeclaEvento> = {}): TeclaEvento => ({ key, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...extra });
 
@@ -119,6 +119,14 @@ describe("ejecutarComando", () => {
   it("un solo elemento se alinea respecto de la escena", () => {
     const solo = { escena: escena(forma("a", 10, 10, 100, 100)), seleccion: ["a"] };
     expect(getForma(ejecutarComando(solo, { tipo: "alinear", modo: "centro" })!.escena, "a").transformacion.x).toBe(450);
+  });
+
+  it("pegar al más cercano une el extremo libre y no hace nada si ya está pegado", () => {
+    const e = escena(forma("a", 0, 0), forma("b", 200, 0), linea("L", [[100, 30], [110, 30]], { origen: { elementoId: "a", puerto: 1 } }));
+    const r = ejecutarComando({ escena: e, seleccion: ["L"] }, { tipo: "pegar-al-mas-cercano" });
+    expect(getLinea(r!.escena, "L").destino).toEqual({ elementoId: "b", puerto: 3 });
+    expect(ejecutarComando(r!, { tipo: "pegar-al-mas-cercano" })).toBeNull();
+    expect(ejecutarComando({ escena: e, seleccion: ["a"] }, { tipo: "pegar-al-mas-cercano" })).toBeNull();
   });
 
   it("depurarSeleccion descarta ids que ya no existen", () => {

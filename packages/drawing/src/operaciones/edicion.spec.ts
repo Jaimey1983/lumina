@@ -231,6 +231,48 @@ describe('duplicar', () => {
     expect(getLinea(sola.escena, 'l-copia').destino).toBeUndefined();
   });
 
+  it('duplicar un trío conectado conserva la topología entre las copias, no con los originales', () => {
+    const e = escena(
+      forma('a', 0, 0),
+      forma('b', 200, 0),
+      forma('c', 400, 0),
+      linea('ab', [[100, 30], [200, 30]], { origen: { elementoId: 'a', puerto: 1 }, destino: { elementoId: 'b', puerto: 3 } }),
+      linea('bc', [[300, 30], [400, 30]], { origen: { elementoId: 'b', puerto: 1 }, destino: { elementoId: 'c', puerto: 3 } }),
+    );
+    const r = duplicar(e, ['a', 'b', 'c']);
+    expect(r.ids).toEqual(['a-copia', 'b-copia', 'c-copia']);
+    expect(ids(r.escena)).toEqual(['a', 'b', 'c', 'ab', 'bc', 'a-copia', 'b-copia', 'c-copia', 'ab-copia', 'bc-copia']);
+    expect(getLinea(r.escena, 'ab-copia')).toMatchObject({ origen: { elementoId: 'a-copia', puerto: 1 }, destino: { elementoId: 'b-copia', puerto: 3 } });
+    expect(getLinea(r.escena, 'bc-copia')).toMatchObject({ origen: { elementoId: 'b-copia', puerto: 1 }, destino: { elementoId: 'c-copia', puerto: 3 } });
+    expect(getLinea(r.escena, 'ab')).toMatchObject({ origen: { elementoId: 'a', puerto: 1 }, destino: { elementoId: 'b', puerto: 3 } });
+    expect(getLinea(r.escena, 'bc')).toMatchObject({ origen: { elementoId: 'b', puerto: 1 }, destino: { elementoId: 'c', puerto: 3 } });
+  });
+
+  it('conectores hacia fuera de la selección no se copian', () => {
+    const e = escena(
+      forma('a', 0, 0),
+      forma('b', 200, 0),
+      forma('c', 400, 0),
+      linea('ab', [[100, 30], [200, 30]], { origen: { elementoId: 'a', puerto: 1 }, destino: { elementoId: 'b', puerto: 3 } }),
+      linea('bc', [[300, 30], [400, 30]], { origen: { elementoId: 'b', puerto: 1 }, destino: { elementoId: 'c', puerto: 3 } }),
+    );
+    const r = duplicar(e, ['a', 'b']);
+    expect(ids(r.escena)).toContain('ab-copia');
+    expect(ids(r.escena)).not.toContain('bc-copia');
+    expect(getLinea(r.escena, 'ab-copia')).toMatchObject({ origen: { elementoId: 'a-copia', puerto: 1 }, destino: { elementoId: 'b-copia', puerto: 3 } });
+    expect(getLinea(r.escena, 'bc').origen).toEqual({ elementoId: 'b', puerto: 1 });
+  });
+
+  it('un conector con un extremo fuera no se autoincluye al duplicar solo el origen', () => {
+    const e = escena(
+      forma('a', 0, 0),
+      forma('b', 200, 0),
+      linea('ab', [[100, 30], [200, 30]], { origen: { elementoId: 'a', puerto: 1 }, destino: { elementoId: 'b', puerto: 3 } }),
+    );
+    const r = duplicar(e, ['a']);
+    expect(ids(r.escena)).toEqual(['a', 'b', 'ab', 'a-copia']);
+  });
+
   it('seleccionar un grupo y su hijo duplica una sola vez', () => {
     const e = escena(forma('a', 0, 0), forma('b', 0, 0), grupo('g', ['a', 'b']));
     expect(ids(duplicar(e, ['g', 'a']).escena)).toHaveLength(6);

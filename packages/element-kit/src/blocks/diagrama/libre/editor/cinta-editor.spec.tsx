@@ -26,7 +26,7 @@ describe("cinta del editor", () => {
 
   it("todos los comandos que antes tenían botón siguen teniéndolo, cada uno en su pestaña (ningún botón desaparece)", () => {
     montar();
-    const sinBoton = new Set(["seleccionar-todo", "listo", "buscar-comando"]);
+    const sinBoton = new Set(["seleccionar-todo", "listo", "buscar-comando", "pegar-al-mas-cercano"]);
     const faltan: string[] = [];
     for (const nombre of ["Inicio", "Insertar", "Organizar", "Vista"]) {
       irAPestana(nombre);
