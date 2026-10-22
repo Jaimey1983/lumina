@@ -16,6 +16,8 @@ import {
   AlignStartVertical,
   AlignVerticalSpaceBetween,
   Anchor,
+  Paintbrush,
+  PaintBucket,
   ClipboardCopy,
   ClipboardPaste,
   ClipboardType,
@@ -62,6 +64,10 @@ export interface ContextoComando {
   zoom: number;
   cuadricula: boolean;
   imantar: boolean;
+  /** Hay un formato copiado con el pincel (Y12b). */
+  formatoGuardado?: boolean;
+  /** El pincel está en uso: una vez, o fijo hasta salir (Y12b). */
+  pincel?: "una-vez" | "fijo" | null;
 }
 
 /** Una combinación de teclas. `ctrl` vale por Ctrl o ⌘ y es exacto (por defecto, sin Ctrl); `shift` y `alt` solo se exigen si se indican. */
@@ -164,6 +170,17 @@ export const COMANDOS: readonly DefinicionComando[] = [
   { id: "cortar", etiqueta: "Cortar", icono: Scissors, grupo: "edicion", atajos: [ctrl("x", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "cortar" }, habilitado: hay },
   { id: "pegar", etiqueta: "Pegar", icono: ClipboardPaste, grupo: "edicion", atajos: [ctrl("v", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "pegar" } },
   { id: "pegar-en-sitio", etiqueta: "Pegar en el mismo sitio", icono: ClipboardType, grupo: "edicion", atajos: [ctrl("v", { shift: true, alt: false })], atajoNativo: true, orden: { tipo: "pegar-en-sitio" } },
+  // Pincel (Y12b)
+  { id: "copiar-formato", etiqueta: "Copiar formato", icono: Paintbrush, grupo: "edicion", atajos: [ctrl("c", { shift: false, alt: true })], orden: { tipo: "copiar-formato" }, habilitado: hay, activo: (c) => (c.pincel ?? null) !== null },
+  {
+    id: "aplicar-formato",
+    etiqueta: "Aplicar formato",
+    icono: PaintBucket,
+    grupo: "edicion",
+    atajos: [ctrl("v", { shift: false, alt: true })],
+    orden: { tipo: "aplicar-formato" },
+    habilitado: (c) => (c.formatoGuardado !== true ? "Copia un formato primero" : c.seleccion.length > 0 ? true : "Elige un elemento"),
+  },
   { id: "duplicar", etiqueta: "Duplicar", icono: Copy, grupo: "edicion", atajos: [ctrl("d")], orden: { tipo: "duplicar" }, habilitado: hay },
   { id: "eliminar", etiqueta: "Eliminar", icono: Trash2, grupo: "edicion", atajos: [{ tecla: "Delete" }, { tecla: "Backspace" }], orden: { tipo: "eliminar" }, habilitado: hay },
   {

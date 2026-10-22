@@ -36,7 +36,7 @@ export const ids = (e: Escena): string[] => e.elementos.map((x) => x.id);
 // La cinta solo monta la pestaña visible: para tocar un botón hay que abrir antes su pestaña.
 
 const PESTANA_DE_COMANDO: Array<[RegExp, string]> = [
-  [/^(Seleccionar|Línea|Flecha|Texto|Duplicar|Eliminar|Agregar hijo|Agregar hermano|Borrar rama|Copiar|Cortar|Pegar|Pegar en el mismo sitio)$/, "Inicio"],
+  [/^(Seleccionar|Línea|Flecha|Texto|Duplicar|Eliminar|Agregar hijo|Agregar hermano|Borrar rama|Copiar|Cortar|Pegar|Pegar en el mismo sitio|Copiar formato|Aplicar formato)$/, "Inicio"],
   [/^Conectar en cadena$/, "Insertar"],
   [/^Insertar /, "Insertar"],
   [/^(Agrupar|Desagrupar|Traer al frente|Subir un nivel|Bajar un nivel|Enviar al fondo|Alinear |Centrar |Distribuir )/, "Organizar"],

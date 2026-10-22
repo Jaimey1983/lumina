@@ -87,7 +87,10 @@ export type Orden =
   | { tipo: "copiar" }
   | { tipo: "cortar" }
   | { tipo: "pegar" }
-  | { tipo: "pegar-en-sitio" };
+  | { tipo: "pegar-en-sitio" }
+  /** Pincel (Y12b): toma el formato de lo elegido y lo aplica a lo que se señale (una vez, o fijo). */
+  | { tipo: "copiar-formato" }
+  | { tipo: "aplicar-formato" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
