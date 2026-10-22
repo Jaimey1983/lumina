@@ -1,15 +1,9 @@
----
-description: Contratos obligatorios del editor de slides/canvas en lumina-frontend (posición, historial, drag, render).
-globs: lumina-frontend/**/*
-alwaysApply: false
----
-
 # Lumina — Contratos del editor de canvas (frontend)
 
 **Obligatorio en todo cambio** en el editor de clases, canvas, bloques, capas, alineación, historial y render de slides.
 
 Ruta del proyecto frontend: `lumina-frontend/`  
-Documentación extendida: `lumina-frontend/.cursorrules` (sección «Contratos del editor»).
+Documentación extendida: `docs/contexto/frontend.md` (sección «Contratos del editor»).
 
 ---
 

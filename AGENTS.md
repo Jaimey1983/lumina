@@ -21,7 +21,6 @@
 Este archivo es la **única** fuente de verdad para cómo se trabaja en este repositorio. Lo leen, sin excepción y con el mismo contenido:
 
 - **Claude Code** — vía `CLAUDE.md` en la raíz (`@AGENTS.md`) y en cada paquete.
-- **Cursor** — de forma nativa como regla base, más `.cursor/rules/*.mdc` para reglas ya existentes con alcance específico (editor de canvas). Ningún `.mdc` nuevo redefine lo que dice este archivo — solo puede apuntar aquí.
 - **Antigravity** — de forma nativa desde v1.20.3. **No crear un `GEMINI.md` en la raíz**: si existe, Antigravity le da prioridad sobre este archivo para reglas en conflicto, y volveríamos a tener dos fuentes de verdad por la puerta de atrás.
 
 Si una herramienta sugiere algo que contradice este documento, **este documento gana siempre**. Si hace falta una regla nueva, se agrega acá — nunca en un archivo paralelo.
@@ -33,7 +32,7 @@ Contexto completo del diagnóstico y la hoja de ruta: informe "Plano Lumina" (pe
 ## Regla 0 — Jerarquía
 
 1. Este archivo.
-2. Los contratos ya existentes y vigentes (ej. `.cursor/rules/lumina-canvas-editor-contracts.mdc` para el editor de canvas, mientras esa parte no haya migrado al nuevo contrato).
+2. Los contratos ya existentes y vigentes (ej. `docs/contratos/canvas-editor.md` para el editor de canvas, mientras esa parte no haya migrado al nuevo contrato).
 3. La convención de la herramienta que estés usando.
 4. Preferencia personal — **no aplica** en este proyecto durante la migración.
 
@@ -95,7 +94,7 @@ Se mantiene la convención ya usada en el repo (`feat:`, `fix:`, `chore:`, en es
 
 ## Regla 8 — Un solo archivo de reglas, siempre
 
-Nadie crea un segundo documento de convenciones en ninguna herramienta (otro `.md` de reglas, otro `.mdc` que repita en vez de referenciar, notas sueltas en el README de un paquete). Ampliaciones y excepciones se agregan **en este archivo**, con su propio commit, para que las tres herramientas las vean al mismo tiempo.
+Nadie crea un segundo documento de convenciones en ninguna herramienta (otro `.md` de reglas que repita en vez de referenciar, notas sueltas en el README de un paquete). Ampliaciones y excepciones se agregan **en este archivo**, con su propio commit, para que todas las herramientas las vean al mismo tiempo.
 
 ## Regla 9 — Protocolo obligatorio de corrección de errores (lint, tipos, CI)
 
@@ -112,7 +111,7 @@ Aplica a cualquier error preexistente que se decida corregir (empezando por los 
 
 ## Regla 10 — Tablero de pasos y órdenes de trabajo
 
-El trabajo se reparte entre tres operadores — **Claude Code**, **Cursor**, **Antigravity** — en pasos atómicos (un paso = un PR). Cada paso vive como una **ficha** en la sección **«Tablero de pasos»** (índice al final de este archivo; fichas en `docs/tablero/`). El prompt que recibe un operador es corto **a propósito**: todo el detalle está en la ficha.
+El trabajo se reparte entre dos operadores — **Claude Code** y **Antigravity** — en pasos atómicos (un paso = un PR). Cada paso vive como una **ficha** en la sección **«Tablero de pasos»** (índice al final de este archivo; fichas en `docs/tablero/`). El prompt que recibe un operador es corto **a propósito**: todo el detalle está en la ficha.
 
 ### Prompt canónico del operador
 
@@ -126,7 +125,7 @@ Nada más. Si el operador necesita algo que **no** está en la ficha, no improvi
 |---|---|
 | **ID** | `E<etapa>.<n>` migración · `F1.<n>` riesgo Fase 1 · `L.<n>` **lint** (Regla 9; no confundir con etapas de producto) · `X.<n>` fuera de hoja de ruta · **Letra de etapa + número** post-migración: `G`, `H`, `I`, `J`, `K`, `M`, `N`, `Q`, … (`M1`, `N0`, `Q1`…). **`N` = motor Storyline/reglas**; **química = `Q`**, nunca `N` ni `L` |
 | **Título** | Una línea imperativa ("Realizá X"). |
-| **Operador** | Claude Code · Cursor · Antigravity. |
+| **Operador** | Claude Code · Antigravity. |
 | **Estado** | `pendiente` → `[en curso: <op>]` → `en revisión` → `hecho`; o `bloqueado por <ID>`. |
 | **Precondición** | Qué fichas deben estar `hecho` antes. Si la Regla 1 lo impide, se dice acá. |
 | **Alcance** | Carpetas/archivos que el paso PUEDE tocar y los que NO. Un cambio fuera de esto = rechazo en revisión. |
@@ -147,7 +146,7 @@ Nada más. Si el operador necesita algo que **no** está en la ficha, no improvi
 
 ## Regla 11 — Los operadores ejecutan sin pedir permiso paso a paso
 
-Aplica a **Antigravity, Cursor, Codex y Claude Code**. Interrumpir pidiendo confirmación por cada acción (Antigravity llega a ~3 prompts por minuto) frena el trabajo sin sumar seguridad real: el alcance ya está acotado por la ficha (Regla 10) y la red de seguridad es el CI + los tests (Regla 7).
+Aplica a **Antigravity y Claude Code**. Interrumpir pidiendo confirmación por cada acción (Antigravity llega a ~3 prompts por minuto) frena el trabajo sin sumar seguridad real: el alcance ya está acotado por la ficha (Regla 10) y la red de seguridad es el CI + los tests (Regla 7).
 
 - El operador ejecuta **todas las acciones de su ficha sin pedir confirmación**: leer y escribir archivos, correr `pnpm` / `npx` / tests / lint, `git add` de sus propios archivos, `git commit`, crear ramas locales.
 - El permiso es **por adelantado y para todo el ciclo de la ficha** — no se pregunta comando por comando. Si el cliente tiene un modo "auto-run / YOLO / ejecutar sin confirmar", se deja activado para este repo.
@@ -188,6 +187,6 @@ Las fichas viven en `docs/tablero/`, **una por etapa**. No se cargan de forma au
 | U (actividades de nivel profesional) | `docs/tablero/etapa-U.md` | U0–U8, U9a (U9a.1–U9a.8), U9b (U9b.1–U9b.6) y U9c (U9c.1–U9c.4) en revisión; **U9d hecho**; U10 (U10.1–U10.4), U11 (U11.1–U11.5) y U12 (U12.1a–U12.3) y U13 (primera tanda elegida) en revisión; **U14 (`relacionar_lineas`), U15 (`problema_pasos`), U16 (`etiquetar_imagen`) y U17 (`linea_tiempo`) y U18 (`cloze_banco`) en revisión — **primera tanda de actividades nuevas (U14–U18) completa** |
 | V (diagramas: lo roto, tema de cuatro piezas, layout/exportación) | `docs/tablero/etapa-V.md` | V1.1–V3.2 en revisión; V4.1–V4.3 reemplazadas por la etapa W. Sustento: `PERITAJE_EDRAWMAX_VS_DIAGRAMAS.md` |
 | W (editor de dibujo libre tipo EdrawMax: elemento `dibujo`) | `docs/tablero/etapa-W.md` | W1–W10 y W5b (Diagramas abre el editor libre) en revisión; **DW11: el editor vive dentro de `diagrama`, no hay widget aparte (tipo `dibujo` retirado en W10)**; W11 es ficha raíz (se redacta al cerrar W10) |
-| Y (editor de diagramas: cinta, conexión fluida, productividad) | `docs/tablero/etapa-Y.md` | Y0–Y4 en revisión; **Y5, Y6 y Y7 en revisión**; **Y8 en revisión**; **Y9 en revisión**; **Y10 en revisión**; **Y11 en revisión (fase B completa)** (fases C–F se redactan al cerrar la fase B; contenedores después de W10) |
+| Y (editor de diagramas: cinta, conexión fluida, productividad) | `docs/tablero/etapa-Y.md` | Y0–Y4 en revisión; **Y5, Y6 y Y7 en revisión**; **Y8 en revisión**; **Y9 en revisión**; **Y10 en revisión**; **Y11 en revisión (fase B completa)** **fase C redactada (Y12a–Y17, `pendiente`)**; fases D–F se redactan al cerrar la fase anterior; contenedores después de W10 |
 
 Las etapas cerradas son historial: no se leen salvo que una ficha activa las cite.

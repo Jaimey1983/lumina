@@ -998,7 +998,7 @@ LIB / HOOKS
   components/animations/animation-panel.tsx .... AnimationList + TransitionPanel
   types/slide.types.ts / widget.types.ts / animation.types.ts ... esquema completo
 REGLAS
-  lumina-frontend/.cursorrules  ·  .cursor/rules/lumina-canvas-editor-contracts.mdc
+  docs/contexto/frontend.md  ·  docs/contratos/canvas-editor.md
   lumina-frontend/CLAUDE.md (familias de widgets, SlideNavContext)
 ```
 

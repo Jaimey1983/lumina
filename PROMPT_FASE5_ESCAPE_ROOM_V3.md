@@ -15,7 +15,7 @@ Cada sección “PROMPT CAPA N” se ejecuta **sola**, en su propia sesión. No 
 - `PERITAJE_ESCAPE_ROOM_ADDENDUM.md`
 - `LUMINA_CONTEXT_V41.md`
 - `LUMINA_ROADMAP_DETALLADO.md` (solo Fase 5)
-- Frontend: `lumina-frontend/.cursorrules` (contratos de canvas) si la capa toca `SlideRenderer` o bloques
+- Frontend: `docs/contexto/frontend.md` (contratos de canvas) si la capa toca `SlideRenderer` o bloques
 
 ---
 
@@ -236,7 +236,7 @@ Dashboard independiente + cableado de visibilidad. `LiveResponsesPanel` sin camb
 
 ## PROMPT CAPA 5 — Canvas en el viewer
 
-Lee el preámbulo, el plan capa 5 y `lumina-frontend/.cursorrules` (contratos 3.2). Requiere capa 2 (si no, F5 resetea el lienzo en vivo).
+Lee el preámbulo, el plan capa 5 y `docs/contexto/frontend.md` (contratos 3.2). Requiere capa 2 (si no, F5 resetea el lienzo en vivo).
 
 ### Punto de partida real
 

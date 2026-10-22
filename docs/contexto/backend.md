@@ -1,5 +1,5 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
-# Archivo de contexto para Cursor AI
+# Archivo de contexto del backend
 # Última actualización: 26/03/2026 (Correcciones Postman: GamificationModule + MessagingModule)
 # Revisión de código y correcciones documentadas: 24/03/2026, 25/03/2026 y 26/03/2026 (ver sección al final del archivo)
 
@@ -48,7 +48,7 @@ Eres el programador líder y arquitecto senior del proyecto Lumina. Tu rol es:
 ## 💻 ENTORNO DE DESARROLLO
 
 - **OS:** Windows 11
-- **IDE:** Cursor + VS Code
+- **IDE:** VS Code
 - **Node.js:** v22.20.0
 - **NestJS CLI:** 11.0.16
 - **Docker:** 29.2.1
@@ -1321,7 +1321,7 @@ lumina-backend/
 
 ---
 
-## 📌 REVISIÓN 24/03/2026 — Cambios realizados en el código (referencia para Cursor)
+## 📌 REVISIÓN 24/03/2026 — Cambios realizados en el código (referencia)
 
 Resumen de la revisión solicitada al asistente: errores detectados y correcciones ya aplicadas en el repositorio. No sustituye el resto de este archivo; amplía el contexto.
 

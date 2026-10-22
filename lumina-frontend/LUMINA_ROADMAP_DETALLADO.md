@@ -54,7 +54,7 @@ Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Nive
 ---
 
 # FASE 3 — CANVAS: AUDITORÍA, DEPURACIÓN Y REFINAMIENTO
-> Completada 26/08/2026 — auditoría Grupo 9 (`DIAGNOSTICO_GRUPO9.md`), contratos canvas (`.cursor/rules/lumina-canvas-editor-contracts.mdc`) y mejoras 3.3 en editor.
+> Completada 26/08/2026 — auditoría Grupo 9 (`DIAGNOSTICO_GRUPO9.md`), contratos canvas (`docs/contratos/canvas-editor.md`) y mejoras 3.3 en editor.
 
 ### 3.1 — Auditoría (solo lectura, primer prompt)
 - [x] Revisar `use-block-drag.ts` contra widgets Grupo 9 y actividades Grupo 4 — contrato `getBlockPos` / `withRect` / clamp

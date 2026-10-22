@@ -8,8 +8,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Contratos del editor de canvas (obligatorio)
 
-Antes de modificar el editor de clases, canvas, bloques o historial undo, lee **`.cursorrules`** en esta carpeta (sección «Contratos del editor»).
+Antes de modificar el editor de clases, canvas, bloques o historial undo, lee **`docs/contexto/frontend.md`** en la raíz del monorepo (sección «Contratos del editor»).
 
 Regla de oro: **leer (`getBlockPos`) → transformar → clamp → persistir → historial**.
 
-En el monorepo raíz también aplica `.cursor/rules/lumina-canvas-editor-contracts.mdc` al editar archivos bajo `lumina-frontend/`.
+El contrato del editor de canvas vive en `docs/contratos/canvas-editor.md` y aplica al editar archivos bajo `lumina-frontend/`.

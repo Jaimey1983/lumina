@@ -20,7 +20,7 @@
 - **Una sola fuente de verdad de posición:** `getBlockPos(block)` en `src/hooks/use-block-drag.ts`.
   Todo (render, drag, resize, snap, capas, alineación, miniaturas) lee de ahí; nadie reimplementa
   fallbacks por `tipo`.
-- **Regla de oro del editor** (`.cursorrules` / `.cursor/rules/lumina-canvas-editor-contracts.mdc`):
+- **Regla de oro del editor** (`docs/contexto/frontend.md` / `docs/contratos/canvas-editor.md`):
   `leer (getBlockPos) → transformar → clamp (clampDragCorner) → persistir (PATCH) → historial`.
 - **~30 tipos de elemento** conviven en el canvas: bloques básicos, formas, máscaras de recorte
   (`clip-group`), 11 widgets estilo Genially/Captivate y 25 tipos de actividad evaluable — todos
@@ -606,7 +606,7 @@ HISTORIAL / PERSISTENCIA
   src/hooks/api/use-slide-versions.ts ....... SlideVersion (Ctrl+S)
 
 REGLAS
-  lumina-frontend/.cursorrules  ·  .cursor/rules/lumina-canvas-editor-contracts.mdc
+  docs/contexto/frontend.md  ·  docs/contratos/canvas-editor.md
   lumina-frontend/CLAUDE.md (familias de widgets, SlideNavContext)
 ```
 

@@ -76,7 +76,7 @@ export interface QuizMultiple {
 
 Notas:
 - **No** llevan `id`, `createdAt`, `updatedAt` dentro de `actividad`: la identidad y los timestamps
-  viven en el Block/Slide (`.cursorrules`: "el id del bloque raíz lo asigna el editor").
+  viven en el Block/Slide (`docs/contexto/frontend.md`: "el id del bloque raíz lo asigna el editor").
 - `correctOptionId` del borrador se descarta: se mantiene `esCorrecta` por opción (D2).
 
 ### Eventos Socket.IO (Etapa 4, modo SYNCED)
@@ -154,7 +154,7 @@ Idempotente y sin pérdida: si el docente cambia de layout luego, `imagenUrl` si
 
 ---
 
-## 5. Prompt para Cursor — Etapa 1
+## 5. Prompt de implementación — Etapa 1
 
 ```
 CONTEXTO
@@ -163,7 +163,7 @@ contenedor de N preguntas SIN romper los quizzes existentes ni el build. Solo Et
 contrato de tipos + migración + ajuste mínimo de compilación. NO tocar viewer/editor UX
 todavía (eso es Etapa 2 y 3).
 
-Regla de oro del editor de canvas (ver lumina-frontend/.cursorrules): no cambiar el flujo
+Regla de oro del editor de canvas (ver docs/contexto/frontend.md): no cambiar el flujo
 leer→transformar→clamp→persistir→historial. Aquí no aplica porque no tocamos el canvas.
 
 TAREAS

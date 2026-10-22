@@ -1,6 +1,6 @@
 # Backlog de limpieza de lint (Regla 9 de AGENTS.md)
 
-Listas exactas para el reparto de trabajo entre Claude Code, Cursor y Antigravity. Ver `AGENTS.md` → "Reparto activo — limpieza de lint" para el protocolo y el estado de cada cluster.
+Listas exactas para el reparto de trabajo entre Claude Code y Antigravity. Ver `AGENTS.md` → "Reparto activo — limpieza de lint" para el protocolo y el estado de cada cluster.
 
 **Antes de tocar un archivo de esta lista:** marcar la fila correspondiente en `AGENTS.md` como `[en curso: <herramienta>]` y commitear ese cambio primero.
 
@@ -100,7 +100,7 @@ lumina-frontend/src/components/widgets/timeline/timeline-node-layouts.tsx
 lumina-frontend/src/components/widgets/timeline/timeline-node-primitives.tsx
 ```
 
-## Asignado a Cursor (68 casos, código sensible de notas)
+## Sin asignar (68 casos, código sensible de notas)
 
 ```
 lumina-backend/src/classes/activity-scoring.ts
