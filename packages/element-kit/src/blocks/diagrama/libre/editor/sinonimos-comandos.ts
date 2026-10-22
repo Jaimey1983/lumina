@@ -18,6 +18,8 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   cortar: ["cut", "mover", "portapapeles"],
   pegar: ["paste", "portapapeles"],
   "pegar-en-sitio": ["pegar", "paste", "portapapeles", "misma posicion"],
+  "copiar-formato": ["pincel", "brocha", "estilo", "formato", "copiar estilo"],
+  "aplicar-formato": ["pincel", "brocha", "estilo", "formato", "pegar formato", "pegar estilo"],
   duplicar: ["copiar", "clonar"],
   agrupar: ["juntar", "unir"],
   desagrupar: ["separar", "desunir"],

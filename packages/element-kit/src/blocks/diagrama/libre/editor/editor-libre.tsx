@@ -27,8 +27,11 @@ import {
   conectarFormas,
   crearHijo,
   crearHijoEn,
+  aplicarFormato,
   cajaDeFragmento,
   DESPLAZAMIENTO_PEGADO,
+  elementosEn,
+  extraerFormato,
   existeConector,
   pegar,
   normalizarEscena,
@@ -36,6 +39,7 @@ import {
   trazadoForma,
   type Conexion,
   type Lado,
+  type FormatoCopiado,
   type OpcionesPegar,
   type TipoForma,
   type Elemento,
@@ -124,7 +128,7 @@ export interface EditorLibreProps {
 }
 
 type Accion = {
-  modo: "pan" | "gesto" | "crear" | "conector" | "hijo";
+  modo: "pan" | "gesto" | "crear" | "conector" | "hijo" | "pincel";
   gesto: Gesto | null;
   /** Solo en modo `hijo`: asa «+» desde la que se arrastra. */
   hijo?: { padreId: string; lado: Lado; base: Escena };
@@ -301,6 +305,12 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   /** Forma que se arrastra desde la galería de la cinta y dónde caería (solo mientras el puntero está sobre el lienzo). */
   const [fantasmaGaleria, setFantasmaGaleria] = useState<{ forma: TipoForma; centro: Punto } | null>(null);
   const galeria = useRef<{ cancelar: () => void } | null>(null);
+  /** El pincel (Y12b): `null` = apagado; `fijo` = sigue activo tras aplicar. */
+  const [pincel, setPincel] = useState<{ fijo: boolean } | null>(null);
+  const pincelRef = useRef<{ fijo: boolean } | null>(null);
+  /** El último formato copiado con el pincel: vale para `Ctrl+Alt+V` aunque se haya salido del modo. */
+  const formatoRef = useRef<FormatoCopiado | null>(null);
+  const [hayFormato, setHayFormato] = useState(false);
   /** Lo último que se copió desde esta página: respaldo si el navegador quita el formato propio, y lo que pega el botón «Pegar». */
   const memoriaCopia = useRef<Copia | null>(null);
   /** Cuántas veces seguidas se pegó lo mismo (cada pegado se desplaza 20 más). */
@@ -514,7 +524,13 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setObjetivoPuerto((previo) => (previo?.elementoId === p?.elementoId && previo?.puerto === p?.puerto ? previo : p));
   }, []);
 
+  const fijarPincel = useCallback((p: { fijo: boolean } | null): void => {
+    pincelRef.current = p;
+    setPincel(p);
+  }, []);
+
   const elegirHerramienta = useCallback((h: Herramienta, fija = false): void => {
+    if (pincelRef.current) fijarPincel(null); // elegir una herramienta saca del pincel
     const sera = fija && h.tipo !== "seleccionar";
     fijaRef.current = sera;
     setHerramientaFija(sera);
@@ -529,7 +545,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
     setAnuncio(h.tipo === "seleccionar" ? "Herramienta: seleccionar." : h.tipo === "forma" ? `Herramienta: ${FORMAS[h.forma].nombre}. Haz clic o arrastra en el lienzo.` : h.tipo === "linea" ? `Herramienta: ${h.flecha ? "flecha" : "línea"}. Arrastra, o haz clic en cada punto y doble clic para terminar.` : "Herramienta: texto. Haz clic o arrastra en el lienzo.");
     svgRef.current?.focus();
-  }, [fijarCurso, fijarObjetivo]);
+  }, [fijarCurso, fijarObjetivo, fijarPincel]);
 
   const elegirPorNombre = useCallback(
     (nombre: NombreHerramienta, fija = false): void => elegirHerramienta(nombre === "seleccionar" ? SELECCIONAR : nombre === "texto" ? { tipo: "texto" } : { tipo: "linea", flecha: nombre === "flecha" }, fija),
@@ -586,6 +602,49 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       radioPx: radioDePuertoPx(tipoPuntero.current),
       ...(shift && desde ? { restringir: (p: Punto) => restringirAngulo(desde, p) } : {}),
     });
+  };
+
+  // ─── Pincel: copiar formato (Y12b) ──────────────────────────────────────────
+  /** Aplica el formato guardado: UNA entrada de historial aunque sean varios elementos. Los bloqueados se saltan y se avisa. */
+  const aplicarFormatoA = (ids: readonly string[], desdeElModo: boolean): void => {
+    const f = formatoRef.current;
+    if (!f) return;
+    const { escena: actual } = vivo.current;
+    const r = aplicarFormato(actual, ids, f);
+    const n = r.aplicados.length;
+    const saltados = r.omitidos.length;
+    if (r.escena === actual) {
+      setAnuncio(n === 0 ? (saltados > 0 ? "No se aplicó el formato: lo señalado está bloqueado." : "No hay nada que formatear ahí.") : "Ya tenía ese formato.");
+    } else {
+      confirmar(actual, { escena: r.escena, seleccion: [...ids] });
+      setAnuncio(`Formato aplicado a ${n === 1 ? "1 elemento" : `${n} elementos`}${saltados > 0 ? `; se saltó ${saltados === 1 ? "1 bloqueado" : `${saltados} bloqueados`}` : ""}.`);
+    }
+    if (desdeElModo && pincelRef.current?.fijo !== true) fijarPincel(null);
+  };
+
+  /**
+   * «Copiar formato»: toma el formato de lo elegido y deja el pincel listo. Un clic con el pincel ya en uso lo suelta (como
+   * en Office); con Mayús o con doble clic en el botón (`fijo`) queda fijo hasta salir.
+   */
+  const iniciarPincel = (fijo: boolean): void => {
+    const { escena: actual, seleccion: sel } = vivo.current;
+    if (pincelRef.current && !fijo) {
+      fijarPincel(null);
+      setCursor("default");
+      setAnuncio("Pincel cancelado.");
+      return;
+    }
+    const f = sel[0] ? extraerFormato(actual, sel[0]) : null;
+    if (!f) {
+      setAnuncio("Elige un elemento para copiarle el formato.");
+      return;
+    }
+    formatoRef.current = f;
+    setHayFormato(true);
+    if (vivo.current.herramienta.tipo !== "seleccionar") elegirHerramienta(SELECCIONAR);
+    fijarPincel({ fijo });
+    setAnuncio(fijo ? "Pincel fijo: señala los elementos que quieras formatear. Escape lo suelta." : "Pincel: señala un elemento, o arrastra un recuadro, para darle ese formato. Escape lo cancela.");
+    svgRef.current?.focus();
   };
 
   // ─── Portapapeles (Y12a, DY7) ───────────────────────────────────────────────
@@ -787,6 +846,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
     if (e.button !== 0) return;
     const { escena: actual, seleccion: sel, vista: v, herramienta: h } = vivo.current;
+    if (pincelRef.current) {
+      // Con el pincel: un clic en un elemento le da el formato; un arrastre desde el vacío dibuja un recuadro y se lo da a lo que abarque.
+      const crudo = pantallaAEscena(v, pantalla);
+      const bajo = elementoEn(escenaConRutas(actual), crudo, { tolerancia: 6 / v.zoom });
+      accion.current = { modo: "pincel", gesto: null, activo: false, origen: pantalla, ultimo: pantalla, inicioEscena: crudo, shift: false, ...(bajo !== undefined ? { hit: bajo } : {}) };
+      capturar(e);
+      return;
+    }
     if (h.tipo !== "seleccionar") {
       // Crear: se parte del punto (imantado, o del puerto si se empieza una línea sobre uno) y se decide al soltar si fue un clic o un arrastre.
       const crudo = pantallaAEscena(v, pantalla);
@@ -861,6 +928,11 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (!a) {
       // Sin arrastre: cambia el cursor según la herramienta y lo que haya debajo; una línea a medio hacer sigue al cursor.
       const { escena: actual, seleccion: sel, vista: v, herramienta: h, enCurso: curso } = vivo.current;
+      if (pincelRef.current) {
+        setFormaHover(null);
+        setCursor(espacio.current ? "grab" : "copy");
+        return;
+      }
       if (h.tipo !== "seleccionar") {
         setFormaHover(null);
         setCursor(espacio.current ? "grab" : h.tipo === "texto" ? "text" : "crosshair");
@@ -886,6 +958,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (a.modo === "pan") {
       setVista((v) => desplazar(v, pantalla.x - a.ultimo.x, pantalla.y - a.ultimo.y));
       a.ultimo = pantalla;
+      return;
+    }
+    if (a.modo === "pincel") {
+      if (!a.activo) {
+        if (Math.hypot(pantalla.x - a.origen.x, pantalla.y - a.origen.y) < UMBRAL_ARRASTRE_PX) return;
+        a.activo = true;
+      }
+      if (a.hit === undefined) setRecuadro(cajaArrastrada(a.inicioEscena as Punto, pantallaAEscena(vivo.current.vista, pantalla)));
       return;
     }
     if (a.modo === "crear") {
@@ -984,6 +1064,19 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     const base = vivo.current.herramienta.tipo === "seleccionar" ? "default" : vivo.current.herramienta.tipo === "texto" ? "text" : "crosshair";
     setCursor(espacio.current ? "grab" : base);
     if (!a || a.modo === "pan") return;
+    if (a.modo === "pincel") {
+      const { escena: actual, vista: v } = vivo.current;
+      if (!a.activo) {
+        if (a.hit !== undefined) aplicarFormatoA([a.hit], true);
+        return;
+      }
+      if (a.hit !== undefined) return; // se arrastró desde un elemento: no es un recuadro ni un clic
+      const caja = cajaArrastrada(a.inicioEscena as Punto, pantallaAEscena(v, aPantalla(e)));
+      const ids = elementosEn(actual, caja);
+      if (ids.length === 0) setAnuncio("El recuadro no abarca nada.");
+      else aplicarFormatoA(ids, true);
+      return;
+    }
     if (a.modo === "hijo" && a.hijo) {
       const { vista: v } = vivo.current;
       const puntoSuelta = pantallaAEscena(v, aPantalla(e));
@@ -1110,6 +1203,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   };
 
   const alDobleClic = (e: RatonReact<SVGSVGElement>): void => {
+    if (pincelRef.current) return; // con el pincel, el doble clic no abre el texto
     const { herramienta: h, enCurso: curso, escena: actual, vista: v } = vivo.current;
     // Con la herramienta de línea, el doble clic cierra la línea de varios puntos.
     if (h.tipo === "linea") {
@@ -1260,6 +1354,13 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       case "pegar-en-sitio":
         pegarDeBoton(true);
         return;
+      case "copiar-formato":
+        iniciarPincel(opciones?.fija === true);
+        return;
+      case "aplicar-formato":
+        aplicarFormatoA(vivo.current.seleccion, false);
+        svgRef.current?.focus();
+        return;
       case "terminar":
         cerrar();
         return;
@@ -1269,7 +1370,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         return;
       }
       case "cerrar":
-        if (vivo.current.enCurso) {
+        if (pincelRef.current) {
+          fijarPincel(null);
+          setAnuncio("Pincel cancelado.");
+        } else if (vivo.current.enCurso) {
           fijarCurso(null);
           fijarObjetivo(null);
           setPrevia(null);
@@ -1344,7 +1448,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const cantidad = escena.elementos.filter((x) => x.tipo !== "grupo").length;
   const puedeDeshacer = historial.current.puedeDeshacer;
   const puedeRehacer = historial.current.puedeRehacer;
-  const contextoCinta: ContextoComando = { escena, seleccion, herramienta, puedeDeshacer, puedeRehacer, zoom: vista.zoom, cuadricula, imantar };
+  const contextoCinta: ContextoComando = { escena, seleccion, herramienta, puedeDeshacer, puedeRehacer, zoom: vista.zoom, cuadricula, imantar, formatoGuardado: hayFormato, pincel: pincel === null ? null : pincel.fijo ? "fijo" : "una-vez" };
 
   // Al elegir un conector se muestra su pestaña contextual, pero solo si el usuario estaba en Inicio: no le quita la pestaña a quien trabaja en otra.
   const [pestana, setPestana] = useState(PESTANA_INICIO);
@@ -1404,6 +1508,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         onPestana={setPestana}
         onOrden={ejecutarOrden}
         herramientaFija={herramientaFija}
+        pincelFijo={pincel?.fijo === true}
         onArrastrarForma={iniciarArrastreGaleria}
         onColocarForma={colocarFormaAlCentro}
         onCambiarConector={cambiarConector}
@@ -1494,7 +1599,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         zoom={vista.zoom}
         cuadricula={cuadricula}
         imantar={imantar}
-        ayuda={ayudaDeHerramienta(herramienta, enCurso)}
+        ayuda={pincel ? "Pincel: haz clic en un elemento, o arrastra un recuadro, para darle el formato copiado · Esc lo suelta" : ayudaDeHerramienta(herramienta, enCurso)}
         onOrden={ejecutarOrden}
         onZoom={(z) => acercar(z / vivo.current.vista.zoom)}
         cursorRef={cursorEstado}

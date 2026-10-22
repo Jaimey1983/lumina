@@ -53,6 +53,8 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "seleccionar-todo": "Edición general",
   "conectar-cadena": "Insertar",
   copiar: "Inicio",
+  "copiar-formato": "Inicio",
+  "aplicar-formato": "Inicio",
   cortar: "Inicio",
   pegar: "Inicio",
   "pegar-en-sitio": "Inicio",
@@ -94,6 +96,8 @@ export interface CintaEditorProps {
   onOrden: (orden: Orden, opciones?: OpcionesOrden) => void;
   /** La herramienta activa quedó fija (Y11): su botón lo marca con `data-fija`. */
   herramientaFija?: boolean;
+  /** El pincel quedó fijo (Y12b): el botón «Copiar formato» lo marca con `data-fija`. */
+  pincelFijo?: boolean;
   /** Se aprieta el botón de una forma de la galería: si la persona arrastra, el editor la suelta en el lienzo (Y11). */
   onArrastrarForma?: (forma: TipoForma, evento: PointerEvent<HTMLButtonElement>) => void;
   /** Enter sobre una forma de la galería: se coloca al centro de la vista (Y11). */
@@ -106,7 +110,7 @@ export interface CintaEditorProps {
   acciones?: ReactNode;
 }
 
-export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, herramientaFija, onArrastrarForma, onColocarForma, onCambiarConector, onSalirALienzo, acciones }: CintaEditorProps): ReactElement {
+export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, herramientaFija, pincelFijo, onArrastrarForma, onColocarForma, onCambiarConector, onSalirALienzo, acciones }: CintaEditorProps): ReactElement {
   /** Botón de un comando del registro. */
   const boton = (id: string, size: "large" | "medium" | "small" = "medium", icono?: ReactNode): ReactElement => {
     const def = comando(id);
@@ -114,7 +118,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
     const Icono = def.icono;
     // Las herramientas de crear se pueden dejar fijas (Mayús al elegirlas o doble clic) y las formas se arrastran desde la galería (Y11).
     const forma = def.orden.tipo === "herramienta-forma" ? def.orden.forma : null;
-    const esHerramienta = forma !== null || (def.orden.tipo === "herramienta" && def.orden.herramienta !== "seleccionar");
+    const esHerramienta = forma !== null || (def.orden.tipo === "herramienta" && def.orden.herramienta !== "seleccionar") || def.orden.tipo === "copiar-formato";
     return (
       <RibbonButton
         key={id}
@@ -126,7 +130,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
         disabled={!estado.habilitado}
         disabledReason={estado.motivo || undefined}
         data-comando={id}
-        {...(estado.activo && herramientaFija ? { "data-fija": "" } : {})}
+        {...(estado.activo && (def.orden.tipo === "copiar-formato" ? pincelFijo : herramientaFija) ? { "data-fija": "" } : {})}
         onClick={(e) => (esHerramienta ? onOrden(def.orden, { fija: e.shiftKey }) : onOrden(def.orden))}
         {...(esHerramienta ? { onDoubleClick: () => onOrden(def.orden, { fija: true }) } : {})}
         {...(forma !== null
@@ -192,6 +196,10 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
             {boton("cortar", "medium")}
             {boton("copiar", "medium")}
             {boton("pegar-en-sitio", "medium")}
+          </RibbonGroup>
+          <RibbonGroup label="Formato">
+            {boton("copiar-formato", "medium")}
+            {boton("aplicar-formato", "medium")}
           </RibbonGroup>
           <RibbonGroup label="Herramientas">
             {boton("seleccionar", "large")}

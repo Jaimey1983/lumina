@@ -82,11 +82,13 @@ describe("Y12a — los atajos los resuelve el navegador (el editor no los interc
     expect(textoDeAtajo(comando("pegar"))).toBe("Ctrl+V");
     expect(textoDeAtajo(comando("pegar-en-sitio"))).toBe("Ctrl+Mayús+V");
     for (const id of ["copiar", "cortar", "pegar", "pegar-en-sitio"]) expect(comando(id).atajoNativo).toBe(true);
-    // Cada atajo lleva a su comando, y Ctrl+Alt+C queda libre para el pincel (Y12b).
+    // Cada atajo lleva a su comando, y Ctrl+Alt+C / Ctrl+Alt+V son del pincel (Y12b).
     expect(comandoDeTecla({ key: "c", ctrlKey: true, shiftKey: false, altKey: false, metaKey: false })?.id).toBe("copiar");
     expect(comandoDeTecla({ key: "V", ctrlKey: true, shiftKey: true, altKey: false, metaKey: false })?.id).toBe("pegar-en-sitio");
     expect(comandoDeTecla({ key: "v", ctrlKey: true, shiftKey: false, altKey: false, metaKey: false })?.id).toBe("pegar");
-    expect(comandoDeTecla({ key: "c", ctrlKey: true, shiftKey: false, altKey: true, metaKey: false })).toBeNull();
+    // Ctrl+Alt+C es del pincel (Y12b), no de copiar.
+    expect(comandoDeTecla({ key: "c", ctrlKey: true, shiftKey: false, altKey: true, metaKey: false })?.id).toBe("copiar-formato");
+    expect(comandoDeTecla({ key: "v", ctrlKey: true, shiftKey: false, altKey: true, metaKey: false })?.id).toBe("aplicar-formato");
     expect(comandoDeTecla({ key: "C", ctrlKey: true, shiftKey: true, altKey: false, metaKey: false })).toBeNull();
   });
 
