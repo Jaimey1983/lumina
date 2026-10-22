@@ -165,7 +165,7 @@ Redactada el 2026-10-22, al cerrar la fase B (Y6–Y11 en revisión y mergeadas)
 
 #### Y12b — Copiar formato (el pincel)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y12a `hecho`; la herramienta fija de Y11 (mecanismo `fija`).
 - **Alcance — PUEDE tocar:** `packages/drawing/src/operaciones/formato.ts` (+ spec, export), `editor/comandos-registro.ts`, `editor/comandos.ts`, `editor/editor-libre.tsx` (solo el modo «pincel»), `editor/herramientas.ts`, `editor/cinta-editor.tsx` (botón en Inicio), specs.
 - **Entregable:** **`extraerFormato(elemento)`** (estilo de relleno/contorno/sombra/opacidad/radio y `estiloTexto`) y **`aplicarFormato(escena, ids, formato)`**: de forma a forma aplica todo; de forma a **línea** solo contorno, grosor, discontinuo y opacidad; de línea a forma, solo contorno; **nunca** cambia geometría, texto, tamaño ni conexiones. Comando **«Copiar formato»** (botón en Inicio y `Ctrl+Alt+C`): toma el formato del elemento elegido y deja el cursor en modo pincel; **un solo uso** (el siguiente clic o recuadro aplica y sale), o **fijo** con doble clic en el botón (mecanismo de Y11); `Ctrl+Alt+V` aplica el formato guardado a la selección actual sin cambiar de modo; Escape sale del modo. Aplicar es **UNA entrada de historial** aunque sean varios elementos. Pruebas: forma→forma, forma→línea, línea→forma, varios destinos, destino bloqueado (se salta y se avisa), un solo uso, fijo, Escape, `Ctrl+Alt+V`, deshacer en un paso, sin formato guardado el comando de aplicar está deshabilitado con motivo.
