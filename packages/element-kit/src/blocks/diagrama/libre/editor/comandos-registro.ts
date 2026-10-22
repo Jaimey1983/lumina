@@ -49,6 +49,7 @@ import {
   GitBranchPlus,
   GitBranch,
   Link2,
+  ListOrdered,
   ListTree,
   Undo2,
   Ungroup,
@@ -205,6 +206,8 @@ export const COMANDOS: readonly DefinicionComando[] = [
   { id: "pegar-en-sitio", etiqueta: "Pegar en el mismo sitio", icono: ClipboardType, grupo: "edicion", atajos: [ctrl("v", { shift: true, alt: false })], atajoNativo: true, orden: { tipo: "pegar-en-sitio" } },
   // Organizar automáticamente (Y13)
   ...ORGANIZAR,
+  // Esquema → diagrama (Y14)
+  { id: "esquema", etiqueta: "Esquema…", icono: ListOrdered, grupo: "edicion", orden: { tipo: "esquema" } },
   // Pincel (Y12b)
   { id: "copiar-formato", etiqueta: "Copiar formato", icono: Paintbrush, grupo: "edicion", atajos: [ctrl("c", { shift: false, alt: true })], orden: { tipo: "copiar-formato" }, habilitado: hay, activo: (c) => (c.pincel ?? null) !== null },
   {
