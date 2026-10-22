@@ -37,7 +37,7 @@ export {
   type OpcionesAlinear,
 } from './organizar.js';
 export { crearHijo, crearHijoEn, DISTANCIA_HIJO_POR_DEFECTO, LADO_HIJO_TECLADO, type ResultadoCrearHijo } from './hijo.js';
-export { conectarEnCadena, filtrarFormasParaCadena, ordenEspacialParaCadena } from './cadena.js';
+export { conectarEnCadena, filtrarFormasParaCadena, ordenEspacialParaCadena, ordenParaCadena } from './cadena.js';
 export { eliminarRama } from './rama.js';
 export {
   ajustarAngulo,

@@ -17,7 +17,8 @@ function hijasPorConector(escena: Escena, padreId: string): string[] {
 }
 
 /**
- * Elimina `raizId` y las formas alcanzables solo bajando por conectores desde ella.
+ * Elimina `raizId` y las formas que solo se alcanzan por ella, bajando por conectores. Una forma que además cuelga de
+ * otra fuera de la rama (otra raíz, una forma bloqueada) se queda, y con ella todo lo que solo depende de ella.
  * No borra ramas hermanas ni formas bloqueadas; con ciclos no se cuelga (conjunto visitado).
  * Si la raíz no es una forma visible o está bloqueada, devuelve la misma escena.
  */
@@ -27,23 +28,34 @@ export function eliminarRama(escena: Escena, raizId: string): Escena {
   const bloqueados = bloqueadosEfectivos(escena);
   if (bloqueados.has(raizId)) return escena;
 
+  // 1. Todo lo que cuelga de la raíz.
   const aBorrar = new Set<string>();
-  const visitados = new Set<string>();
-
   const visitar = (id: string): void => {
-    if (visitados.has(id)) return;
-    visitados.add(id);
+    if (aBorrar.has(id)) return;
     const el = escena.elementos.find((e) => e.id === id);
-    if (el?.tipo !== 'forma') return;
-    if (bloqueados.has(id)) return;
+    if (el?.tipo !== 'forma' || bloqueados.has(id)) return;
     aBorrar.add(id);
     for (const h of hijasPorConector(escena, id)) visitar(h);
   };
-
   visitar(raizId);
-  if (aBorrar.size === 0) return escena;
+
+  // 2. Se salvan las que tienen un padre que no se va a borrar, hasta que no cambie nada.
+  const padres = new Map<string, string[]>();
+  for (const e of escena.elementos) {
+    const de = e.tipo === 'linea' ? e.origen?.elementoId : undefined;
+    const a = e.tipo === 'linea' ? e.destino?.elementoId : undefined;
+    if (de && a) padres.set(a, [...(padres.get(a) ?? []), de]);
+  }
+  let cambio = true;
+  while (cambio) {
+    cambio = false;
+    for (const id of [...aBorrar]) {
+      if (id === raizId) continue;
+      if ((padres.get(id) ?? []).some((p) => !aBorrar.has(p))) {
+        aBorrar.delete(id);
+        cambio = true;
+      }
+    }
+  }
   return eliminar(escena, aBorrar);
 }
-
-
-

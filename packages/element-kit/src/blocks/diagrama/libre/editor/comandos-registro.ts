@@ -195,7 +195,7 @@ export const COMANDOS: readonly DefinicionComando[] = [
     icono: Link2,
     grupo: "edicion",
     atajos: [ctrl("l")],
-    orden: { tipo: "conectar-cadena", orden: "seleccion" },
+    orden: { tipo: "conectar-cadena", orden: "auto" },
     soloLienzo: true,
     habilitado: dosFormas,
   },

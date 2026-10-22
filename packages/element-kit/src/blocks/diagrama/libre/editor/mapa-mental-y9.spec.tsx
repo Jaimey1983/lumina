@@ -59,7 +59,7 @@ describe("Y9 mapa mental y cadena", () => {
     const hijos = e1.elementos.filter((x) => x.tipo === "forma" && x.id !== "P");
     expect(hijos).toHaveLength(1);
     const h = hijos[0]!;
-    expect(h.forma).toBe("rombo");
+    expect((h as Forma).forma).toBe("rombo");
     expect(existeConector(e1, "P", h.id)).toBe(true);
     const l = e1.elementos.find((x) => x.tipo === "linea");
     expect(l?.origen).toEqual({ elementoId: "P", puerto: 1 });
@@ -108,6 +108,42 @@ describe("Y9 mapa mental y cadena", () => {
     const e1 = m.ultima();
     expect(existeConector(e1, "a", "b")).toBe(true);
     expect(existeConector(e1, "b", "c")).toBe(true);
+  });
+
+  it("Ctrl+L: clics en otro orden que la escena mandan; en el mismo orden se lee en pantalla", () => {
+    const e0 = escena(forma("r", 400, 0), forma("l", 0, 0), forma("m", 200, 0));
+    // Mismo orden que la escena (r, l, m): es ambiguo → izquierda a derecha: l → m → r.
+    const a = montar(e0);
+    a.elegir("r", e0);
+    a.elegir("l", e0, true);
+    a.elegir("m", e0, true);
+    fireEvent.keyDown(a.lienzo, { key: "l", ctrlKey: true });
+    const ea = a.ultima();
+    expect(existeConector(ea, "l", "m")).toBe(true);
+    expect(existeConector(ea, "m", "r")).toBe(true);
+    expect(existeConector(ea, "r", "l")).toBe(false);
+    cleanup();
+    // Otro orden (m, l, r): lo eligió la persona → m → l → r.
+    const b = montar(e0);
+    b.elegir("m", e0);
+    b.elegir("l", e0, true);
+    b.elegir("r", e0, true);
+    fireEvent.keyDown(b.lienzo, { key: "l", ctrlKey: true });
+    const eb = b.ultima();
+    expect(existeConector(eb, "m", "l")).toBe(true);
+    expect(existeConector(eb, "l", "r")).toBe(true);
+    expect(existeConector(eb, "l", "m")).toBe(false);
+  });
+
+  it("Ctrl+Supr no borra una forma que cuelga también de otra rama", () => {
+    const e0 = escena(forma("A", 0, 0), forma("X", 0, 200), forma("C", 300, 100));
+    const e1 = conectarFormas(conectarFormas(e0, "A", "C"), "X", "C");
+    const m = montar(e1);
+    m.elegir("A", e1);
+    fireEvent.keyDown(m.lienzo, { key: "Delete", ctrlKey: true });
+    expect(ids(m.ultima())).toContain("C");
+    expect(ids(m.ultima())).toContain("X");
+    expect(ids(m.ultima())).not.toContain("A");
   });
 
   it("conectar en cadena con orden espacial (comando puro)", () => {

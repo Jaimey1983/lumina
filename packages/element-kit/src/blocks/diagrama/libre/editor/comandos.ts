@@ -15,6 +15,7 @@ import {
   LADO_HIJO_TECLADO,
   mover,
   ordenEspacialParaCadena,
+  ordenParaCadena,
   reordenar,
   type Escena,
   type ModoAlineacion,
@@ -44,7 +45,7 @@ export type Comando =
   | { tipo: "crear-hijo" }
   | { tipo: "crear-hermano" }
   | { tipo: "eliminar-rama" }
-  | { tipo: "conectar-cadena"; orden: "seleccion" | "espacial" };
+  | { tipo: "conectar-cadena"; orden: "seleccion" | "espacial" | "auto" };
 
 /** Padre inmediato por conector entrante (origen→hijo); `null` si no hay. */
 export function padreConectorDe(escena: Escena, hijoId: string): string | null {
@@ -174,7 +175,7 @@ export function ejecutarComando(estado: EstadoEditor, c: Comando): EstadoEditor 
       return nueva === escena ? null : { escena: nueva, seleccion: depurarSeleccion(nueva, seleccion) };
     }
     case "conectar-cadena": {
-      const formas = c.orden === "espacial" ? ordenEspacialParaCadena(escena, seleccion) : filtrarFormasParaCadena(escena, seleccion);
+      const formas = c.orden === "espacial" ? ordenEspacialParaCadena(escena, seleccion) : c.orden === "auto" ? ordenParaCadena(escena, seleccion) : filtrarFormasParaCadena(escena, seleccion);
       if (formas.length < 2) return null;
       const nueva = conectarEnCadena(escena, formas);
       return nueva === escena ? null : { escena: nueva, seleccion };

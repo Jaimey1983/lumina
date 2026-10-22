@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { conectarFormas, existeConector } from '../conectores/enlazar.js';
-import { conectarEnCadena, filtrarFormasParaCadena, ordenEspacialParaCadena } from './cadena.js';
+import { conectarEnCadena, filtrarFormasParaCadena, ordenEspacialParaCadena, ordenParaCadena } from './cadena.js';
 import { escena, forma, linea } from './util-pruebas.js';
 
 describe('conectarEnCadena', () => {
@@ -52,5 +52,14 @@ describe('conectarEnCadena', () => {
   it('orden espacial: izquierda a derecha y arriba a abajo', () => {
     const e = escena(forma('abajo', 100, 300), forma('izq', 0, 0), forma('der', 300, 0), forma('arriba', 100, 0));
     expect(ordenEspacialParaCadena(e, ['abajo', 'der', 'izq', 'arriba'])).toEqual(['izq', 'arriba', 'abajo', 'der']);
+  });
+
+  it('ordenParaCadena: respeta el orden elegido si difiere de la escena y lee en pantalla si coincide', () => {
+    const e = escena(forma('r', 400, 0), forma('l', 0, 0), forma('m', 200, 0));
+    expect(ordenParaCadena(e, ['r', 'l', 'm'])).toEqual(['l', 'm', 'r']);
+    expect(ordenParaCadena(e, ['m', 'l', 'r'])).toEqual(['m', 'l', 'r']);
+    expect(ordenParaCadena(e, ['r', 'm'])).toEqual(['m', 'r']); // subconjunto en el orden de la escena
+    expect(ordenParaCadena(e, ['m', 'r'])).toEqual(['m', 'r']);
+    expect(ordenParaCadena(e, ['l'])).toEqual(['l']);
   });
 });

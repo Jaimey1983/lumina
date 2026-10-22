@@ -53,3 +53,15 @@ export function conectarEnCadena(escena: Escena, idsEnOrden: readonly string[]):
 
 
 
+
+/**
+ * El orden en que se encadenan las formas elegidas. Si el orden de selección difiere del orden de la escena, lo
+ * eligió la persona (clic a clic) y se respeta; si coincide con él (recuadro, «seleccionar todo», o clics que
+ * casualmente van en ese orden) es ambiguo y se lee en pantalla: izquierda→derecha y arriba→abajo.
+ */
+export function ordenParaCadena(escena: Escena, ids: readonly string[]): string[] {
+  const elegidas = filtrarFormasParaCadena(escena, ids);
+  const enEscena = escena.elementos.filter((e) => elegidas.includes(e.id)).map((e) => e.id);
+  const ambiguo = elegidas.every((id, i) => id === enEscena[i]);
+  return ambiguo ? ordenEspacialParaCadena(escena, elegidas) : elegidas;
+}
