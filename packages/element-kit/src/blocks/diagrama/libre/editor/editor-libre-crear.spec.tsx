@@ -527,12 +527,17 @@ describe("escribir dentro de un elemento (doble clic)", () => {
     expect(lineas(m.ultima())[0]?.texto).toBe("Sí");
   });
 
-  it("no abre nada en el vacío ni en un elemento bloqueado", () => {
+  it("no abre nada en un elemento bloqueado (ni escribe un texto nuevo encima)", () => {
     const m = montar(escena(forma("fija", 300, 200, 200, 120, { bloqueado: true, texto: "No" }), forma("a", 700, 100)));
-    fireEvent.doubleClick(m.lienzo, m.aPantalla(900, 500));
-    expect(screen.queryByRole("textbox", { name: "Texto del elemento" })).toBeNull();
     fireEvent.doubleClick(m.lienzo, m.aPantalla(400, 260));
     expect(screen.queryByRole("textbox", { name: "Texto del elemento" })).toBeNull();
+  });
+
+  it("el doble clic en un vacío abre un cuadro de texto nuevo, vacío (Y11)", () => {
+    const m = montar(escena(forma("a", 700, 100)));
+    fireEvent.doubleClick(m.lienzo, m.aPantalla(900, 500));
+    expect(cuadroTexto().value).toBe("");
+    expect(m.onCambio).not.toHaveBeenCalled(); // hasta escribir algo no hay nada que guardar
   });
 
   it("un elemento de un grupo se edita por su cuenta con doble clic", () => {

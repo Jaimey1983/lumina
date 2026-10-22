@@ -33,6 +33,7 @@ import {
   trazadoForma,
   type Conexion,
   type Lado,
+  type TipoForma,
   type Elemento,
   type EntradaElemento,
   type Escena,
@@ -43,7 +44,8 @@ import {
 import { NodosSvg } from "../dibujo-render.js";
 import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
 import { BuscadorComandos } from "./buscador-comandos.js";
-import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO } from "./cinta-editor.js";
+import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO, type OpcionesOrden } from "./cinta-editor.js";
+import { CapaFantasmaForma } from "./fantasma-forma.js";
 import { PanelAtajos } from "./panel-atajos.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, padreConectorDe, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
@@ -53,6 +55,7 @@ import {
   areaDeTexto,
   cajaArrastrada,
   cajaPorDefecto,
+  centroSinTapar,
   conMinimo,
   entradaForma,
   entradaLinea,
@@ -287,6 +290,12 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [anuncio, setAnuncio] = useState("");
   const [, setVersionHistorial] = useState(0);
   const [herramienta, setHerramienta] = useState<Herramienta>(SELECCIONAR);
+  /** La herramienta de crear queda activa tras crear (Y11): Mayús al elegirla o doble clic en su botón. */
+  const [herramientaFija, setHerramientaFija] = useState(false);
+  const fijaRef = useRef(false);
+  /** Forma que se arrastra desde la galería de la cinta y dónde caería (solo mientras el puntero está sobre el lienzo). */
+  const [fantasmaGaleria, setFantasmaGaleria] = useState<{ forma: TipoForma; centro: Punto } | null>(null);
+  const galeria = useRef<{ cancelar: () => void } | null>(null);
   const [enCurso, setEnCurso] = useState<Punto[] | null>(null);
   const [previa, setPrevia] = useState<VistaPrevia | null>(null);
   const [edicion, setEdicion] = useState<Edicion | null>(null);
@@ -492,17 +501,25 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setObjetivoPuerto((previo) => (previo?.elementoId === p?.elementoId && previo?.puerto === p?.puerto ? previo : p));
   }, []);
 
-  const elegirHerramienta = useCallback((h: Herramienta): void => {
+  const elegirHerramienta = useCallback((h: Herramienta, fija = false): void => {
+    const sera = fija && h.tipo !== "seleccionar";
+    fijaRef.current = sera;
+    setHerramientaFija(sera);
     setHerramienta(h);
     fijarCurso(null);
     fijarObjetivo(null);
     setPrevia(null);
+    if (sera) {
+      setAnuncio(`Herramienta fija: ${h.tipo === "forma" ? FORMAS[h.forma].nombre : h.tipo === "linea" ? (h.flecha ? "flecha" : "línea") : "texto"}. Escape o elige otra herramienta para salir.`);
+      svgRef.current?.focus();
+      return;
+    }
     setAnuncio(h.tipo === "seleccionar" ? "Herramienta: seleccionar." : h.tipo === "forma" ? `Herramienta: ${FORMAS[h.forma].nombre}. Haz clic o arrastra en el lienzo.` : h.tipo === "linea" ? `Herramienta: ${h.flecha ? "flecha" : "línea"}. Arrastra, o haz clic en cada punto y doble clic para terminar.` : "Herramienta: texto. Haz clic o arrastra en el lienzo.");
     svgRef.current?.focus();
   }, [fijarCurso, fijarObjetivo]);
 
   const elegirPorNombre = useCallback(
-    (nombre: NombreHerramienta): void => elegirHerramienta(nombre === "seleccionar" ? SELECCIONAR : nombre === "texto" ? { tipo: "texto" } : { tipo: "linea", flecha: nombre === "flecha" }),
+    (nombre: NombreHerramienta, fija = false): void => elegirHerramienta(nombre === "seleccionar" ? SELECCIONAR : nombre === "texto" ? { tipo: "texto" } : { tipo: "linea", flecha: nombre === "flecha" }, fija),
     [elegirHerramienta],
   );
 
@@ -518,7 +535,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       confirmar(actual, { escena: r.escena, seleccion: [r.id] });
       const nuevo = r.escena.elementos.find((x) => x.id === r.id);
       setAnuncio(`${nuevo ? describirElemento(nuevo) : "Elemento"} agregado.`);
-      setHerramienta(SELECCIONAR);
+      // Un solo uso: tras crear vuelve a Seleccionar, salvo que la herramienta esté fija.
+      if (!fijaRef.current) setHerramienta(SELECCIONAR);
     },
     [confirmar],
   );
@@ -992,12 +1010,92 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
     // Con seleccionar, el doble clic escribe en el elemento (dentro de una forma, el rótulo de una línea, el cuadro de texto).
     const id = elementoEn(escenaConRutas(actual), pantallaAEscena(v, aPantalla(e)), { tolerancia: 6 / v.zoom, entrarEnGrupos: true });
-    if (id !== undefined) abrirEdicion(id);
+    if (id !== undefined) {
+      abrirEdicion(id);
+      return;
+    }
+    // Doble clic en un vacío: caja de texto nueva con el texto en edición (Y11). Con una edición abierta no se crea otra.
+    if (edicionRef.current) return;
+    // Sobre un elemento bloqueado tampoco: no se puede editar y un texto nuevo encima sería una sorpresa.
+    const crudo = pantallaAEscena(v, aPantalla(e));
+    if (elementoEn(escenaConRutas(actual), crudo, { tolerancia: 6 / v.zoom, entrarEnGrupos: true, incluirBloqueados: true }) !== undefined) return;
+    const p = imantarPunto(crudo, e.ctrlKey || e.metaKey);
+    abrirEdicionNueva({ x: p.x, y: p.y, ancho: TEXTO_NUEVO.ancho, alto: TEXTO_NUEVO.alto });
   };
+
+  // ─── Galería de formas de la cinta (Y11) ────────────────────────────────────
+  /** Escribe el centro de la forma en el lienzo si el puntero está sobre él; `null` si está fuera. */
+  const centroSobreLienzo = (cliente: { clientX: number; clientY: number }, ctrl: boolean): Punto | null => {
+    const r = svgRef.current?.getBoundingClientRect();
+    if (!r || cliente.clientX < r.left || cliente.clientX > r.right || cliente.clientY < r.top || cliente.clientY > r.bottom) return null;
+    return imantarPunto(pantallaAEscena(vivo.current.vista, aPantalla(cliente)), ctrl);
+  };
+
+  /** Agrega la forma por defecto centrada en `centro`, la deja elegida y respeta el modo fijo. */
+  const colocarForma = (forma: TipoForma, centro: Punto): void => {
+    fijarCurso(null);
+    fijarObjetivo(null);
+    setPrevia(null);
+    crearElemento(entradaForma(forma, cajaPorDefecto(forma, centro)));
+  };
+
+  /** Enter sobre una forma de la galería: al centro de lo que se ve, sin tapar otra igual. */
+  const colocarFormaAlCentro = (forma: TipoForma): void => {
+    const m = medir();
+    const centro = pantallaAEscena(vivo.current.vista, { x: m.ancho / 2, y: m.alto / 2 });
+    colocarForma(forma, centroSinTapar(vivo.current.escena, forma, centro));
+  };
+
+  /**
+   * Arrastrar una forma desde la galería: con una forma fantasma bajo el cursor mientras esté sobre el lienzo; al soltar ahí
+   * se crea (una entrada de historial); fuera del lienzo o con Escape no queda nada. Sin arrastre, el clic elige la herramienta.
+   */
+  const iniciarArrastreGaleria = (forma: TipoForma, e: { button: number; clientX: number; clientY: number }): void => {
+    if (e.button !== 0) return;
+    galeria.current?.cancelar();
+    const origen = { x: e.clientX, y: e.clientY };
+    let activo = false;
+    const limpiar = (): void => {
+      window.removeEventListener("pointermove", mover);
+      window.removeEventListener("pointerup", soltar);
+      window.removeEventListener("pointercancel", cancelar);
+      window.removeEventListener("keydown", tecla, true);
+      galeria.current = null;
+      setFantasmaGaleria(null);
+    };
+    const cancelar = (): void => limpiar();
+    const mover = (ev: PointerEvent): void => {
+      if (!activo) {
+        if (Math.hypot(ev.clientX - origen.x, ev.clientY - origen.y) < UMBRAL_ARRASTRE_PX) return;
+        activo = true;
+      }
+      const centro = centroSobreLienzo(ev, ev.ctrlKey || ev.metaKey);
+      setFantasmaGaleria(centro ? { forma, centro } : null);
+    };
+    const soltar = (ev: PointerEvent): void => {
+      const centro = activo ? centroSobreLienzo(ev, ev.ctrlKey || ev.metaKey) : null;
+      limpiar();
+      if (centro) colocarForma(forma, centro);
+    };
+    const tecla = (ev: globalThis.KeyboardEvent): void => {
+      if (ev.key !== "Escape") return;
+      ev.preventDefault();
+      ev.stopPropagation(); // el Escape cancela el arrastre y nada más (no cierra el editor)
+      limpiar();
+    };
+    window.addEventListener("pointermove", mover);
+    window.addEventListener("pointerup", soltar);
+    window.addEventListener("pointercancel", cancelar);
+    window.addEventListener("keydown", tecla, true);
+    galeria.current = { cancelar };
+  };
+
+  // Si el editor se cierra a media arrastrada, no quedan oyentes en la ventana.
+  useEffect(() => () => galeria.current?.cancelar(), []);
 
   // ─── Órdenes ────────────────────────────────────────────────────────────────
   // Un botón de la cinta y un atajo de teclado piden lo mismo (registro único de comandos, DY3): una `Orden`.
-  const ejecutarOrden = (orden: Orden): void => {
+  const ejecutarOrden = (orden: Orden, opciones?: OpcionesOrden): void => {
     switch (orden.tipo) {
       case "deshacer":
         deshacer();
@@ -1006,10 +1104,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         rehacer();
         return;
       case "herramienta":
-        elegirPorNombre(orden.herramienta);
+        elegirPorNombre(orden.herramienta, opciones?.fija === true);
         return;
       case "herramienta-forma":
-        elegirHerramienta({ tipo: "forma", forma: orden.forma });
+        elegirHerramienta({ tipo: "forma", forma: orden.forma }, opciones?.fija === true);
         return;
       case "zoom":
         acercar(orden.factor);
@@ -1147,6 +1245,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         pestana={pestana}
         onPestana={setPestana}
         onOrden={ejecutarOrden}
+        herramientaFija={herramientaFija}
+        onArrastrarForma={iniciarArrastreGaleria}
+        onColocarForma={colocarFormaAlCentro}
         onCambiarConector={cambiarConector}
         onSalirALienzo={() => svgRef.current?.focus()}
         acciones={<BotonExportar escena={escena} {...(titulo ? { titulo } : {})} />}
@@ -1188,6 +1289,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           ) : null}
           <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} />
           <CapaAsasHijo escena={escena} vista={vista} herramienta={herramienta} seleccion={seleccion} gestoEnCurso={gestoEnCurso} edicionAbierta={edicion !== null} tactil={tactil} />
+          {fantasmaGaleria ? <CapaFantasmaForma vista={vista} forma={fantasmaGaleria.forma} centro={fantasmaGaleria.centro} /> : null}
           {fantasmaHijo ? <CapaFantasmaHijo escena={escena} vista={vista} padreId={fantasmaHijo.padreId} centro={fantasmaHijo.centro} /> : null}
           {lineaElegida ? <CapaAsasDeConector escena={escena} linea={lineaElegida} vista={vista} /> : null}
           <CapaPuertos escena={escena} vista={vista} formasElegidas={formasConPuertos} todas={herramienta.tipo === "linea" || arrastrandoExtremo} objetivo={objetivoPuerto} tactil={tactil} />

@@ -61,6 +61,21 @@ export function cajaPorDefecto(forma: TipoForma, centro: Punto): Caja {
   return { x: centro.x - ancho / 2, y: centro.y - alto / 2, ancho, alto };
 }
 
+/**
+ * Centro donde colocar una forma por defecto sin tapar a otra igual: si ya hay una forma con esa misma
+ * posición, baja en diagonal de 20 en 20 (como «Duplicar») hasta encontrar un sitio libre.
+ */
+export function centroSinTapar(escena: Escena, forma: TipoForma, centro: Punto, paso = 20, maximo = 50): Punto {
+  for (let i = 0; i <= maximo; i++) {
+    const c = { x: centro.x + paso * i, y: centro.y + paso * i };
+    const caja = cajaPorDefecto(forma, c);
+    // Con holgura: el modelo redondea las medidas, así que «la misma posición» no es igualdad exacta.
+    const ocupado = escena.elementos.some((e) => e.tipo === "forma" && Math.abs(e.transformacion.x - caja.x) < 0.5 && Math.abs(e.transformacion.y - caja.y) < 0.5);
+    if (!ocupado) return c;
+  }
+  return centro;
+}
+
 /** Lo que dibujó el usuario, con el mínimo respetado. */
 export function conMinimo(caja: Caja, minimo = TAMANO_MINIMO): Caja {
   const ancho = Math.max(minimo, caja.ancho);
