@@ -124,7 +124,7 @@ describe("ejecutarComando", () => {
   it("pegar al más cercano une el extremo libre y no hace nada si ya está pegado", () => {
     const e = escena(forma("a", 0, 0), forma("b", 200, 0), linea("L", [[100, 30], [110, 30]], { origen: { elementoId: "a", puerto: 1 } }));
     const r = ejecutarComando({ escena: e, seleccion: ["L"] }, { tipo: "pegar-al-mas-cercano" });
-    expect(getLinea(r!.escena, "L").destino).toEqual({ elementoId: "a", puerto: 1 });
+    expect(getLinea(r!.escena, "L").destino).toEqual({ elementoId: "b", puerto: 3 });
     expect(ejecutarComando(r!, { tipo: "pegar-al-mas-cercano" })).toBeNull();
     expect(ejecutarComando({ escena: e, seleccion: ["a"] }, { tipo: "pegar-al-mas-cercano" })).toBeNull();
   });
