@@ -6,7 +6,7 @@
 // canvas-area.tsx — este componente es ahora el único camino para
 // mover/redimensionar/rotar bloques en el lienzo del editor principal.
 //
-// Contrato del editor (`.cursorrules`): leer (getBlockPos) → transformar
+// Contrato del editor (`docs/contratos/canvas-editor.md`): leer (getBlockPos) → transformar
 // (computeSnap / computeNewCoords) → clamp (clampDragCorner, dentro de
 // computeSnap) → persistir (onCommit) → historial (lo hace canvas-area).
 //

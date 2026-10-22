@@ -9,7 +9,7 @@
 ## Para quién es esto
 
 Este prompt se le entrega **completo, tal cual**, a un agente de IA con
-acceso de escritura al repositorio (Claude Code, Cursor, Antigravity, u otra
+acceso de escritura al repositorio (Claude Code, Antigravity, u otra
 sesión) — junto con **los 2 PDFs oficiales del MEN** de una sola área:
 
 1. **Derechos Básicos de Aprendizaje (DBA)** de esa área — contenido por

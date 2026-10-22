@@ -474,7 +474,7 @@ por el `@layouts`/`@menu` de Materialize. Solo se alinea el *contenido*.
 
 ### Scoring / lógica
 Ningún cambio de este documento toca evaluación, contratos del editor de canvas
-(`.cursorrules`), ni el scoring unificado. Es 100% capa visual.
+(`docs/contexto/`), ni el scoring unificado. Es 100% capa visual.
 
 ---
 

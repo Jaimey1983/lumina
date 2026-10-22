@@ -1,5 +1,5 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
-# Archivo de contexto para Cursor AI
+# Archivo de contexto del proyecto
 # Última actualización: 25/08/2026 (Contratos editor canvas frontend)
 # Revisión de código y correcciones documentadas: 24/03/2026, 25/03/2026 y 26/03/2026 (ver sección al final del archivo)
 
@@ -11,8 +11,8 @@ El monorepo incluye el frontend Next.js en `lumina-frontend/`. **Contratos oblig
 
 | Recurso | Ruta |
 |---|---|
-| Reglas completas frontend | `lumina-frontend/.cursorrules` |
-| Regla Cursor (auto al editar frontend) | `.cursor/rules/lumina-canvas-editor-contracts.mdc` |
+| Reglas completas frontend | `docs/contexto/frontend.md` |
+| Contrato del editor de canvas | `docs/contratos/canvas-editor.md` |
 
 Regla de oro del editor: **leer (`getBlockPos`) → transformar → clamp → persistir → historial**. Toda función nueva debe seguir los mismos contratos que las existentes.
 
@@ -61,7 +61,7 @@ Eres el programador líder y arquitecto senior del proyecto Lumina. Tu rol es:
 ## 💻 ENTORNO DE DESARROLLO
 
 - **OS:** Windows 11
-- **IDE:** Cursor + VS Code
+- **IDE:** VS Code
 - **Node.js:** v22.20.0
 - **NestJS CLI:** 11.0.16
 - **Docker:** 29.2.1
@@ -1327,7 +1327,7 @@ lumina-backend/
 
 ---
 
-## 📌 REVISIÓN 24/03/2026 — Cambios realizados en el código (referencia para Cursor)
+## 📌 REVISIÓN 24/03/2026 — Cambios realizados en el código (referencia)
 
 Resumen de la revisión solicitada al asistente: errores detectados y correcciones ya aplicadas en el repositorio. No sustituye el resto de este archivo; amplía el contexto.
 

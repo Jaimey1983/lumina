@@ -1,4 +1,4 @@
-# 🎓 LUMINA FRONTEND — Reglas para Cursor AI
+# 🎓 LUMINA FRONTEND — Reglas del frontend
 # Última actualización: 25/08/2026
 # Stack: Next.js 16 + React 19 + TypeScript + TanStack Query + Tailwind 4
 
@@ -46,7 +46,7 @@ Eres el programador líder del frontend de Lumina. Escribes código production-r
 > **leer (canónico) → transformar → clamp → persistir → historial (si aplica)**  
 > Sin atajos que dupliquen lógica de posición, edición o snapshots.
 
-Cursor también carga la regla en `.cursor/rules/lumina-canvas-editor-contracts.mdc` al trabajar archivos bajo `lumina-frontend/`.
+El contrato vive en `docs/contratos/canvas-editor.md`.
 
 ### 1. Posicionamiento (contrato 3.2)
 
@@ -170,4 +170,4 @@ src/components/editor/         # Toolbar alineación, capas, etc.
 
 ## 🔗 BACKEND
 
-Contratos de dominio (notas, roles, API REST): ver `.cursorrules` en la raíz del monorepo (`lumina/.cursorrules`) y `lumina-backend/.cursorrules`.
+Contratos de dominio (notas, roles, API REST): ver `docs/contexto/proyecto.md` y `docs/contexto/backend.md`.
