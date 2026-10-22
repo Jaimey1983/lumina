@@ -93,7 +93,9 @@ export type Orden =
   | { tipo: "copiar-formato" }
   | { tipo: "aplicar-formato" }
   /** Organizar automáticamente (Y13): jerárquico, árbol o radial, con dirección. */
-  | { tipo: "organizar"; modo: ModoOrganizar; direccion?: DireccionOrganizar };
+  | { tipo: "organizar"; modo: ModoOrganizar; direccion?: DireccionOrganizar }
+  /** Pegar esquema (Y14): abre el diálogo que convierte un texto con sangría en un diagrama. */
+  | { tipo: "esquema" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {

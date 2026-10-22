@@ -54,9 +54,11 @@ import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marco
 import { BuscadorComandos } from "./buscador-comandos.js";
 import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO, type OpcionesOrden } from "./cinta-editor.js";
 import { CapaFantasmaForma } from "./fantasma-forma.js";
-import { NOMBRE_MODO, organizarAuto } from "./organizar-auto.js";
+import { NOMBRE_MODO, organizarAuto, type ModoOrganizar } from "./organizar-auto.js";
 import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, type EscribirDatos, type Lectura } from "./portapapeles.js";
 import { PanelAtajos } from "./panel-atajos.js";
+import { DialogoEsquema } from "./dialogo-esquema.js";
+import { esquemaAEscena, type Esquema } from "../esquema-a-escena.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, padreConectorDe, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
 import {
@@ -296,6 +298,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [imantar, setImantar] = useState(true);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
   const [atajosAbiertos, setAtajosAbiertos] = useState(false);
+  const [esquemaAbierto, setEsquemaAbierto] = useState(false);
   const [cursor, setCursor] = useState("default");
   const [anuncio, setAnuncio] = useState("");
   const [, setVersionHistorial] = useState(0);
@@ -1307,6 +1310,21 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   // Si el editor se cierra a media arrastrada, no quedan oyentes en la ventana.
   useEffect(() => () => galeria.current?.cancelar(), []);
 
+  /** Esquema → diagrama (Y14): crea todo en UNA entrada de historial, centrado en lo que se ve, y lo deja elegido. */
+  const aceptarEsquema = (esquema: Esquema, modo: ModoOrganizar): void => {
+    setEsquemaAbierto(false);
+    const { escena: actual, vista: v } = vivo.current;
+    const m = medir();
+    const r = esquemaAEscena(actual, esquema, { modo, centro: pantallaAEscena(v, { x: m.ancho / 2, y: m.alto / 2 }) });
+    if (r.ids.length === 0) return;
+    confirmar(actual, { escena: r.escena, seleccion: r.ids });
+    const avisos = [
+      esquema.sobrantes > 0 ? `Solo se crearon los primeros ${esquema.nodos.length} nodos; sobraron ${esquema.sobrantes}.` : "",
+      esquema.recortadas > 0 ? `${esquema.recortadas} ${esquema.recortadas === 1 ? "línea se recortó" : "líneas se recortaron"}.` : "",
+    ].filter(Boolean);
+    setAnuncio([`Esquema creado: ${esquema.nodos.length} ${esquema.nodos.length === 1 ? "nodo" : "nodos"}.`, ...avisos].join(" "));
+  };
+
   // ─── Órdenes ────────────────────────────────────────────────────────────────
   // Un botón de la cinta y un atajo de teclado piden lo mismo (registro único de comandos, DY3): una `Orden`.
   const ejecutarOrden = (orden: Orden, opciones?: OpcionesOrden): void => {
@@ -1369,6 +1387,11 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         svgRef.current?.focus();
         return;
       }
+      case "esquema":
+        setBuscadorAbierto(false);
+        setAtajosAbiertos(false);
+        setEsquemaAbierto(true);
+        return;
       case "copiar-formato":
         iniciarPincel(opciones?.fija === true);
         return;
@@ -1413,7 +1436,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     e.stopPropagation();
     const objetivo = e.target as HTMLElement;
     const esCampo = objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.tagName === "SELECT" || objetivo.isContentEditable;
-    if (buscadorAbierto || atajosAbiertos) return;
+    if (buscadorAbierto || atajosAbiertos || esquemaAbierto) return;
     if (esCampo) return;
     if (e.key === " " && (objetivo as Element) === svgRef.current) {
       espacio.current = true;
@@ -1633,6 +1656,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         ejecutarOrden={ejecutarOrden}
         focoLienzo={() => svgRef.current?.focus()}
       />
+      {esquemaAbierto ? <DialogoEsquema onCerrar={() => setEsquemaAbierto(false)} onAceptar={aceptarEsquema} focoLienzo={() => svgRef.current?.focus()} /> : null}
       <PanelAtajos abierto={atajosAbiertos} onCerrar={() => setAtajosAbiertos(false)} focoLienzo={() => svgRef.current?.focus()} />
     </div>
   );

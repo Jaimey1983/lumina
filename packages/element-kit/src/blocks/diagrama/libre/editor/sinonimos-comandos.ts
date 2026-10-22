@@ -12,6 +12,7 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   "eliminar-rama": ["rama", "subarbol", "mapa mental"],
   "crear-hijo": ["hijo", "mapa mental", "rama"],
   "crear-hermano": ["hermano", "mapa mental"],
+  esquema: ["pegar esquema", "outline", "lista", "indice", "texto a diagrama", "mapa mental", "arbol", "importar"],
   "conectar-cadena": ["cadena", "enlazar", "secuencia", "flujo"],
   "pegar-al-mas-cercano": ["pegar", "extremo libre", "huerfano", "conectar extremo"],
   copiar: ["copy", "portapapeles"],

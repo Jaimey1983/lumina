@@ -52,6 +52,7 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   atajos: "Vista",
   "seleccionar-todo": "Edición general",
   "conectar-cadena": "Insertar",
+  esquema: "Insertar",
   copiar: "Inicio",
   ...Object.fromEntries(ORGANIZAR.map((c) => [c.id, "Organizar"])),
   "copiar-formato": "Inicio",
@@ -250,6 +251,9 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
         <>
           <RibbonGroup label="Conexión">
             {boton("conectar-cadena", "large")}
+          </RibbonGroup>
+          <RibbonGroup label="Texto a diagrama">
+            {boton("esquema", "large")}
           </RibbonGroup>
           {gruposDeFormas}
         </>
