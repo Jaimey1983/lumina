@@ -45,7 +45,7 @@ import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marco
 import { BuscadorComandos } from "./buscador-comandos.js";
 import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO } from "./cinta-editor.js";
 import { PanelAtajos } from "./panel-atajos.js";
-import { depurarSeleccion, ejecutarComando, ordenDeTecla, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
+import { depurarSeleccion, ejecutarComando, ordenDeTecla, padreConectorDe, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
 import {
   SELECCIONAR,
@@ -402,24 +402,41 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     [onCambio],
   );
 
+  const abrirEdicionEn = useCallback((id: string, escenaBase: Escena): void => {
+    const el = escenaBase.elementos.find((x) => x.id === id);
+    if (!el || bloqueadosEfectivosDe(escenaBase).has(id)) return;
+    const area = areaDeTexto(escenaBase, el);
+    if (!area) return;
+    setSeleccion([id]);
+    const ed: Edicion = { id, area, valor: area.texto };
+    edicionRef.current = ed;
+    setEdicion(ed);
+  }, []);
+
   const ejecutar = useCallback(
     (c: Comando): boolean => {
       finVistaPanel();
       const { escena: actual, seleccion: sel } = vivo.current;
+      if (c.tipo === "crear-hermano" && sel.length === 1 && !padreConectorDe(actual, sel[0]!)) {
+        setAnuncio("No se puede agregar hermano: la forma no tiene padre.");
+        return false;
+      }
       // Al alinear o distribuir, los conectores siguen a sus formas en vez de moverse solos (se despegarían).
       const alinea = c.tipo === "alinear" || c.tipo === "distribuir";
       const resultado = ejecutarComando({ escena: actual, seleccion: alinea ? sinConectoresQueSiguen(actual, sel) : sel }, c);
       const r = resultado && alinea ? { ...resultado, seleccion: sel } : resultado;
       if (!r) return false;
+      const abrirTexto = c.tipo === "crear-hijo" || c.tipo === "crear-hermano";
       if (r.escena === actual) {
         setSeleccion(r.seleccion);
         setAnuncio(describirSeleccion(actual, r.seleccion));
       } else {
         confirmar(actual, r);
+        if (abrirTexto && r.seleccion[0]) abrirEdicionEn(r.seleccion[0], r.escena);
       }
       return true;
     },
-    [confirmar, finVistaPanel],
+    [abrirEdicionEn, confirmar, finVistaPanel],
   );
 
   const aplicarDelPanel = useCallback(
@@ -545,15 +562,6 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     edicionRef.current = e;
     setEdicion(e);
   }, []);
-
-  const abrirEdicionEn = (id: string, escenaBase: Escena): void => {
-    const el = escenaBase.elementos.find((x) => x.id === id);
-    if (!el || bloqueadosEfectivosDe(escenaBase).has(id)) return;
-    const area = areaDeTexto(escenaBase, el);
-    if (!area) return;
-    setSeleccion([id]);
-    fijarEdicion({ id, area, valor: area.texto });
-  };
 
   const abrirEdicion = (id: string): void => {
     abrirEdicionEn(id, vivo.current.escena);

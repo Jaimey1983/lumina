@@ -4,11 +4,17 @@
 import {
   agrupar,
   alinear,
+  conectarEnCadena,
+  crearHijo,
   desagrupar,
   distribuir,
   duplicar,
   eliminar,
+  eliminarRama,
+  filtrarFormasParaCadena,
+  LADO_HIJO_TECLADO,
   mover,
+  ordenEspacialParaCadena,
   reordenar,
   type Escena,
   type ModoAlineacion,
@@ -34,7 +40,26 @@ export type Comando =
   | { tipo: "orden"; modo: ModoOrden }
   | { tipo: "alinear"; modo: ModoAlineacion }
   | { tipo: "distribuir"; eje: "horizontal" | "vertical" }
-  | { tipo: "siguiente"; atras: boolean };
+  | { tipo: "siguiente"; atras: boolean }
+  | { tipo: "crear-hijo" }
+  | { tipo: "crear-hermano" }
+  | { tipo: "eliminar-rama" }
+  | { tipo: "conectar-cadena"; orden: "seleccion" | "espacial" };
+
+/** Padre inmediato por conector entrante (origen→hijo); `null` si no hay. */
+export function padreConectorDe(escena: Escena, hijoId: string): string | null {
+  for (const e of escena.elementos) {
+    if (e.tipo === "linea" && e.destino?.elementoId === hijoId && e.origen?.elementoId) return e.origen.elementoId;
+  }
+  return null;
+}
+
+const unaFormaElegida = (escena: Escena, seleccion: readonly string[]): string | null => {
+  if (seleccion.length !== 1) return null;
+  const id = seleccion[0]!;
+  const el = escena.elementos.find((e) => e.id === id);
+  return el?.tipo === "forma" ? id : null;
+};
 
 /** Lo que el teclado puede pedir además de los comandos de escena. */
 export type NombreHerramienta = "seleccionar" | "linea" | "flecha" | "texto";
@@ -126,6 +151,32 @@ export function ejecutarComando(estado: EstadoEditor, c: Comando): EstadoEditor 
     }
     case "distribuir": {
       const nueva = distribuir(escena, seleccion, c.eje);
+      return nueva === escena ? null : { escena: nueva, seleccion };
+    }
+    case "crear-hijo": {
+      const padreId = unaFormaElegida(escena, seleccion);
+      if (!padreId) return null;
+      const r = crearHijo(escena, padreId, LADO_HIJO_TECLADO);
+      return r.id === "" ? null : { escena: r.escena, seleccion: [r.id] };
+    }
+    case "crear-hermano": {
+      const hijoId = unaFormaElegida(escena, seleccion);
+      if (!hijoId) return null;
+      const padreId = padreConectorDe(escena, hijoId);
+      if (!padreId) return null;
+      const r = crearHijo(escena, padreId, LADO_HIJO_TECLADO);
+      return r.id === "" ? null : { escena: r.escena, seleccion: [r.id] };
+    }
+    case "eliminar-rama": {
+      const raiz = unaFormaElegida(escena, seleccion);
+      if (!raiz) return null;
+      const nueva = eliminarRama(escena, raiz);
+      return nueva === escena ? null : { escena: nueva, seleccion: depurarSeleccion(nueva, seleccion) };
+    }
+    case "conectar-cadena": {
+      const formas = c.orden === "espacial" ? ordenEspacialParaCadena(escena, seleccion) : filtrarFormasParaCadena(escena, seleccion);
+      if (formas.length < 2) return null;
+      const nueva = conectarEnCadena(escena, formas);
       return nueva === escena ? null : { escena: nueva, seleccion };
     }
   }

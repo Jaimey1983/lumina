@@ -78,13 +78,22 @@ describe("registro de comandos (DY3)", () => {
   it("las letras de herramienta no valen con Mayús, Alt ni Ctrl; Ctrl+A sigue siendo seleccionar todo", () => {
     expect(comandoDeTecla(tecla("L", { shiftKey: true }))).toBeNull();
     expect(comandoDeTecla(tecla("l", { altKey: true }))).toBeNull();
-    expect(comandoDeTecla(tecla("l", { ctrlKey: true }))).toBeNull();
+    expect(comandoDeTecla(tecla("l", { ctrlKey: true }))?.id).toBe("conectar-cadena");
     expect(comandoDeTecla(tecla("a", { ctrlKey: true }))?.id).toBe("seleccionar-todo");
-    expect(comandoDeTecla(tecla("Delete", { ctrlKey: true }))).toBeNull();
+    expect(comandoDeTecla(tecla("Delete", { ctrlKey: true }))?.id).toBe("eliminar-rama");
   });
 
-  it("solo las letras de herramienta están limitadas al lienzo", () => {
-    expect(COMANDOS.filter((c) => c.soloLienzo).map((c) => c.id)).toEqual(["seleccionar", "linea", "flecha", "texto"]);
+  it("solo las letras de herramienta y los atajos de mapa mental están limitados al lienzo", () => {
+    expect(COMANDOS.filter((c) => c.soloLienzo).map((c) => c.id)).toEqual([
+      "seleccionar",
+      "linea",
+      "flecha",
+      "texto",
+      "crear-hijo",
+      "crear-hermano",
+      "eliminar-rama",
+      "conectar-cadena",
+    ]);
   });
 });
 

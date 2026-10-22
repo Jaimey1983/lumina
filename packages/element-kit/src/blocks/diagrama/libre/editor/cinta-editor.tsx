@@ -51,6 +51,10 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "buscar-comando": "Edición general",
   atajos: "Vista",
   "seleccionar-todo": "Edición general",
+  "conectar-cadena": "Insertar",
+  "crear-hijo": "Inicio",
+  "crear-hermano": "Inicio",
+  "eliminar-rama": "Inicio",
 };
 
 /** Pestaña de la cinta donde vive cada comando (para el panel de atajos). */
@@ -161,11 +165,25 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onC
           <RibbonGroup label="Edición">
             {boton("duplicar", "large")}
             {boton("eliminar", "large")}
+            {boton("crear-hijo", "medium")}
+            {boton("crear-hermano", "medium")}
+            {boton("eliminar-rama", "medium")}
           </RibbonGroup>
         </>
       ),
     },
-    { id: "insertar", label: "Insertar", content: <>{gruposDeFormas}</> },
+    {
+      id: "insertar",
+      label: "Insertar",
+      content: (
+        <>
+          <RibbonGroup label="Conexión">
+            {boton("conectar-cadena", "large")}
+          </RibbonGroup>
+          {gruposDeFormas}
+        </>
+      ),
+    },
     {
       id: "organizar",
       label: "Organizar",
