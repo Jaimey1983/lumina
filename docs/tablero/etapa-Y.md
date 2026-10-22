@@ -107,8 +107,8 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 - **Cierre:** ninguno.
 
 #### Y9 — Teclado tipo mapa mental y conectar en cadena
-- **Operador:** Claude Code
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** [en curso: Cursor]
 - **Precondición:** Y8 `hecho`.
 - **Alcance — PUEDE tocar:** `editor/comandos-registro.ts` (comandos nuevos), `editor/comandos.ts`, `packages/drawing/src/operaciones/` (solo `conectarEnCadena` y `eliminarRama` puros), specs. **No cambia la tecla `Tab`** (recorre elementos, DW8).
 - **Entregable:** **`Ctrl+Enter`** crea un hijo de la forma elegida (reusa `crearHijo`), **`Ctrl+Mayús+Enter`** un hermano (misma conexión que el padre), **`Ctrl+Supr`** borra la rama (la forma y todo lo alcanzable solo desde ella), **`Ctrl+L`** (y botón en Insertar) **conecta en cadena** las formas elegidas en el orden de selección o, si es ambiguo, de izquierda a derecha y arriba a abajo. Todos en el registro (aparecen en cinta, buscador y atajos). Pruebas: hijo/hermano con conector correcto, borrar rama no toca ramas hermanas ni ciclos, cadena de 2, 5 y 20 formas, deshacer en un paso. Verificación: la de Y2.
