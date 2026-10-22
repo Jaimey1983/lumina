@@ -10,7 +10,7 @@ import type { KeyboardEvent, PointerEvent, ReactElement, ReactNode } from "react
 import { formasPorGrupo, trazadoForma, type Escena, type Linea, type TipoForma } from "@lumina/drawing";
 import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup, RibbonSplitButton } from "@lumina/ui/ribbon";
 import { CornerDownRight, Minus, Spline } from "lucide-react";
-import { COMANDOS, comando, estadoComando, ORGANIZAR, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
+import { COMANDOS, comando, ELEGIR, estadoComando, ORGANIZAR, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { Orden } from "./comandos.js";
 import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, hayExtremoLibre, valorComun } from "./conectores.js";
 
@@ -63,6 +63,7 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "crear-hijo": "Inicio",
   "crear-hermano": "Inicio",
   "eliminar-rama": "Inicio",
+  ...Object.fromEntries(ELEGIR.map((c) => [c.id, "Inicio"])),
   "pegar-al-mas-cercano": "Formato de conector",
 };
 
@@ -145,6 +146,29 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
               },
             }
           : {})}
+      />
+    );
+  };
+
+  /** «Seleccionar todo» con la flecha de las demás selecciones (Y15): todas salen del registro. */
+  const botonSeleccionar = (): ReactElement => {
+    const principal = comando("seleccionar-todo");
+    const Icono = principal.icono;
+    return (
+      <RibbonSplitButton
+        key="seleccionar-todo"
+        size="large"
+        label={principal.etiqueta}
+        icon={Icono ? <Icono /> : undefined}
+        shortcut={textoDeAtajo(principal)}
+        data-comando="seleccionar-todo"
+        onClick={() => onOrden(principal.orden)}
+        menuLabel="Más selecciones"
+        items={ELEGIR.map((v) => {
+          const Ic = v.icono;
+          const estado = estadoComando(v, contexto);
+          return { id: v.id, label: v.etiqueta, icon: Ic ? <Ic /> : undefined, disabled: !estado.habilitado, onSelect: () => onOrden(v.orden) };
+        })}
       />
     );
   };
@@ -234,6 +258,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
             {boton("flecha", "large")}
             {boton("texto", "large")}
           </RibbonGroup>
+          <RibbonGroup label="Seleccionar">{botonSeleccionar()}</RibbonGroup>
           <RibbonGroup label="Edición">
             {boton("duplicar", "large")}
             {boton("eliminar", "large")}
