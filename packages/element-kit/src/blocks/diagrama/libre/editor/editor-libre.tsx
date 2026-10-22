@@ -27,12 +27,16 @@ import {
   conectarFormas,
   crearHijo,
   crearHijoEn,
+  cajaDeFragmento,
+  DESPLAZAMIENTO_PEGADO,
   existeConector,
+  pegar,
   normalizarEscena,
   sincronizarConectores,
   trazadoForma,
   type Conexion,
   type Lado,
+  type OpcionesPegar,
   type TipoForma,
   type Elemento,
   type EntradaElemento,
@@ -46,6 +50,7 @@ import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marco
 import { BuscadorComandos } from "./buscador-comandos.js";
 import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO, type OpcionesOrden } from "./cinta-editor.js";
 import { CapaFantasmaForma } from "./fantasma-forma.js";
+import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, type EscribirDatos, type Lectura } from "./portapapeles.js";
 import { PanelAtajos } from "./panel-atajos.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, padreConectorDe, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
@@ -296,6 +301,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   /** Forma que se arrastra desde la galería de la cinta y dónde caería (solo mientras el puntero está sobre el lienzo). */
   const [fantasmaGaleria, setFantasmaGaleria] = useState<{ forma: TipoForma; centro: Punto } | null>(null);
   const galeria = useRef<{ cancelar: () => void } | null>(null);
+  /** Lo último que se copió desde esta página: respaldo si el navegador quita el formato propio, y lo que pega el botón «Pegar». */
+  const memoriaCopia = useRef<Copia | null>(null);
+  /** Cuántas veces seguidas se pegó lo mismo (cada pegado se desplaza 20 más). */
+  const pegadoRef = useRef<{ clave: string; veces: number } | null>(null);
+  /** `Ctrl+Mayús+V`: el evento `paste` no trae Mayús, así que se anota al apretar la tecla. */
+  const pegarEnSitio = useRef(false);
+  /** El evento `copy`/`cut` que pidió un botón llegó y se atendió. */
+  const copiaHecha = useRef(false);
   const [enCurso, setEnCurso] = useState<Punto[] | null>(null);
   const [previa, setPrevia] = useState<VistaPrevia | null>(null);
   const [edicion, setEdicion] = useState<Edicion | null>(null);
@@ -573,6 +586,112 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       radioPx: radioDePuertoPx(tipoPuntero.current),
       ...(shift && desde ? { restringir: (p: Punto) => restringirAngulo(desde, p) } : {}),
     });
+  };
+
+  // ─── Portapapeles (Y12a, DY7) ───────────────────────────────────────────────
+  const esCampoDeTexto = (objetivo: EventTarget | null): boolean => {
+    const t = objetivo as HTMLElement | null;
+    return t !== null && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable === true);
+  };
+
+  /** Copia lo elegido. Con `datos` (el `clipboardData` de un evento) lo escribe en el portapapeles del sistema. */
+  const copiarSeleccion = (datos: EscribirDatos | null): boolean => {
+    const { escena: actual, seleccion: sel } = vivo.current;
+    if (sel.length === 0) {
+      setAnuncio("No hay nada elegido para copiar.");
+      return false;
+    }
+    const r = prepararCopia(actual, sel);
+    if (!r.ok) {
+      setAnuncio(r.motivo);
+      return false;
+    }
+    memoriaCopia.current = r.copia;
+    pegadoRef.current = null;
+    if (datos) escribirEnPortapapeles(datos, r.copia);
+    copiaHecha.current = true;
+    const n = r.copia.fragmento.elementos.filter((x) => x.tipo !== "grupo").length;
+    setAnuncio(n === 1 ? "1 elemento copiado." : `${n} elementos copiados.`);
+    return true;
+  };
+
+  /** Copia y quita lo elegido (lo bloqueado se queda, como con Eliminar): UNA entrada de historial. */
+  const cortarSeleccion = (datos: EscribirDatos | null): void => {
+    if (!copiarSeleccion(datos)) return;
+    // `ejecutar` devuelve `false` si no se quitó nada (todo lo elegido está bloqueado).
+    const hecho = ejecutar({ tipo: "eliminar" });
+    const n = (memoriaCopia.current?.fragmento.elementos ?? []).filter((x) => x.tipo !== "grupo").length;
+    setAnuncio(hecho ? (n === 1 ? "1 elemento cortado." : `${n} elementos cortados.`) : "Copiado; lo bloqueado no se corta.");
+  };
+
+  /** Pega lo leído: un fragmento (formas, estilo, conectores) o texto plano como cuadro de texto (DY8). */
+  const aplicarLectura = (lectura: Lectura, enSitio: boolean): void => {
+    if (lectura.tipo === "vacio") {
+      setAnuncio("No hay nada que pegar.");
+      return;
+    }
+    if (lectura.tipo === "error") {
+      setAnuncio(lectura.motivo);
+      return;
+    }
+    const { escena: actual, vista: v } = vivo.current;
+    const previo = pegadoRef.current;
+    const veces = !enSitio && previo?.clave === lectura.clave ? previo.veces : 0;
+    const m = medir();
+    const arriba = pantallaAEscena(v, { x: 0, y: 0 });
+    const abajo = pantallaAEscena(v, { x: m.ancho, y: m.alto });
+    const centroVista = pantallaAEscena(v, { x: m.ancho / 2, y: m.alto / 2 });
+    const centro = { x: centroVista.x + DESPLAZAMIENTO_PEGADO * veces, y: centroVista.y + DESPLAZAMIENTO_PEGADO * veces };
+    if (lectura.tipo === "texto") {
+      const alto = Math.max(TEXTO_NUEVO.alto, lectura.texto.split("\n").length * 26);
+      crearElemento(entradaTexto({ x: centro.x - TEXTO_NUEVO.ancho / 2, y: centro.y - alto / 2, ancho: TEXTO_NUEVO.ancho, alto }, lectura.texto));
+      pegadoRef.current = { clave: lectura.clave, veces: veces + 1 };
+      setAnuncio("Texto pegado en un cuadro de texto.");
+      return;
+    }
+    let opciones: OpcionesPegar = {};
+    if (!enSitio) {
+      const caja = cajaDeFragmento(lectura.fragmento);
+      const d = DESPLAZAMIENTO_PEGADO * (veces + 1);
+      // Si el original sigue a la vista, la copia va un poco desplazada; si no, al centro de lo que se ve.
+      const cabe = caja !== null && caja.x + d >= arriba.x && caja.y + d >= arriba.y && caja.x + caja.ancho + d <= abajo.x && caja.y + caja.alto + d <= abajo.y;
+      opciones = cabe ? { desplazamiento: { x: d, y: d } } : { centro };
+    }
+    const r = pegar(actual, lectura.fragmento, opciones);
+    if (r.motivo) {
+      setAnuncio(r.motivo === "demasiados" ? "El dibujo ya tiene demasiados elementos para pegar más." : "No hay nada que pegar.");
+      return;
+    }
+    confirmar(actual, { escena: r.escena, seleccion: r.ids });
+    const n = r.ids.length;
+    setAnuncio(n === 1 ? "1 elemento pegado." : `${n} elementos pegados.`);
+    if (!enSitio) pegadoRef.current = { clave: lectura.clave, veces: veces + 1 };
+  };
+
+  /** Un botón de la cinta: pide al navegador el evento `copy`/`cut` y, si no lo da, copia dentro del editor. */
+  const copiarOCortarDeBoton = (tipo: "copy" | "cut"): void => {
+    copiaHecha.current = false;
+    try {
+      if (typeof document.execCommand === "function") document.execCommand(tipo);
+    } catch {
+      // sin permiso o sin soporte: se copia dentro del editor
+    }
+    if (!copiaHecha.current) {
+      if (tipo === "cut") cortarSeleccion(null);
+      else copiarSeleccion(null);
+    }
+    svgRef.current?.focus();
+  };
+
+  /** El botón «Pegar»: un botón no puede leer el portapapeles del sistema sin permiso, así que pega la última copia hecha aquí. */
+  const pegarDeBoton = (enSitio: boolean): void => {
+    const m = memoriaCopia.current;
+    if (!m) {
+      setAnuncio("Para pegar usa Ctrl+V: el navegador no deja leer el portapapeles desde un botón.");
+      return;
+    }
+    aplicarLectura({ tipo: "fragmento", fragmento: m.fragmento, clave: m.json }, enSitio);
+    svgRef.current?.focus();
   };
 
   // ─── Texto en el sitio ──────────────────────────────────────────────────────
@@ -1129,6 +1248,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         setBuscadorAbierto(false);
         setAtajosAbiertos(true);
         return;
+      case "copiar":
+        copiarOCortarDeBoton("copy");
+        return;
+      case "cortar":
+        copiarOCortarDeBoton("cut");
+        return;
+      case "pegar":
+        pegarDeBoton(false);
+        return;
+      case "pegar-en-sitio":
+        pegarDeBoton(true);
+        return;
       case "terminar":
         cerrar();
         return;
@@ -1169,6 +1300,11 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       espacio.current = true;
       setCursor("grab");
       e.preventDefault();
+      return;
+    }
+    // Copiar, cortar y pegar los resuelve el navegador con sus eventos (`copy`/`cut`/`paste`): aquí solo se anota si fue con Mayús.
+    if (comandoDeTecla(e)?.atajoNativo) {
+      if (e.key.toLowerCase() === "v") pegarEnSitio.current = e.shiftKey;
       return;
     }
     const orden = ordenDeTecla(e);
@@ -1235,6 +1371,28 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
       onKeyDown={alTeclear}
       onKeyUp={alSoltarTecla}
+      onCopy={(e) => {
+        e.stopPropagation(); // ni un copiar ni un pegar de aquí debe llegar al editor de diapositivas
+        if (esCampoDeTexto(e.target) || (window.getSelection()?.toString() ?? "") !== "") return;
+        if (vivo.current.seleccion.length === 0) return;
+        e.preventDefault();
+        copiarSeleccion(e.clipboardData);
+      }}
+      onCut={(e) => {
+        e.stopPropagation();
+        if (esCampoDeTexto(e.target) || (window.getSelection()?.toString() ?? "") !== "") return;
+        if (vivo.current.seleccion.length === 0) return;
+        e.preventDefault();
+        cortarSeleccion(e.clipboardData);
+      }}
+      onPaste={(e) => {
+        e.stopPropagation();
+        if (esCampoDeTexto(e.target)) return;
+        e.preventDefault();
+        const enSitio = pegarEnSitio.current;
+        pegarEnSitio.current = false;
+        aplicarLectura(leerDePortapapeles(e.clipboardData, memoriaCopia.current), enSitio);
+      }}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}

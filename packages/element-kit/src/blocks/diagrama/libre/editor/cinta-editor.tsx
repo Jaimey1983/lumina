@@ -52,6 +52,10 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   atajos: "Vista",
   "seleccionar-todo": "Edición general",
   "conectar-cadena": "Insertar",
+  copiar: "Inicio",
+  cortar: "Inicio",
+  pegar: "Inicio",
+  "pegar-en-sitio": "Inicio",
   "crear-hijo": "Inicio",
   "crear-hermano": "Inicio",
   "eliminar-rama": "Inicio",
@@ -183,6 +187,12 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
       label: "Inicio",
       content: (
         <>
+          <RibbonGroup label="Portapapeles">
+            {boton("pegar", "large")}
+            {boton("cortar", "medium")}
+            {boton("copiar", "medium")}
+            {boton("pegar-en-sitio", "medium")}
+          </RibbonGroup>
           <RibbonGroup label="Herramientas">
             {boton("seleccionar", "large")}
             {boton("linea", "large")}

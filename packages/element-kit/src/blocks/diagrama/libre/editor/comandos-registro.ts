@@ -16,6 +16,10 @@ import {
   AlignStartVertical,
   AlignVerticalSpaceBetween,
   Anchor,
+  ClipboardCopy,
+  ClipboardPaste,
+  ClipboardType,
+  Scissors,
   ArrowRight,
   BringToFront,
   Check,
@@ -81,6 +85,8 @@ export interface DefinicionComando {
   orden: Orden;
   /** Solo vale con el foco en el lienzo (las letras de herramienta, para no robar teclas a la cinta). */
   soloLienzo?: boolean;
+  /** Su atajo lo resuelve el navegador (eventos `copy`/`cut`/`paste`): se muestra y se busca, pero el editor no lo intercepta. */
+  atajoNativo?: boolean;
   /** `true` si se puede; si no, el motivo en una frase (va en el tooltip). Sin esta función, siempre se puede. */
   habilitado?: (c: ContextoComando) => true | string;
   /** Botones de dos estados (herramienta elegida, cuadrícula encendida). */
@@ -153,6 +159,11 @@ export const COMANDOS: readonly DefinicionComando[] = [
   ...FORMAS_COMANDOS,
 
   // Edición
+  // Portapapeles (Y12a): los atajos los resuelve el navegador con sus eventos; el editor solo los muestra.
+  { id: "copiar", etiqueta: "Copiar", icono: ClipboardCopy, grupo: "edicion", atajos: [ctrl("c", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "copiar" }, habilitado: hay },
+  { id: "cortar", etiqueta: "Cortar", icono: Scissors, grupo: "edicion", atajos: [ctrl("x", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "cortar" }, habilitado: hay },
+  { id: "pegar", etiqueta: "Pegar", icono: ClipboardPaste, grupo: "edicion", atajos: [ctrl("v", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "pegar" } },
+  { id: "pegar-en-sitio", etiqueta: "Pegar en el mismo sitio", icono: ClipboardType, grupo: "edicion", atajos: [ctrl("v", { shift: true, alt: false })], atajoNativo: true, orden: { tipo: "pegar-en-sitio" } },
   { id: "duplicar", etiqueta: "Duplicar", icono: Copy, grupo: "edicion", atajos: [ctrl("d")], orden: { tipo: "duplicar" }, habilitado: hay },
   { id: "eliminar", etiqueta: "Eliminar", icono: Trash2, grupo: "edicion", atajos: [{ tecla: "Delete" }, { tecla: "Backspace" }], orden: { tipo: "eliminar" }, habilitado: hay },
   {

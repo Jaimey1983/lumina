@@ -144,14 +144,14 @@ describe("Y10 conectores sin huérfanos", () => {
     const m = montar(e0);
     fireEvent.keyDown(m.lienzo, { key: "k", ctrlKey: true });
     const dialogo = screen.getByRole("dialog", { name: "Buscar comando" });
-    fireEvent.change(within(dialogo).getByRole("combobox"), { target: { value: "pegar" } });
+    fireEvent.change(within(dialogo).getByRole("combobox"), { target: { value: "pegar al mas cercano" } });
     const opcion = within(dialogo).getByRole("option", { name: /Pegar al más cercano/ });
     expect(opcion.getAttribute("aria-disabled")).toBe("true");
     fireEvent.keyDown(within(dialogo).getByRole("combobox"), { key: "Escape" });
     m.elegirLinea(275, 130);
     fireEvent.keyDown(m.lienzo, { key: "k", ctrlKey: true });
     const abierto = screen.getByRole("dialog", { name: "Buscar comando" });
-    fireEvent.change(within(abierto).getByRole("combobox"), { target: { value: "pegar" } });
+    fireEvent.change(within(abierto).getByRole("combobox"), { target: { value: "pegar al mas cercano" } });
     const activa = within(abierto).getByRole("option", { name: /Pegar al más cercano/ });
     expect(activa.getAttribute("aria-disabled")).not.toBe("true");
     fireEvent.keyDown(within(abierto).getByRole("combobox"), { key: "Enter" });
