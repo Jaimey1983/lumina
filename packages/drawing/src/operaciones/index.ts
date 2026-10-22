@@ -40,6 +40,20 @@ export { crearHijo, crearHijoEn, DISTANCIA_HIJO_POR_DEFECTO, LADO_HIJO_TECLADO, 
 export { conectarEnCadena, filtrarFormasParaCadena, ordenEspacialParaCadena, ordenParaCadena } from './cadena.js';
 export { eliminarRama } from './rama.js';
 export {
+  cajaDeFragmento,
+  copiar,
+  DESPLAZAMIENTO_PEGADO,
+  FORMATO_FRAGMENTO,
+  MAX_ELEMENTOS_FRAGMENTO,
+  MAX_TAMANO_FRAGMENTO,
+  pegar,
+  validarFragmento,
+  VERSION_FRAGMENTO,
+  type Fragmento,
+  type OpcionesPegar,
+  type ResultadoPegar,
+} from './portapapeles.js';
+export {
   ajustarAngulo,
   ASAS,
   mover,

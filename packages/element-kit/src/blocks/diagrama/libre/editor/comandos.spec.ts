@@ -29,7 +29,7 @@ describe("ordenDeTecla", () => {
   });
   it("lo demás no significa nada", () => {
     expect(ordenDeTecla(tecla("x"))).toBeNull();
-    expect(ordenDeTecla(tecla("c", { ctrlKey: true }))).toBeNull();
+    expect(ordenDeTecla(tecla("j", { ctrlKey: true }))).toBeNull();
     expect(ordenDeTecla(tecla("q"))).toBeNull();
   });
 });

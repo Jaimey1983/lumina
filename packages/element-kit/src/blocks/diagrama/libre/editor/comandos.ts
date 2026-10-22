@@ -82,7 +82,12 @@ export type Orden =
   | { tipo: "terminar" }
   | { tipo: "aceptar" }
   | { tipo: "buscar-comando" }
-  | { tipo: "ver-atajos" };
+  | { tipo: "ver-atajos" }
+  /** Portapapeles (Y12a): las hace el editor, que es quien tiene el `clipboardData` y la vista. */
+  | { tipo: "copiar" }
+  | { tipo: "cortar" }
+  | { tipo: "pegar" }
+  | { tipo: "pegar-en-sitio" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
