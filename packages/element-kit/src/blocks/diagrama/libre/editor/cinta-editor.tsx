@@ -6,7 +6,7 @@
 // Pestañas: Inicio · Insertar · Organizar · Vista, y la contextual «Formato de conector» cuando lo elegido
 // son líneas. «Formato de forma» llega con la fase D (estilos y mini barra): una pestaña sin contenido no se muestra (DY1).
 
-import type { ReactElement, ReactNode } from "react";
+import type { KeyboardEvent, PointerEvent, ReactElement, ReactNode } from "react";
 import { formasPorGrupo, trazadoForma, type Escena, type Linea, type TipoForma } from "@lumina/drawing";
 import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup } from "@lumina/ui/ribbon";
 import { CornerDownRight, Minus, Spline } from "lucide-react";
@@ -75,6 +75,11 @@ function Miniatura({ forma }: { forma: TipoForma }): ReactElement {
   );
 }
 
+/** Cómo se pidió una orden: `fija` deja la herramienta elegida hasta que se elija otra (Mayús al elegirla, o doble clic en su botón). */
+export interface OpcionesOrden {
+  fija?: boolean;
+}
+
 export interface CintaEditorProps {
   contexto: ContextoComando;
   /** Conectores elegidos (la pestaña «Formato de conector» aparece si hay alguno). */
@@ -82,7 +87,13 @@ export interface CintaEditorProps {
   pestana: string;
   onPestana: (id: string) => void;
   /** Un botón o un atajo piden lo mismo: una orden que el editor ejecuta. */
-  onOrden: (orden: Orden) => void;
+  onOrden: (orden: Orden, opciones?: OpcionesOrden) => void;
+  /** La herramienta activa quedó fija (Y11): su botón lo marca con `data-fija`. */
+  herramientaFija?: boolean;
+  /** Se aprieta el botón de una forma de la galería: si la persona arrastra, el editor la suelta en el lienzo (Y11). */
+  onArrastrarForma?: (forma: TipoForma, evento: PointerEvent<HTMLButtonElement>) => void;
+  /** Enter sobre una forma de la galería: se coloca al centro de la vista (Y11). */
+  onColocarForma?: (forma: TipoForma) => void;
   /** Cambio sobre los conectores elegidos: una sola entrada de historial. */
   onCambiarConector: (nueva: Escena) => void;
   /** F6 más allá de la cinta: el foco vuelve al lienzo. */
@@ -91,12 +102,15 @@ export interface CintaEditorProps {
   acciones?: ReactNode;
 }
 
-export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onCambiarConector, onSalirALienzo, acciones }: CintaEditorProps): ReactElement {
+export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, herramientaFija, onArrastrarForma, onColocarForma, onCambiarConector, onSalirALienzo, acciones }: CintaEditorProps): ReactElement {
   /** Botón de un comando del registro. */
   const boton = (id: string, size: "large" | "medium" | "small" = "medium", icono?: ReactNode): ReactElement => {
     const def = comando(id);
     const estado = estadoComando(def, contexto);
     const Icono = def.icono;
+    // Las herramientas de crear se pueden dejar fijas (Mayús al elegirlas o doble clic) y las formas se arrastran desde la galería (Y11).
+    const forma = def.orden.tipo === "herramienta-forma" ? def.orden.forma : null;
+    const esHerramienta = forma !== null || (def.orden.tipo === "herramienta" && def.orden.herramienta !== "seleccionar");
     return (
       <RibbonButton
         key={id}
@@ -108,7 +122,19 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onC
         disabled={!estado.habilitado}
         disabledReason={estado.motivo || undefined}
         data-comando={id}
-        onClick={() => onOrden(def.orden)}
+        {...(estado.activo && herramientaFija ? { "data-fija": "" } : {})}
+        onClick={(e) => (esHerramienta ? onOrden(def.orden, { fija: e.shiftKey }) : onOrden(def.orden))}
+        {...(esHerramienta ? { onDoubleClick: () => onOrden(def.orden, { fija: true }) } : {})}
+        {...(forma !== null
+          ? {
+              onPointerDown: (e: PointerEvent<HTMLButtonElement>) => onArrastrarForma?.(forma, e),
+              onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => {
+                if (e.key !== "Enter" || e.ctrlKey || e.metaKey || e.altKey || !onColocarForma) return;
+                e.preventDefault(); // sin esto el Enter también «haría clic» y elegiría la herramienta
+                onColocarForma(forma);
+              },
+            }
+          : {})}
       />
     );
   };
