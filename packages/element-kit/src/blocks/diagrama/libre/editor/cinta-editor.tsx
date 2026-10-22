@@ -8,9 +8,9 @@
 
 import type { KeyboardEvent, PointerEvent, ReactElement, ReactNode } from "react";
 import { formasPorGrupo, trazadoForma, type Escena, type Linea, type TipoForma } from "@lumina/drawing";
-import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup } from "@lumina/ui/ribbon";
+import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup, RibbonSplitButton } from "@lumina/ui/ribbon";
 import { CornerDownRight, Minus, Spline } from "lucide-react";
-import { COMANDOS, comando, estadoComando, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
+import { COMANDOS, comando, estadoComando, ORGANIZAR, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { Orden } from "./comandos.js";
 import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, hayExtremoLibre, valorComun } from "./conectores.js";
 
@@ -53,6 +53,7 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "seleccionar-todo": "Edición general",
   "conectar-cadena": "Insertar",
   copiar: "Inicio",
+  ...Object.fromEntries(ORGANIZAR.map((c) => [c.id, "Organizar"])),
   "copiar-formato": "Inicio",
   "aplicar-formato": "Inicio",
   cortar: "Inicio",
@@ -143,6 +144,31 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
               },
             }
           : {})}
+      />
+    );
+  };
+
+  /** «Organizar automáticamente» con la flecha de las variantes (jerárquico, árbol y radial): todas salen del registro. */
+  const botonOrganizar = (): ReactElement => {
+    const principal = comando("organizar-auto");
+    const estado = estadoComando(principal, contexto);
+    const variantes = ORGANIZAR.filter((c) => c.id !== "organizar-auto");
+    const Icono = principal.icono;
+    return (
+      <RibbonSplitButton
+        key="organizar-auto"
+        size="large"
+        label={principal.etiqueta}
+        icon={Icono ? <Icono /> : undefined}
+        disabled={!estado.habilitado}
+        disabledReason={estado.motivo || undefined}
+        data-comando="organizar-auto"
+        onClick={() => onOrden(principal.orden)}
+        menuLabel="Más disposiciones"
+        items={variantes.map((v) => {
+          const Ic = v.icono;
+          return { id: v.id, label: v.etiqueta, icon: Ic ? <Ic /> : undefined, disabled: !estadoComando(v, contexto).habilitado, onSelect: () => onOrden(v.orden) };
+        })}
       />
     );
   };
@@ -256,6 +282,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
             {boton("distribuir-horizontal", "small")}
             {boton("distribuir-vertical", "small")}
           </RibbonGroup>
+          <RibbonGroup label="Disposición">{botonOrganizar()}</RibbonGroup>
         </>
       ),
     },

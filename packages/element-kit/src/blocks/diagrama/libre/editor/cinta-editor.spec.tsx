@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Escena } from "@lumina/drawing";
 import { EditorLibre } from "./editor-libre.js";
-import { COMANDOS, textoDeAtajo } from "./comandos-registro.js";
+import { COMANDOS, textoDeAtajo, ORGANIZAR } from "./comandos-registro.js";
 import { botonCinta, deshabilitado, escena, forma, ids, irAPestana, linea } from "./util-pruebas.js";
 
 afterEach(cleanup);
@@ -26,7 +26,8 @@ describe("cinta del editor", () => {
 
   it("todos los comandos que antes tenían botón siguen teniéndolo, cada uno en su pestaña (ningún botón desaparece)", () => {
     montar();
-    const sinBoton = new Set(["seleccionar-todo", "listo", "buscar-comando", "pegar-al-mas-cercano"]);
+    // Las variantes de «Organizar automáticamente» (Y13) viven en el menú de su flecha, no como botones sueltos.
+    const sinBoton = new Set(["seleccionar-todo", "listo", "buscar-comando", "pegar-al-mas-cercano", ...ORGANIZAR.filter((c) => c.id !== "organizar-auto").map((c) => c.id)]);
     const faltan: string[] = [];
     for (const nombre of ["Inicio", "Insertar", "Organizar", "Vista"]) {
       irAPestana(nombre);

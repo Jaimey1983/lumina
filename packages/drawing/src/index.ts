@@ -5,3 +5,4 @@ export * from './render/index.js';
 export * from './operaciones/index.js';
 export * from './historial/index.js';
 export * from './conectores/index.js';
+export * from './disposicion/index.js';

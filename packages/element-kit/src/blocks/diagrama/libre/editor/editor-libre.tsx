@@ -54,6 +54,7 @@ import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marco
 import { BuscadorComandos } from "./buscador-comandos.js";
 import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO, type OpcionesOrden } from "./cinta-editor.js";
 import { CapaFantasmaForma } from "./fantasma-forma.js";
+import { NOMBRE_MODO, organizarAuto } from "./organizar-auto.js";
 import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, type EscribirDatos, type Lectura } from "./portapapeles.js";
 import { PanelAtajos } from "./panel-atajos.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, padreConectorDe, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
@@ -1354,6 +1355,20 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       case "pegar-en-sitio":
         pegarDeBoton(true);
         return;
+      case "organizar": {
+        // Organizar automáticamente (Y13): una entrada de historial; los conectores se vuelven a enrutar en `confirmar`.
+        const { escena: actual, seleccion: sel } = vivo.current;
+        const r = organizarAuto(actual, sel, { modo: orden.modo, ...(orden.direccion ? { direccion: orden.direccion } : {}) });
+        if (r.motivo === "demasiadas") setAnuncio("Hay demasiadas formas para organizarlas de una vez (máximo 500). Elige menos.");
+        else if (r.motivo === "pocas") setAnuncio("Hacen falta al menos 2 formas que se puedan mover para organizarlas.");
+        else if (r.motivo === "sin-cambios") setAnuncio("Ya estaba organizado así.");
+        else {
+          confirmar(actual, { escena: r.escena, seleccion: sel });
+          setAnuncio(`Diagrama organizado de forma ${NOMBRE_MODO[orden.modo]}.`);
+        }
+        svgRef.current?.focus();
+        return;
+      }
       case "copiar-formato":
         iniciarPincel(opciones?.fija === true);
         return;

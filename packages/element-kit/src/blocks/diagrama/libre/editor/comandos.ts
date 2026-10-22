@@ -25,6 +25,7 @@ import {
 import { bloqueadosEfectivos } from "./asas.js";
 import { comandoDeTecla } from "./comandos-registro.js";
 import { pegarAlMasCercano } from "./conectores.js";
+import type { DireccionOrganizar, ModoOrganizar } from "./organizar-auto.js";
 
 export interface EstadoEditor {
   escena: Escena;
@@ -90,7 +91,9 @@ export type Orden =
   | { tipo: "pegar-en-sitio" }
   /** Pincel (Y12b): toma el formato de lo elegido y lo aplica a lo que se señale (una vez, o fijo). */
   | { tipo: "copiar-formato" }
-  | { tipo: "aplicar-formato" };
+  | { tipo: "aplicar-formato" }
+  /** Organizar automáticamente (Y13): jerárquico, árbol o radial, con dirección. */
+  | { tipo: "organizar"; modo: ModoOrganizar; direccion?: DireccionOrganizar };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
