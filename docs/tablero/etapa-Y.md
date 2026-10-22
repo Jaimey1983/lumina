@@ -115,8 +115,8 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 - **Cierre:** ninguno.
 
 #### Y10 — Conectores sin huérfanos
-- **Operador:** Claude Code
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** [en curso: Cursor]
 - **Precondición:** Y7 `hecho`.
 - **Alcance — PUEDE tocar:** `editor/conectores-capa.tsx`, `editor/conectores.ts`, `editor/comandos.ts`, `packages/drawing/src/operaciones/edicion.ts` (duplicar) con sus specs.
 - **Entregable:** (1) un extremo **despegado** se dibuja distinto (naranja) y la barra del conector lo avisa («Extremo libre») con la acción «Pegar al más cercano»; (2) **duplicar** formas con un conector entre ellas **duplica también el conector entre las copias**, y las líneas que salen hacia fuera de la selección no se duplican; (3) al crear un conector, la **etiqueta queda en edición** opcionalmente (ajuste en preferencias de la fase E; por ahora, con doble clic como hoy). Pruebas: duplicar un trío conectado conserva la topología, conectores hacia fuera no se copian, el estado «libre» aparece solo con extremos sin conexión, eliminar una forma deja al conector libre y avisado. Verificación: la de Y2.
