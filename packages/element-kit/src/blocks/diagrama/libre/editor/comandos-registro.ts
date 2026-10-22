@@ -16,6 +16,12 @@ import {
   AlignStartVertical,
   AlignVerticalSpaceBetween,
   Anchor,
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Network,
+  Orbit,
+  Workflow,
   Paintbrush,
   PaintBucket,
   ClipboardCopy,
@@ -50,6 +56,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import type { Orden, TeclaEvento } from "./comandos.js";
+import { formasAOrganizar, type DireccionOrganizar, type ModoOrganizar } from "./organizar-auto.js";
 import { hayConectorConExtremoLibre, lineasElegidas } from "./conectores.js";
 import { esMismaHerramienta, SELECCIONAR, type Herramienta } from "./herramientas.js";
 import { ZOOM_MAX, ZOOM_MIN } from "./vista.js";
@@ -117,6 +124,11 @@ const dosFormas = (c: ContextoComando): true | string => {
   const n = c.escena.elementos.filter((e) => e.tipo === "forma" && c.seleccion.includes(e.id)).length;
   return n >= 2 ? true : "Elige 2 o más formas";
 };
+/** Organizar (Y13): 2 o más formas elegidas, o ninguna elegida y 2 o más formas en el diagrama. */
+const puedeOrganizar = (c: ContextoComando): true | string => {
+  if (c.seleccion.length === 1) return "Elige 2 o más formas, o ninguna para organizar todo el diagrama";
+  return formasAOrganizar(c.escena, c.seleccion) >= 2 ? true : "Hacen falta 2 o más formas";
+};
 const tres = (c: ContextoComando): true | string => (c.seleccion.length > 2 ? true : "Elige 3 o más elementos");
 const hayGrupo = (c: ContextoComando): true | string =>
   c.escena.elementos.some((e) => e.tipo === "grupo" && c.seleccion.includes(e.id)) ? true : "Elige un grupo";
@@ -152,6 +164,27 @@ const FORMAS_COMANDOS: DefinicionComando[] = TIPOS_FORMA.map((forma) => ({
   activo: (c: ContextoComando) => esMismaHerramienta(c.herramienta, { tipo: "forma", forma }),
 }));
 
+const organizar = (id: string, etiqueta: string, modo: ModoOrganizar, direccion: DireccionOrganizar | undefined, icono: ComponentType<{ className?: string }>): DefinicionComando => ({
+  id,
+  etiqueta,
+  icono,
+  grupo: "orden",
+  orden: { tipo: "organizar", modo, ...(direccion ? { direccion } : {}) },
+  habilitado: puedeOrganizar,
+});
+
+/** Las disposiciones: la principal («Organizar automáticamente») y las variantes del menú desplegable (Y13). */
+export const ORGANIZAR: readonly DefinicionComando[] = [
+  organizar("organizar-auto", "Organizar automáticamente", "jerarquico", "abajo", Workflow),
+  organizar("organizar-jerarquico-abajo", "Jerárquico: de arriba abajo", "jerarquico", "abajo", ArrowDown),
+  organizar("organizar-jerarquico-derecha", "Jerárquico: de izquierda a derecha", "jerarquico", "derecha", ArrowRight),
+  organizar("organizar-jerarquico-arriba", "Jerárquico: de abajo arriba", "jerarquico", "arriba", ArrowUp),
+  organizar("organizar-jerarquico-izquierda", "Jerárquico: de derecha a izquierda", "jerarquico", "izquierda", ArrowLeft),
+  organizar("organizar-arbol-derecha", "Árbol: hacia la derecha", "arbol", "derecha", Network),
+  organizar("organizar-arbol-abajo", "Árbol: hacia abajo", "arbol", "abajo", Network),
+  organizar("organizar-radial", "Radial", "radial", undefined, Orbit),
+];
+
 export const COMANDOS: readonly DefinicionComando[] = [
   // Historial
   { id: "deshacer", etiqueta: "Deshacer", icono: Undo2, grupo: "historial", atajos: [ctrl("z", { shift: false })], orden: { tipo: "deshacer" }, habilitado: (c) => (c.puedeDeshacer ? true : "No hay nada que deshacer") },
@@ -170,6 +203,8 @@ export const COMANDOS: readonly DefinicionComando[] = [
   { id: "cortar", etiqueta: "Cortar", icono: Scissors, grupo: "edicion", atajos: [ctrl("x", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "cortar" }, habilitado: hay },
   { id: "pegar", etiqueta: "Pegar", icono: ClipboardPaste, grupo: "edicion", atajos: [ctrl("v", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "pegar" } },
   { id: "pegar-en-sitio", etiqueta: "Pegar en el mismo sitio", icono: ClipboardType, grupo: "edicion", atajos: [ctrl("v", { shift: true, alt: false })], atajoNativo: true, orden: { tipo: "pegar-en-sitio" } },
+  // Organizar automáticamente (Y13)
+  ...ORGANIZAR,
   // Pincel (Y12b)
   { id: "copiar-formato", etiqueta: "Copiar formato", icono: Paintbrush, grupo: "edicion", atajos: [ctrl("c", { shift: false, alt: true })], orden: { tipo: "copiar-formato" }, habilitado: hay, activo: (c) => (c.pincel ?? null) !== null },
   {
