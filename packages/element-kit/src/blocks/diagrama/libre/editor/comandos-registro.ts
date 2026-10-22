@@ -33,6 +33,10 @@ import {
   Type,
   Keyboard,
   Search,
+  GitBranchPlus,
+  GitBranch,
+  Link2,
+  ListTree,
   Undo2,
   Ungroup,
   ZoomIn,
@@ -90,6 +94,15 @@ export interface EstadoComando {
 
 const hay = (c: ContextoComando): true | string => (c.seleccion.length > 0 ? true : "Elige un elemento");
 const varios = (c: ContextoComando): true | string => (c.seleccion.length > 1 ? true : "Elige 2 o más elementos");
+const unaForma = (c: ContextoComando): true | string => {
+  if (c.seleccion.length !== 1) return "Elige una sola forma";
+  const el = c.escena.elementos.find((e) => e.id === c.seleccion[0]);
+  return el?.tipo === "forma" ? true : "Elige una forma (no una línea)";
+};
+const dosFormas = (c: ContextoComando): true | string => {
+  const n = c.escena.elementos.filter((e) => e.tipo === "forma" && c.seleccion.includes(e.id)).length;
+  return n >= 2 ? true : "Elige 2 o más formas";
+};
 const tres = (c: ContextoComando): true | string => (c.seleccion.length > 2 ? true : "Elige 3 o más elementos");
 const hayGrupo = (c: ContextoComando): true | string =>
   c.escena.elementos.some((e) => e.tipo === "grupo" && c.seleccion.includes(e.id)) ? true : "Elige un grupo";
@@ -140,6 +153,52 @@ export const COMANDOS: readonly DefinicionComando[] = [
   // Edición
   { id: "duplicar", etiqueta: "Duplicar", icono: Copy, grupo: "edicion", atajos: [ctrl("d")], orden: { tipo: "duplicar" }, habilitado: hay },
   { id: "eliminar", etiqueta: "Eliminar", icono: Trash2, grupo: "edicion", atajos: [{ tecla: "Delete" }, { tecla: "Backspace" }], orden: { tipo: "eliminar" }, habilitado: hay },
+  {
+    id: "crear-hijo",
+    etiqueta: "Agregar hijo",
+    icono: GitBranchPlus,
+    grupo: "edicion",
+    atajos: [ctrl("Enter", { shift: false })],
+    orden: { tipo: "crear-hijo" },
+    soloLienzo: true,
+    habilitado: unaForma,
+  },
+  {
+    id: "crear-hermano",
+    etiqueta: "Agregar hermano",
+    icono: GitBranch,
+    grupo: "edicion",
+    atajos: [ctrl("Enter", { shift: true })],
+    orden: { tipo: "crear-hermano" },
+    soloLienzo: true,
+    habilitado: (c) => {
+      const f = unaForma(c);
+      if (f !== true) return f;
+      const hijo = c.seleccion[0]!;
+      const tienePadre = c.escena.elementos.some((e) => e.tipo === "linea" && e.destino?.elementoId === hijo && e.origen?.elementoId);
+      return tienePadre ? true : "La forma no tiene padre (conector entrante)";
+    },
+  },
+  {
+    id: "eliminar-rama",
+    etiqueta: "Borrar rama",
+    icono: ListTree,
+    grupo: "edicion",
+    atajos: [ctrl("Delete")],
+    orden: { tipo: "eliminar-rama" },
+    soloLienzo: true,
+    habilitado: unaForma,
+  },
+  {
+    id: "conectar-cadena",
+    etiqueta: "Conectar en cadena",
+    icono: Link2,
+    grupo: "edicion",
+    atajos: [ctrl("l")],
+    orden: { tipo: "conectar-cadena", orden: "auto" },
+    soloLienzo: true,
+    habilitado: dosFormas,
+  },
   { id: "seleccionar-todo", etiqueta: "Seleccionar todo", grupo: "edicion", atajos: [ctrl("a")], orden: { tipo: "seleccionar-todo" } },
   { id: "agrupar", etiqueta: "Agrupar", icono: Group, grupo: "edicion", atajos: [ctrl("g", { shift: false })], orden: { tipo: "agrupar" }, habilitado: varios },
   { id: "desagrupar", etiqueta: "Desagrupar", icono: Ungroup, grupo: "edicion", atajos: [ctrl("g", { shift: true })], orden: { tipo: "desagrupar" }, habilitado: hayGrupo },

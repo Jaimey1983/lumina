@@ -11,6 +11,9 @@ import { bloqueadosEfectivos, ocultosEfectivos } from './utilidades.js';
 /** Separación por defecto entre el borde del padre y el de la hija (unidades de escena). */
 export const DISTANCIA_HIJO_POR_DEFECTO = 60;
 
+/** Lado usado al crear hijo/hermano con teclado (Y9): primer hijo a la derecha del padre. */
+export const LADO_HIJO_TECLADO: Lado = 'derecha';
+
 const MAX_BUSQUEDA_HUECO = 32;
 
 function padreValido(escena: Escena, padreId: string): Forma | null {
