@@ -7,6 +7,8 @@ import { escenaAPantalla, type Vista } from "./vista.js";
 
 const COLOR = "#2563eb";
 const COLOR_PEGADO = "#16a34a";
+/** Extremo de conector que no está unido a ninguna forma (Y10). */
+const COLOR_LIBRE = "#ea580c";
 
 /** Puertos de las formas: puntos de unión que se ven al dibujar una línea, al arrastrar un extremo y al elegir una forma. */
 export function CapaPuertos({
@@ -99,7 +101,7 @@ export function CapaConexionPrevia({ vista, previa }: { vista: Vista; previa: { 
   );
 }
 
-/** Asas de la línea elegida: extremos (verdes si están pegados a una forma), puntos intermedios y puntos para crear uno. */
+/** Asas de la línea elegida: extremos (verdes si están pegados, naranja si están libres), puntos intermedios y puntos para crear uno. */
 export function CapaAsasDeConector({ escena, linea, vista }: { escena: Escena; linea: Linea; vista: Vista }): ReactElement {
   const agarres = agarresDeConector(escena, linea);
   const aPantalla = (p: Punto): Punto => escenaAPantalla(vista, p);
@@ -109,7 +111,8 @@ export function CapaAsasDeConector({ escena, linea, vista }: { escena: Escena; l
         const s = aPantalla(a.punto);
         if (a.tipo === "extremo") {
           const pegado = a.cual === "origen" ? linea.origen !== undefined : linea.destino !== undefined;
-          return <circle key={`e${i}`} cx={s.x} cy={s.y} r={6} fill={pegado ? COLOR_PEGADO : "#fff"} stroke={pegado ? COLOR_PEGADO : COLOR} strokeWidth={2} data-asa-conector={a.cual} data-pegado={pegado ? "si" : "no"} />;
+          const color = pegado ? COLOR_PEGADO : COLOR_LIBRE;
+          return <circle key={`e${i}`} cx={s.x} cy={s.y} r={6} fill={color} stroke={color} strokeWidth={2} data-asa-conector={a.cual} data-pegado={pegado ? "si" : "no"} {...(pegado ? {} : { "data-extremo-libre": "" })} />;
         }
         if (a.tipo === "via") return <rect key={`v${i}`} x={s.x - 5} y={s.y - 5} width={10} height={10} fill={COLOR} stroke="#fff" strokeWidth={1.5} data-asa-conector={`via-${a.indice}`} />;
         return <circle key={`i${i}`} cx={s.x} cy={s.y} r={4} fill="#fff" fillOpacity={0.85} stroke={COLOR} strokeWidth={1.25} strokeDasharray="2 2" data-asa-conector={`insertar-${a.tramo}`} />;

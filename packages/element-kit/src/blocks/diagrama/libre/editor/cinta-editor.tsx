@@ -12,7 +12,7 @@ import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup } from "@lumina/ui/ri
 import { CornerDownRight, Minus, Spline } from "lucide-react";
 import { COMANDOS, comando, estadoComando, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { Orden } from "./comandos.js";
-import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, valorComun } from "./conectores.js";
+import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, hayExtremoLibre, valorComun } from "./conectores.js";
 
 export const PESTANA_INICIO = "inicio";
 export const PESTANA_CONECTOR = "conector";
@@ -55,6 +55,7 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "crear-hijo": "Inicio",
   "crear-hermano": "Inicio",
   "eliminar-rama": "Inicio",
+  "pegar-al-mas-cercano": "Formato de conector",
 };
 
 /** Pestaña de la cinta donde vive cada comando (para el panel de atajos). */
@@ -254,6 +255,14 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, onC
                 <RibbonGroup label="Extremos">
                   {selectorExtremo("inicio", inicio)}
                   {selectorExtremo("fin", fin)}
+                </RibbonGroup>
+                <RibbonGroup label="Unión">
+                  {lineas.some(hayExtremoLibre) ? (
+                    <span data-extremo-libre-aviso="" className="px-2 text-xs font-medium text-orange-600 dark:text-orange-400">
+                      Extremo libre
+                    </span>
+                  ) : null}
+                  {boton("pegar-al-mas-cercano", "medium")}
                 </RibbonGroup>
               </div>
             ),

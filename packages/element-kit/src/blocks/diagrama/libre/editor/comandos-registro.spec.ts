@@ -3,7 +3,7 @@ import { TIPOS_FORMA } from "@lumina/drawing";
 import { COMANDOS, comando, comandoDeTecla, estadoComando, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { TeclaEvento } from "./comandos.js";
 import { SELECCIONAR } from "./herramientas.js";
-import { escena, forma, grupo } from "./util-pruebas.js";
+import { escena, forma, grupo, linea } from "./util-pruebas.js";
 
 const tecla = (key: string, extra: Partial<TeclaEvento> = {}): TeclaEvento => ({ key, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...extra });
 
@@ -131,6 +131,15 @@ describe("estado de los comandos", () => {
     expect(estado("alejar", { zoom: 1 }).habilitado).toBe(true);
     expect(estado("acercar", { zoom: 8 }).habilitado).toBe(false);
     expect(estado("acercar", { zoom: 1 }).habilitado).toBe(true);
+  });
+
+  it("pegar al más cercano solo se habilita con un conector de extremo libre", () => {
+    const libre = escena(forma("a", 0, 0), linea("L", [[100, 30], [200, 30]], { origen: { elementoId: "a", puerto: 1 } }));
+    const pegado = escena(forma("a", 0, 0), forma("b", 200, 0), linea("L", [[100, 30], [200, 30]], { origen: { elementoId: "a", puerto: 1 }, destino: { elementoId: "b", puerto: 3 } }));
+    expect(estado("pegar-al-mas-cercano")).toMatchObject({ habilitado: false, motivo: "Elige un conector" });
+    expect(estado("pegar-al-mas-cercano", { escena: pegado, seleccion: ["L"] })).toMatchObject({ habilitado: false, motivo: "El conector no tiene un extremo libre" });
+    expect(estado("pegar-al-mas-cercano", { escena: libre, seleccion: ["L"] })).toMatchObject({ habilitado: true, motivo: "" });
+    expect(estado("pegar-al-mas-cercano", { escena: libre, seleccion: ["a"] }).habilitado).toBe(false);
   });
 
   it("los interruptores y la herramienta elegida están «activos»", () => {
