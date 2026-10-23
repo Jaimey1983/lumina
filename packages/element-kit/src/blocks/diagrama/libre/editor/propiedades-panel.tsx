@@ -4,8 +4,8 @@ import { useEffect, useState, type ReactElement } from "react";
 import { LIMITES, type Contorno, type Escena, type Relleno, type Sombra } from "@lumina/drawing";
 import { CollapsibleSection, type CollapsibleSectionProps } from "@lumina/ui/collapsible-section";
 import { FieldHelp } from "@lumina/ui/field-help";
-import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Italic, PanelRightClose, Underline } from "lucide-react";
-import { CampoNumero, Conmutador, Deslizador, Fila, Opciones, FilaColor } from "./propiedades-campos.js";
+import { AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Italic, PanelRightClose, Underline } from "lucide-react";
+import { ALINEACION_H, CampoNumero, Conmutador, Deslizador, Fila, Opciones, FilaColor } from "./propiedades-campos.js";
 import { PanelCapas } from "./propiedades-capas.js";
 import {
   SOMBRA_POR_DEFECTO,
@@ -61,12 +61,6 @@ const TIPOS_RELLENO = [
   { valor: "ninguno", etiqueta: "Ninguno" },
   { valor: "solido", etiqueta: "Sólido" },
   { valor: "degradado", etiqueta: "Degradado" },
-] as const;
-
-const ALINEACION_H = [
-  { valor: "izquierda", etiqueta: "Texto alineado a la izquierda", icono: <AlignLeft className="size-3.5" /> },
-  { valor: "centro", etiqueta: "Texto centrado", icono: <AlignCenter className="size-3.5" /> },
-  { valor: "derecha", etiqueta: "Texto alineado a la derecha", icono: <AlignRight className="size-3.5" /> },
 ] as const;
 
 const ALINEACION_V = [
