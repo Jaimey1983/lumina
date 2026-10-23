@@ -339,7 +339,7 @@ Redactada el 2026-10-23, al cerrar la fase C (Y12a–Y17 en revisión y mergeada
 
 #### Y21 — Estilos predefinidos y temas
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y18 en `main` (la pestaña contextual «Formato de forma» ya existe y recibe el grupo «Estilos»).
 - **Hechos del código que la condicionan (comprobados, no supuestos):**
   - **Hay dos cosas distintas que se llaman «tema», y esta ficha las separa.** (a) `PALETAS_DIAGRAMA` (10 paletas con `acentoPrincipal` y seis `colores`) y `aplicarPaletaADiagrama` son del **diagrama de grafo** (`DiagramaGrafoBlock`, `opciones.paleta` y `opciones.estilo`); el editor libre solo usa las paletas como **pastillas** de color (`COLORES_DE_PALETA`) y como colores de rama del esquema (Y14, `COLORES_DE_RAMA`). **La escena (`Escena`) no tiene ningún concepto de tema ni de paleta** (ni se lo vamos a dar: DY14). (b) Los «temas» de la app son los tokens `var(--…)` que siguen al modo claro y oscuro.
