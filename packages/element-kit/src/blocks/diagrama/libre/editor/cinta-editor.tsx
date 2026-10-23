@@ -6,11 +6,12 @@
 // Pestañas: Inicio · Insertar · Organizar · Vista, y las contextuales «Formato de forma» (formas o textos elegidos, Y18)
 // y «Formato de conector» (líneas elegidas). Una pestaña sin contenido no se muestra (DY1).
 
-import type { KeyboardEvent, PointerEvent, ReactElement, ReactNode } from "react";
+import { useState, type KeyboardEvent, type PointerEvent, type ReactElement, type ReactNode } from "react";
 import { formasPorGrupo, trazadoForma, type Escena, type Linea, type TipoForma } from "@lumina/drawing";
+import { Popover, PopoverContent, PopoverTrigger } from "@lumina/ui/popover";
 import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup, RibbonSplitButton } from "@lumina/ui/ribbon";
-import { CornerDownRight, Minus, Spline } from "lucide-react";
-import { COMANDOS, comando, ELEGIR, estadoComando, ORGANIZAR, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
+import { CornerDownRight, Minus, Shapes, Spline } from "lucide-react";
+import { CAMBIAR_FORMA, COMANDOS, comando, ELEGIR, estadoComando, ORGANIZAR, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { Orden } from "./comandos.js";
 import { AlineacionHorizontal, BotonFormatoTexto, ColorContorno, ColorRelleno, datosDeFormato, GrosorContorno, TamanoLetra, type AccionesDeFormato } from "./mini-barra-capa.js";
 import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, hayExtremoLibre, valorComun } from "./conectores.js";
@@ -68,6 +69,7 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "crear-hermano": "Inicio",
   "eliminar-rama": "Inicio",
   ...Object.fromEntries(ELEGIR.map((c) => [c.id, "Inicio"])),
+  ...Object.fromEntries(CAMBIAR_FORMA.map((c) => [c.id, "Formato de forma"])),
   "pegar-al-mas-cercano": "Formato de conector",
   negrita: "Formato de forma",
   cursiva: "Formato de forma",
@@ -90,6 +92,69 @@ function Miniatura({ forma }: { forma: TipoForma }): ReactElement {
     </svg>
   );
 }
+
+/**
+ * «Cambiar forma» (Y19): un botón que abre una galería con las 22 formas, agrupadas como la de Insertar y con su miniatura; la
+ * actual (la de todo lo elegido) va marcada. Cada una es un comando del registro («Cambiar a Rombo»). Las flechas recorren la
+ * galería; `Enter` elige; `Escape` cierra.
+ */
+function SelectorForma({ contexto, onOrden }: { contexto: ContextoComando; onOrden: (orden: Orden) => void }): ReactElement {
+  const [abierto, setAbierto] = useState(false);
+  const grupos = formasPorGrupo();
+  const alTeclear = (e: KeyboardEvent<HTMLDivElement>): void => {
+    e.stopPropagation(); // ni las flechas ni Escape llegan al editor
+    const paso = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : e.key === "ArrowDown" ? COLUMNAS_FORMAS : e.key === "ArrowUp" ? -COLUMNAS_FORMAS : 0;
+    if (paso === 0) return;
+    const botones = [...e.currentTarget.querySelectorAll<HTMLButtonElement>("button[data-forma]")];
+    const i = botones.indexOf(e.target as HTMLButtonElement);
+    if (i === -1) return;
+    e.preventDefault();
+    botones[Math.min(botones.length - 1, Math.max(0, i + paso))]?.focus();
+  };
+  return (
+    <Popover open={abierto} onOpenChange={setAbierto}>
+      <PopoverTrigger asChild>
+        <RibbonButton label="Cambiar forma" size="large" icon={<Shapes />} data-cambiar-forma="" />
+      </PopoverTrigger>
+      <PopoverContent align="start" aria-label="Cambiar forma" className="max-h-80 w-72 overflow-y-auto p-2" onKeyDown={alTeclear}>
+        {grupos.map(({ grupo, nombre, formas }) => (
+          <div key={grupo} role="group" aria-label={nombre} className="mb-2 last:mb-0">
+            <p className="mb-1 text-[11px] text-muted-foreground">{nombre}</p>
+            <div className="grid grid-cols-4 gap-1">
+              {formas.map((f) => {
+                const def = CAMBIAR_FORMA.find((c) => c.id === `cambiar-forma-${f.id}`);
+                if (!def) return null;
+                const estado = estadoComando(def, contexto);
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    data-forma={f.id}
+                    data-comando={def.id}
+                    title={estado.habilitado || estado.activo ? def.etiqueta : `${def.etiqueta} — ${estado.motivo}`}
+                    aria-label={def.etiqueta}
+                    aria-pressed={estado.activo === true}
+                    aria-disabled={!estado.habilitado || undefined}
+                    className="flex h-10 items-center justify-center rounded-md border outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-disabled:opacity-40 aria-pressed:bg-accent aria-pressed:ring-2 aria-pressed:ring-primary"
+                    onClick={() => {
+                      if (!estado.habilitado) return;
+                      onOrden(def.orden);
+                      setAbierto(false);
+                    }}
+                  >
+                    <Miniatura forma={f.id} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const COLUMNAS_FORMAS = 4;
 
 /** Cómo se pidió una orden: `fija` deja la herramienta elegida hasta que se elija otra (Mayús al elegirla, o doble clic en su botón). */
 export interface OpcionesOrden {
@@ -360,6 +425,11 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
                 <RibbonGroup label="Relleno">
                   <ColorRelleno datos={datosFormato} sufijo="(cinta)" {...formato} />
                 </RibbonGroup>
+                {datosFormato.destino.some((h) => h.tipo === "forma") ? (
+                  <RibbonGroup label="Forma">
+                    <SelectorForma contexto={contexto} onOrden={onOrden} />
+                  </RibbonGroup>
+                ) : null}
                 <RibbonGroup label="Contorno">
                   <ColorContorno datos={datosFormato} sufijo="(cinta)" {...formato} />
                   <GrosorContorno datos={datosFormato} sufijo="(cinta)" {...formato} />

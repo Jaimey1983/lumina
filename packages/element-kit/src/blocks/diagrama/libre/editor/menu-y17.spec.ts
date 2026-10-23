@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { conectarFormas, type Escena } from "@lumina/drawing";
-import { COMANDOS, ORDEN_GRUPOS_MENU, contextoDeMenu, menuDe, textoDeAtajo, type ContextoComando, type ContextoMenu, type ElementoDeMenu } from "./comandos-registro.js";
+import { CAMBIAR_FORMA, COMANDOS, ORDEN_GRUPOS_MENU, contextoDeMenu, menuDe, textoDeAtajo, type ContextoComando, type ContextoMenu, type ElementoDeMenu } from "./comandos-registro.js";
 import { ejecutarComando } from "./comandos.js";
 import { escena, forma, grupo, linea } from "./util-pruebas.js";
 
@@ -15,6 +15,9 @@ const ctx = (e: Escena, seleccion: string[], extra: Partial<ContextoComando> = {
   imantar: true,
   ...extra,
 });
+
+/** El submenú «Cambiar forma» (Y19): las 22 formas del registro, en orden. */
+const CAMBIAR_FORMA_MENU = `Cambiar forma ▸ ${CAMBIAR_FORMA.map((c) => c.etiqueta).join(" | ")}`;
 
 /** El menú como texto: «Etiqueta», «Submenú ▸ a | b | c» y «—» entre grupos. */
 const texto = (m: ElementoDeMenu[]): string[] => m.map((x) => (x.clase === "separador" ? "—" : x.clase === "comando" ? x.item.def.etiqueta : `${x.etiqueta} ▸ ${x.items.map((i) => i.def.etiqueta).join(" | ")}`));
@@ -56,7 +59,7 @@ describe("Y17 — la lista exacta de cada contexto", () => {
   it("sobre una forma", () => {
     expect(texto(menuDe("forma", ctx(dosFormas(), ["a"])))).toEqual([
       "Cortar", "Copiar", "Pegar",
-      "—", "Duplicar", "Eliminar",
+      "—", "Duplicar", "Eliminar", CAMBIAR_FORMA_MENU,
       "—", "Agregar hijo", "Agregar hermano",
       "—", ORDEN,
       "—", "Agrupar", "Desagrupar",
@@ -67,7 +70,7 @@ describe("Y17 — la lista exacta de cada contexto", () => {
   it("sobre varias formas suma «Alinear ▸» (solo si hay varias)", () => {
     expect(texto(menuDe("forma", ctx(dosFormas(), ["a", "b"])))).toEqual([
       "Cortar", "Copiar", "Pegar",
-      "—", "Duplicar", "Eliminar",
+      "—", "Duplicar", "Eliminar", CAMBIAR_FORMA_MENU,
       "—", "Agregar hijo", "Agregar hermano",
       "—", ORDEN, ALINEAR,
       "—", "Agrupar", "Desagrupar",

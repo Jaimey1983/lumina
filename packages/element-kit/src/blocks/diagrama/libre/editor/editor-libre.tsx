@@ -15,6 +15,7 @@ import {
 } from "react";
 import {
   FORMAS,
+  cambiarForma,
   Historial,
   actualizar,
   agregar,
@@ -1660,6 +1661,13 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         aplicarFormatoA(vivo.current.seleccion, false);
         svgRef.current?.focus();
         return;
+      case "cambiar-forma": {
+        const { escena: actual, seleccion: sel } = vivo.current;
+        if (cambiarForma(actual, sel, orden.forma) === actual) return;
+        aplicarDelPanel((e) => cambiarForma(e, sel, orden.forma));
+        setAnuncio(`Forma cambiada a ${FORMAS[orden.forma].nombre}.`);
+        return;
+      }
       case "formato-texto":
         aplicarDelPanel((e) => alternarTexto(e, vivo.current.seleccion, orden.propiedad));
         return;
