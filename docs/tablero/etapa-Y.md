@@ -270,7 +270,7 @@ Redactada el 2026-10-23, al cerrar la fase C (Y12a–Y17 en revisión y mergeada
 
 #### Y18 — Mini barra flotante y pestaña «Formato de forma»
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** fase C en `main` (Y17 incluida: la mini barra convive con el menú contextual, las medidas en vivo, las reglas y las asas «+»).
 - **Alcance — PUEDE tocar:** `editor/mini-barra.ts` (nuevo, **puro**: dónde va y qué controles lleva; + spec), `editor/mini-barra.tsx` (nuevo; la barra), `editor/propiedades-campos.tsx` y `editor/propiedades-panel.tsx` (**solo** para extraer los campos que la barra, la pestaña y el panel comparten, sin cambiar lo que el panel hace), `editor/propiedades.ts` (agregar funciones puras si hacen falta; **no** cambiar las que hay), `editor/comandos-registro.ts` y `editor/comandos.ts` (Negrita, Cursiva y Subrayado), `editor/cinta-editor.tsx` (pestaña «Formato de forma»), `editor/editor-libre.tsx` (montar la barra, decidir cuándo se oculta, elegir la pestaña), specs. **No toca:** `@lumina/drawing` (todo lo necesario ya está en `cambiarEstilo` y en `propiedades.ts`), el modelo, el exportador ni `diagrama-properties.tsx`.
 - **Entregable:**
