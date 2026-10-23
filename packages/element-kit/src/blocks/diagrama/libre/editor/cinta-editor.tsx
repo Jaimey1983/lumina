@@ -50,7 +50,7 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   imantar: "Vista",
   "buscar-comando": "Edición general",
   atajos: "Vista",
-  "seleccionar-todo": "Edición general",
+  "seleccionar-todo": "Inicio",
   "conectar-cadena": "Insertar",
   esquema: "Insertar",
   copiar: "Inicio",

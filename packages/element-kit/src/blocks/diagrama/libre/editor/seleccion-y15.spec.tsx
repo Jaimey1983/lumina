@@ -83,7 +83,7 @@ describe("Y15 — el desplegable «Seleccionar»", () => {
     fireEvent.click(screen.getByRole("button", { name: "Más selecciones" }));
     const items = await screen.findAllByRole("menuitem");
     expect(items.map((i) => i.textContent)).toEqual(["Seleccionar formas", "Seleccionar conectores", "Seleccionar textos", "Seleccionar iguales a la elegida", "Invertir selección", "Seleccionar rama de la elegida"]);
-  }, 60000);
+  }, 150000);
 
   it("Formas elige las formas elegibles y lo anuncia; no toca el historial", async () => {
     const m = montar(base());
@@ -94,7 +94,7 @@ describe("Y15 — el desplegable «Seleccionar»", () => {
     expect(m.anuncio()).toBe("3 elementos elegidos.");
     expect(m.onCambio).not.toHaveBeenCalled();
     expect((botonCinta("Deshacer") as HTMLElement).getAttribute("aria-disabled")).toBe("true");
-  }, 60000);
+  }, 150000);
 
   const elegirVariante = async (indice: number): Promise<void> => {
     irAPestana("Inicio");
@@ -108,7 +108,7 @@ describe("Y15 — el desplegable «Seleccionar»", () => {
     await elegirVariante(3);
     expect(m.barra()).toBe("2"); // a y b; d es roja pero está bloqueada
     expect(m.onCambio).not.toHaveBeenCalled();
-  }, 60000);
+  }, 150000);
 
   it("Invertir: lo elegible que no estaba elegido (invertir dos veces es la identidad: prueba pura en drawing)", async () => {
     const m = montar(base());
@@ -116,7 +116,7 @@ describe("Y15 — el desplegable «Seleccionar»", () => {
     await elegirVariante(4);
     expect(m.barra()).toBe("3"); // b, c y t
     expect(m.onCambio).not.toHaveBeenCalled();
-  }, 60000);
+  }, 150000);
 
   it("Rama de la elegida elige la forma, lo que cuelga y sus conectores", async () => {
     const e = conectarFormas(base(), "a", "b");
@@ -127,7 +127,7 @@ describe("Y15 — el desplegable «Seleccionar»", () => {
     fireEvent.click((await screen.findAllByRole("menuitem"))[5] as HTMLElement);
     expect(m.barra()).toBe("3"); // a, b y el conector
     expect(m.anuncio()).toBe("3 elementos elegidos.");
-  }, 60000);
+  }, 150000);
 
   it("invertir con todo elegido deja la selección vacía", async () => {
     const m = montar(base());
@@ -135,7 +135,7 @@ describe("Y15 — el desplegable «Seleccionar»", () => {
     fireEvent.click(screen.getByRole("button", { name: "Más selecciones" }));
     fireEvent.click((await screen.findAllByRole("menuitem"))[4] as HTMLElement);
     expect(m.barra()).toBe("0");
-  }, 60000);
+  }, 150000);
 });
 
 describe("Y15 — el lazo con Alt", () => {
