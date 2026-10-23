@@ -1,4 +1,4 @@
-export { ajustar, ajustarCaja, type Guia, type OpcionesAjuste, type ResultadoAjuste } from './ajuste.js';
+export { ajustar, ajustarCaja, type Cota, type Guia, type OpcionesAjuste, type ResultadoAjuste } from './ajuste.js';
 export {
   actualizar,
   agregar,
