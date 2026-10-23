@@ -4,6 +4,7 @@
 import {
   agrupar,
   alinear,
+  bloquear as bloquearElementos,
   conectarEnCadena,
   crearHijo,
   desagrupar,
@@ -15,6 +16,7 @@ import {
   invertirSeleccion,
   LADO_HIJO_TECLADO,
   mover,
+  ocultar as ocultarElementos,
   ordenEspacialParaCadena,
   ordenParaCadena,
   reordenar,
@@ -51,6 +53,9 @@ export type Comando =
   | { tipo: "crear-hijo" }
   | { tipo: "crear-hermano" }
   | { tipo: "eliminar-rama" }
+  /** Bloquear y ocultar lo elegido (Y17): lo bloqueado y lo oculto ya no se pueden elegir, así que la selección queda vacía. */
+  | { tipo: "bloquear" }
+  | { tipo: "ocultar" }
   | { tipo: "conectar-cadena"; orden: "seleccion" | "espacial" | "auto" }
   | { tipo: "pegar-al-mas-cercano" };
 
@@ -220,6 +225,16 @@ export function ejecutarComando(estado: EstadoEditor, c: Comando): EstadoEditor 
       if (!raiz) return null;
       const nueva = eliminarRama(escena, raiz);
       return nueva === escena ? null : { escena: nueva, seleccion: depurarSeleccion(nueva, seleccion) };
+    }
+    case "bloquear": {
+      if (seleccion.length === 0) return null;
+      const nueva = bloquearElementos(escena, seleccion);
+      return nueva === escena ? null : { escena: nueva, seleccion: [] };
+    }
+    case "ocultar": {
+      if (seleccion.length === 0) return null;
+      const nueva = ocultarElementos(escena, seleccion);
+      return nueva === escena ? null : { escena: nueva, seleccion: [] };
     }
     case "conectar-cadena": {
       const formas = c.orden === "espacial" ? ordenEspacialParaCadena(escena, seleccion) : c.orden === "auto" ? ordenParaCadena(escena, seleccion) : filtrarFormasParaCadena(escena, seleccion);
