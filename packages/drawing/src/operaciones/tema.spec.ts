@@ -65,6 +65,11 @@ describe('aplicarPaleta', () => {
     expect(l(r, 'rB').estilo.contorno.color).toBe('#D97706');
     expect(l(r, 'a12').estilo.contorno.color).toBe('#0D9488');
   });
+  it('el relleno es el color de la rama con 14 % de alfa (0x24) y el texto, el del tema, sin depender de las constantes', () => {
+    const r = f(aplicarPaleta(escena(forma('R', 0, 0)), ['R'], PALETA), 'R');
+    expect(r.estilo.relleno).toEqual({ tipo: 'solido', color: '#1E3A8A24' });
+    expect(r.estiloTexto.color).toBe('var(--foreground)');
+  });
   it('no toca geometría, tipografía, sombra, grosor ni opacidad', () => {
     const base = escena(
       forma('R', 10, 20, 150, 90, { estilo: { sombra: { color: '#00000055', desenfoque: 3, dx: 1, dy: 2 }, contorno: { color: '#111111', grosor: 5, patron: 'guiones' }, opacidad: 0.5 }, estiloTexto: { tamano: 30, negrita: true } }),

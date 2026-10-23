@@ -78,6 +78,18 @@ describe("Y21 — la galería «Estilos»", () => {
     expect(m.onCambio.mock.calls.length).toBe(antes);
   });
 
+  it("elegir el que ya tienen no anuncia un cambio que no hubo", () => {
+    const m = montar(base());
+    m.clic(180, 150);
+    fireEvent.click(cmd("estilo-principal"));
+    fireEvent.keyDown(m.lienzo, { key: "Escape" });
+    m.clic(180, 150);
+    const antes = anuncio();
+    expect(antes).not.toContain("Estilo Principal");
+    fireEvent.click(cmd("estilo-principal"));
+    expect(anuncio()).toBe(antes);
+  });
+
   it("con una mezcla (una forma con el estilo y otra sin él) ninguno aparece marcado", () => {
     const m = montar(base());
     m.clic(180, 150);

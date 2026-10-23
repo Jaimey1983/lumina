@@ -125,6 +125,24 @@ describe("aplicarEstiloForma", () => {
     }
   });
 
+  it("un estilo no cuenta como aplicado si cambia el grosor, la sombra o el color del texto, y al aplicarlo se corrigen", () => {
+    const est = estiloPorId("elevado")!;
+    const e0 = escena(forma("a", 100, 100, 160, 100));
+    const listo = aplicarEstiloForma(e0, destino(e0, ["a"]), est);
+    const variantes: Array<[string, Record<string, unknown>]> = [
+      ["grosor", { estilo: { ...f(listo, "a").estilo, contorno: { ...f(listo, "a").estilo.contorno, grosor: 7 } } }],
+      ["sombra", { estilo: { ...f(listo, "a").estilo, sombra: null } }],
+      ["texto", { estiloTexto: { ...f(listo, "a").estiloTexto, color: "#123456" } }],
+    ];
+    for (const [que, cambio] of variantes) {
+      const e = escena({ ...f(listo, "a"), ...cambio });
+      expect(estiloActivo(destino(e, ["a"]), est), que).toBe(false);
+      const r = aplicarEstiloForma(e, destino(e, ["a"]), est);
+      expect(r, que).not.toBe(e);
+      expect(estiloActivo(destino(r, ["a"]), est), que).toBe(true);
+    }
+  });
+
   it("estiloActivo: marcado si todo lo elegido lo tiene; ninguno con una mezcla o sin nada", () => {
     const e = base();
     const nuevo = aplicarEstiloForma(e, destino(e, ["a", "t"]), estiloPorId("neutro")!);
