@@ -190,6 +190,14 @@ describe("Y20 — arrastrar el asa", () => {
     m.evento("pointerup", c);
     expect(m.onCambio).not.toHaveBeenCalled();
   });
+  it("el cursor es «pointer» sobre el asa y el de siempre fuera de ella", () => {
+    const m = montar(base());
+    m.clic(180, 150);
+    m.evento("pointermove", centroDelAsa("inclinacion") as { clientX: number; clientY: number });
+    expect(m.lienzo.style.cursor).toBe("pointer");
+    m.evento("pointermove", m.aPantalla(600, 400));
+    expect(m.lienzo.style.cursor).toBe("default");
+  });
   it("el asa gana sobre mover la forma: la forma no se mueve ni se elige otra cosa", () => {
     const m = montar(base());
     m.clic(180, 150);

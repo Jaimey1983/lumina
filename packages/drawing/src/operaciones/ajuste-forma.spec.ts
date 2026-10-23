@@ -123,6 +123,11 @@ describe('fijarParametro', () => {
     expect(f(r).estilo.radio).toBe(12);
     expect(f(r, 'b').estilo.radio).toBe(0);
   });
+  it('el radio no cambia la escena si ya tiene ese valor, y se acota a la mitad del lado menor', () => {
+    const e = escena(forma('a', 0, 0, 160, 100, { estilo: { radio: 12 } }));
+    expect(fijarParametro(e, ['a'], 'radio', 12)).toBe(e);
+    expect(f(fijarParametro(e, ['a'], 'radio', 9999)).estilo.radio).toBe(50);
+  });
   it('aplica a todas las formas elegidas (también dentro de un grupo)', () => {
     const e = escena(forma('a', 0, 0, 160, 80, { forma: 'trapecio' }), forma('b', 300, 0, 160, 80, { forma: 'trapecio' }), grupo('g', ['a', 'b']));
     const r = fijarParametro(e, ['g'], 'inclinacion', 0.4);
