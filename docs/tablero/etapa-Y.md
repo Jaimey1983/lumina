@@ -314,7 +314,7 @@ Redactada el 2026-10-23, al cerrar la fase C (Y12a–Y17 en revisión y mergeada
 
 #### Y20 — Asas amarillas de ajuste
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y19 en `main` (mergeada): `cambiarForma` ya descarta los `parametros` ajenos y el panel puede mostrar los de la forma actual.
 - **Hechos del código que la condicionan (comprobados, no supuestos):**
   - **Ninguna interfaz edita hoy los `parametros` de una forma.** El panel cambia relleno, contorno, sombra, esquinas (`estilo.radio`) y tipografía, pero no `Forma.parametros`: sin esta ficha, 14 formas con ajustes quedan siempre con los valores por defecto.
