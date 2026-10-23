@@ -1,4 +1,7 @@
 import { TIPOS_FORMA, type TipoForma } from "@lumina/drawing";
+import type { DiagramaPaletaId } from "@lumina/types/slide";
+import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
+import { ESTILOS_FORMA } from "./estilos-forma.js";
 
 // Sinónimos de búsqueda por id de comando (Y5). La etiqueta oficial sigue en el registro; acá solo ayudas al buscador.
 
@@ -51,6 +54,8 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   "forma-rectangulo": ["caja", "cuadro"],
   "forma-rectangulo-redondeado": ["caja", "cuadro"],
   ...Object.fromEntries(TIPOS_FORMA.map((t) => [`cambiar-forma-${t}`, ["transformar", "convertir", ...(PALABRAS_DE_FORMA[t] ?? [])]] as const)),
+  ...Object.fromEntries(ESTILOS_FORMA.map((e) => [`estilo-${e.id}`, ["estilo", "aspecto", "formato", "color"]] as const)),
+  ...Object.fromEntries((Object.keys(PALETAS_DIAGRAMA) as DiagramaPaletaId[]).map((p) => [`tema-${p}`, ["tema", "paleta", "colores", "colorear"]] as const)),
   listo: ["terminar", "cerrar", "guardar"],
   deshacer: ["atras"],
   rehacer: ["adelante"],

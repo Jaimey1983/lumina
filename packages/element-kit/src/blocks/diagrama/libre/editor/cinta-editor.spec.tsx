@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Escena } from "@lumina/drawing";
 import { EditorLibre } from "./editor-libre.js";
-import { CAMBIAR_FORMA, COMANDOS, textoDeAtajo, ORGANIZAR, ELEGIR } from "./comandos-registro.js";
+import { CAMBIAR_FORMA, COMANDOS, ESTILOS_COMANDOS, textoDeAtajo, ORGANIZAR, ELEGIR } from "./comandos-registro.js";
 import { botonCinta, deshabilitado, escena, forma, ids, irAPestana, linea } from "./util-pruebas.js";
 
 afterEach(cleanup);
@@ -18,20 +18,21 @@ function montar(e: Escena = base()) {
 }
 
 describe("cinta del editor", () => {
-  it("tiene las pestañas Inicio, Insertar, Organizar y Vista, y ninguna contextual sin selección", () => {
+  it("tiene las pestañas Inicio, Insertar, Organizar, Diseño y Vista, y ninguna contextual sin selección", () => {
     montar();
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Inicio", "Insertar", "Organizar", "Vista"]);
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Inicio", "Insertar", "Organizar", "Diseño", "Vista"]);
     expect(screen.getByRole("tab", { name: "Inicio" }).getAttribute("aria-selected")).toBe("true");
   });
 
   it("todos los comandos que antes tenían botón siguen teniéndolo, cada uno en su pestaña (ningún botón desaparece)", () => {
     montar();
     // Negrita, cursiva y subrayado (Y18) viven en la pestaña contextual «Formato de forma» y en la mini barra: sin selección no hay botón.
+    // Los estilos (Y21) viven en la galería «Estilos» de «Formato de forma» (contextual); los temas, en la pestaña «Diseño», que sí se recorre.
     // «Cambiar a …» (Y19) salen en la galería «Cambiar forma» de esa pestaña contextual, en el menú contextual y en Ctrl+K.
     // Las variantes de «Organizar automáticamente» (Y13) viven en el menú de su flecha, no como botones sueltos.
-    const sinBoton = new Set(["seleccionar-todo", ...ELEGIR.map((c) => c.id), ...COMANDOS.filter((c) => c.soloMenu).map((c) => c.id), "listo", "buscar-comando", "pegar-al-mas-cercano", "negrita", "cursiva", "subrayado", ...CAMBIAR_FORMA.map((c) => c.id), ...ORGANIZAR.filter((c) => c.id !== "organizar-auto").map((c) => c.id)]);
+    const sinBoton = new Set(["seleccionar-todo", ...ELEGIR.map((c) => c.id), ...COMANDOS.filter((c) => c.soloMenu).map((c) => c.id), "listo", "buscar-comando", "pegar-al-mas-cercano", "negrita", "cursiva", "subrayado", ...CAMBIAR_FORMA.map((c) => c.id), ...ESTILOS_COMANDOS.map((c) => c.id), ...ORGANIZAR.filter((c) => c.id !== "organizar-auto").map((c) => c.id)]);
     const faltan: string[] = [];
-    for (const nombre of ["Inicio", "Insertar", "Organizar", "Vista"]) {
+    for (const nombre of ["Inicio", "Insertar", "Organizar", "Diseño", "Vista"]) {
       irAPestana(nombre);
       const presentes = new Set([...document.querySelectorAll("[data-comando]")].map((b) => b.getAttribute("data-comando")));
       for (const c of COMANDOS) if (presentes.has(c.id)) sinBoton.add(c.id);

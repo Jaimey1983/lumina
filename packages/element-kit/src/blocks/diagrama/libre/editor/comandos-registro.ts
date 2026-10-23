@@ -70,6 +70,10 @@ import {
 import { seleccionPorCriterio, type CriterioSeleccion, type Orden, type TeclaEvento } from "./comandos.js";
 import { formasAOrganizar, type DireccionOrganizar, type ModoOrganizar } from "./organizar-auto.js";
 import { hayConectorConExtremoLibre, lineasElegidas } from "./conectores.js";
+import { ESTILOS_FORMA, estiloActivo } from "./estilos-forma.js";
+import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
+import { ambitoDeTema } from "./temas-escena.js";
+import type { DiagramaPaletaId } from "@lumina/types/slide";
 import { hayFormato, hojasDeFormato, hojasEditables, valorComun, type FormatoDeTexto } from "./propiedades.js";
 import { esMismaHerramienta, SELECCIONAR, type Herramienta } from "./herramientas.js";
 import { ZOOM_MAX, ZOOM_MIN } from "./vista.js";
@@ -220,6 +224,31 @@ const cambiarForma = (forma: TipoForma): DefinicionComando => ({
   },
   menu: { forma: { grupo: "edicion", submenu: "Cambiar forma", si: hayFormaEditable } },
 });
+
+/** «Estilo: Principal» (Y21): lo elegido (formas, textos y conectores) toma el estilo; el conector solo el color. */
+const estiloComando = (e: (typeof ESTILOS_FORMA)[number]): DefinicionComando => ({
+  id: `estilo-${e.id}`,
+  etiqueta: `Estilo: ${e.nombre}`,
+  grupo: "formato",
+  orden: { tipo: "aplicar-estilo", estilo: e.id },
+  habilitado: (c) => (hojasEditables(c.escena, c.seleccion).length > 0 ? true : "Elige una forma, un texto o un conector"),
+  activo: (c) => estiloActivo(hojasEditables(c.escena, c.seleccion), e),
+  sinMenu: true,
+});
+
+/** «Tema: Océano Profundo» (Y21): colorea por ramas la selección o, sin formas elegidas, todo el diagrama. */
+const temaComando = (id: DiagramaPaletaId): DefinicionComando => ({
+  id: `tema-${id}`,
+  etiqueta: `Tema: ${PALETAS_DIAGRAMA[id].nombre}`,
+  grupo: "formato",
+  orden: { tipo: "aplicar-tema", paleta: id },
+  habilitado: (c) => (ambitoDeTema(c.escena, c.seleccion).ids.length > 0 ? true : "No hay formas que colorear"),
+  sinMenu: true,
+});
+
+/** Los 12 estilos y los 10 temas, en el orden de sus galerías. */
+export const ESTILOS_COMANDOS: readonly DefinicionComando[] = ESTILOS_FORMA.map(estiloComando);
+export const TEMAS_COMANDOS: readonly DefinicionComando[] = (Object.keys(PALETAS_DIAGRAMA) as DiagramaPaletaId[]).map(temaComando);
 
 /** Los 22 comandos «Cambiar a …», en el orden del catálogo (Y19). */
 export const CAMBIAR_FORMA: readonly DefinicionComando[] = TIPOS_FORMA.map(cambiarForma);
@@ -394,6 +423,10 @@ export const COMANDOS: readonly DefinicionComando[] = [
 
   // Cambiar la forma de lo elegido (Y19)
   ...CAMBIAR_FORMA,
+
+  // Estilos de forma y temas del diagrama (Y21)
+  ...ESTILOS_COMANDOS,
+  ...TEMAS_COMANDOS,
 
   // Formato de texto (Y18): sin atajo; Ctrl+B/I/U se evalúan al tocar el texto en el sitio.
   formatoDeTexto("negrita", "Negrita", Bold),

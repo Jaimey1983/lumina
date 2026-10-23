@@ -28,6 +28,7 @@ import {
   type ModoOrden,
   type TipoForma,
 } from "@lumina/drawing";
+import type { DiagramaPaletaId } from "@lumina/types/slide";
 import { bloqueadosEfectivos } from "./asas.js";
 import { comandoDeTecla } from "./comandos-registro.js";
 import { pegarAlMasCercano } from "./conectores.js";
@@ -136,7 +137,10 @@ export type Orden =
   /** Negrita, cursiva o subrayado de lo elegido (Y18): un interruptor sobre todo lo editable. */
   | { tipo: "formato-texto"; propiedad: "negrita" | "cursiva" | "subrayado" }
   /** Cambiar la forma de lo elegido (Y19): conserva todo lo demás y deja los conectores por el mismo lado. */
-  | { tipo: "cambiar-forma"; forma: TipoForma };
+  | { tipo: "cambiar-forma"; forma: TipoForma }
+  /** Un estilo predefinido de forma (Y21) y un tema de paleta para el diagrama (Y21): los dos cambian solo el aspecto. */
+  | { tipo: "aplicar-estilo"; estilo: string }
+  | { tipo: "aplicar-tema"; paleta: DiagramaPaletaId };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
