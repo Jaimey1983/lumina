@@ -51,6 +51,8 @@ import {
   Link2,
   ListOrdered,
   BoxSelect,
+  Lock,
+  EyeOff,
   Ruler,
   Eraser,
   FlipHorizontal2,
@@ -96,6 +98,19 @@ export interface Atajo {
   alt?: boolean;
 }
 
+/** Dónde se abre el menú contextual (Y17): sobre una forma (o texto), sobre un conector o sobre un vacío. */
+export type ContextoMenu = "forma" | "conector" | "vacio";
+
+/** Cómo aparece un comando en el menú de un contexto. */
+export interface EntradaMenu {
+  /** Los grupos se separan con una línea; su orden lo fija `ORDEN_GRUPOS_MENU`. */
+  grupo: string;
+  /** Si lo lleva, el comando va dentro de ese submenú («Orden», «Alinear»). */
+  submenu?: string;
+  /** Solo aparece si se cumple (p. ej. «Alinear» con varios elementos). Sin esto, aparece siempre (deshabilitado con su motivo si no se puede). */
+  si?: (c: ContextoComando) => boolean;
+}
+
 export type GrupoComando = "herramientas" | "formas" | "edicion" | "orden" | "alinear" | "distribuir" | "vista" | "historial" | "cierre";
 
 export interface DefinicionComando {
@@ -115,6 +130,12 @@ export interface DefinicionComando {
   habilitado?: (c: ContextoComando) => true | string;
   /** Botones de dos estados (herramienta elegida, cuadrícula encendida). */
   activo?: (c: ContextoComando) => boolean;
+  /** En qué menús contextuales aparece y cómo (Y17). Todo comando declara `menu` o `sinMenu`: una prueba lo exige. */
+  menu?: Partial<Record<ContextoMenu, EntradaMenu>>;
+  /** Decidido a propósito: este comando no va en ningún menú contextual. */
+  sinMenu?: true;
+  /** Solo se puede pedir desde el menú contextual (no tiene botón en la cinta). */
+  soloMenu?: true;
 }
 
 export interface EstadoComando {
@@ -156,6 +177,9 @@ const hayFormaElegida = (c: ContextoComando): true | string => {
 /** «Seleccionar…» (Y15): habilitado si el criterio elegiría algo (invertir, siempre que haya algo elegible). */
 const eligeAlgo = (criterio: CriterioSeleccion, vacio: string) => (c: ContextoComando): true | string => (seleccionPorCriterio(c.escena, c.seleccion, criterio).length > 0 ? true : vacio);
 
+const varias = (c: ContextoComando): boolean => c.seleccion.length > 1;
+const conExtremoLibre = (c: ContextoComando): boolean => hayConectorConExtremoLibre(c.escena, c.seleccion);
+
 const ctrl = (tecla: string, extra: Omit<Atajo, "tecla" | "ctrl"> = {}): Atajo => ({ tecla, ctrl: true, ...extra });
 const letra = (tecla: string): Atajo => ({ tecla, shift: false, alt: false });
 
@@ -168,6 +192,7 @@ const herramienta = (id: string, etiqueta: string, h: Herramienta, tecla: string
   orden: nombre,
   soloLienzo: true,
   activo: (c) => esMismaHerramienta(c.herramienta, h),
+  sinMenu: true,
 });
 
 const alineacion = (id: string, etiqueta: string, modo: "izquierda" | "centro" | "derecha" | "arriba" | "medio" | "abajo", icono: ComponentType<{ className?: string }>): DefinicionComando => ({
@@ -177,6 +202,7 @@ const alineacion = (id: string, etiqueta: string, modo: "izquierda" | "centro" |
   grupo: "alinear",
   orden: { tipo: "alinear", modo },
   habilitado: hay,
+  menu: { forma: { grupo: "orden", submenu: "Alinear", si: varias } },
 });
 
 const FORMAS_COMANDOS: DefinicionComando[] = TIPOS_FORMA.map((forma) => ({
@@ -185,6 +211,7 @@ const FORMAS_COMANDOS: DefinicionComando[] = TIPOS_FORMA.map((forma) => ({
   grupo: "formas" as const,
   orden: { tipo: "herramienta-forma" as const, forma },
   activo: (c: ContextoComando) => esMismaHerramienta(c.herramienta, { tipo: "forma", forma }),
+  sinMenu: true as const,
 }));
 
 const organizar = (id: string, etiqueta: string, modo: ModoOrganizar, direccion: DireccionOrganizar | undefined, icono: ComponentType<{ className?: string }>): DefinicionComando => ({
@@ -194,6 +221,7 @@ const organizar = (id: string, etiqueta: string, modo: ModoOrganizar, direccion:
   grupo: "orden",
   orden: { tipo: "organizar", modo, ...(direccion ? { direccion } : {}) },
   habilitado: puedeOrganizar,
+  sinMenu: true,
 });
 
 /** Las disposiciones: la principal («Organizar automáticamente») y las variantes del menú desplegable (Y13). */
@@ -210,18 +238,18 @@ export const ORGANIZAR: readonly DefinicionComando[] = [
 
 /** El desplegable «Seleccionar» (Y15): «Seleccionar todo» es el botón principal y estos, las variantes de su flecha. */
 export const ELEGIR: readonly DefinicionComando[] = [
-  { id: "elegir-formas", etiqueta: "Seleccionar formas", icono: Shapes, grupo: "edicion", orden: { tipo: "elegir", criterio: "formas" }, habilitado: eligeAlgo("formas", "No hay formas que elegir") },
-  { id: "elegir-conectores", etiqueta: "Seleccionar conectores", icono: Spline, grupo: "edicion", orden: { tipo: "elegir", criterio: "conectores" }, habilitado: eligeAlgo("conectores", "No hay conectores que elegir") },
-  { id: "elegir-textos", etiqueta: "Seleccionar textos", icono: Type, grupo: "edicion", orden: { tipo: "elegir", criterio: "textos" }, habilitado: eligeAlgo("textos", "No hay textos que elegir") },
-  { id: "elegir-iguales", etiqueta: "Seleccionar iguales a la elegida", icono: Equal, grupo: "edicion", orden: { tipo: "elegir", criterio: "iguales" }, habilitado: hayFormaElegida },
-  { id: "elegir-invertir", etiqueta: "Invertir selección", icono: FlipHorizontal2, grupo: "edicion", orden: { tipo: "elegir", criterio: "invertir" }, habilitado: (c) => (c.escena.elementos.length > 0 ? true : "No hay nada que elegir") },
-  { id: "elegir-rama", etiqueta: "Seleccionar rama de la elegida", icono: ListTree, grupo: "edicion", orden: { tipo: "elegir", criterio: "rama" }, habilitado: unaForma },
+  { id: "elegir-formas", sinMenu: true, etiqueta: "Seleccionar formas", icono: Shapes, grupo: "edicion", orden: { tipo: "elegir", criterio: "formas" }, habilitado: eligeAlgo("formas", "No hay formas que elegir") },
+  { id: "elegir-conectores", sinMenu: true, etiqueta: "Seleccionar conectores", icono: Spline, grupo: "edicion", orden: { tipo: "elegir", criterio: "conectores" }, habilitado: eligeAlgo("conectores", "No hay conectores que elegir") },
+  { id: "elegir-textos", sinMenu: true, etiqueta: "Seleccionar textos", icono: Type, grupo: "edicion", orden: { tipo: "elegir", criterio: "textos" }, habilitado: eligeAlgo("textos", "No hay textos que elegir") },
+  { id: "elegir-iguales", sinMenu: true, etiqueta: "Seleccionar iguales a la elegida", icono: Equal, grupo: "edicion", orden: { tipo: "elegir", criterio: "iguales" }, habilitado: hayFormaElegida },
+  { id: "elegir-invertir", sinMenu: true, etiqueta: "Invertir selección", icono: FlipHorizontal2, grupo: "edicion", orden: { tipo: "elegir", criterio: "invertir" }, habilitado: (c) => (c.escena.elementos.length > 0 ? true : "No hay nada que elegir") },
+  { id: "elegir-rama", sinMenu: true, etiqueta: "Seleccionar rama de la elegida", icono: ListTree, grupo: "edicion", orden: { tipo: "elegir", criterio: "rama" }, habilitado: unaForma },
 ];
 
 export const COMANDOS: readonly DefinicionComando[] = [
   // Historial
-  { id: "deshacer", etiqueta: "Deshacer", icono: Undo2, grupo: "historial", atajos: [ctrl("z", { shift: false })], orden: { tipo: "deshacer" }, habilitado: (c) => (c.puedeDeshacer ? true : "No hay nada que deshacer") },
-  { id: "rehacer", etiqueta: "Rehacer", icono: Redo2, grupo: "historial", atajos: [ctrl("y"), ctrl("z", { shift: true })], orden: { tipo: "rehacer" }, habilitado: (c) => (c.puedeRehacer ? true : "No hay nada que rehacer") },
+  { id: "deshacer", sinMenu: true, etiqueta: "Deshacer", icono: Undo2, grupo: "historial", atajos: [ctrl("z", { shift: false })], orden: { tipo: "deshacer" }, habilitado: (c) => (c.puedeDeshacer ? true : "No hay nada que deshacer") },
+  { id: "rehacer", sinMenu: true, etiqueta: "Rehacer", icono: Redo2, grupo: "historial", atajos: [ctrl("y"), ctrl("z", { shift: true })], orden: { tipo: "rehacer" }, habilitado: (c) => (c.puedeRehacer ? true : "No hay nada que rehacer") },
 
   // Herramientas
   herramienta("seleccionar", "Seleccionar", SELECCIONAR, "v", MousePointer2, { tipo: "herramienta", herramienta: "seleccionar" }),
@@ -232,18 +260,18 @@ export const COMANDOS: readonly DefinicionComando[] = [
 
   // Edición
   // Portapapeles (Y12a): los atajos los resuelve el navegador con sus eventos; el editor solo los muestra.
-  { id: "copiar", etiqueta: "Copiar", icono: ClipboardCopy, grupo: "edicion", atajos: [ctrl("c", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "copiar" }, habilitado: hay },
-  { id: "cortar", etiqueta: "Cortar", icono: Scissors, grupo: "edicion", atajos: [ctrl("x", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "cortar" }, habilitado: hay },
-  { id: "pegar", etiqueta: "Pegar", icono: ClipboardPaste, grupo: "edicion", atajos: [ctrl("v", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "pegar" } },
-  { id: "pegar-en-sitio", etiqueta: "Pegar en el mismo sitio", icono: ClipboardType, grupo: "edicion", atajos: [ctrl("v", { shift: true, alt: false })], atajoNativo: true, orden: { tipo: "pegar-en-sitio" } },
+  { id: "cortar", menu: { forma: { grupo: "portapapeles" } }, etiqueta: "Cortar", icono: Scissors, grupo: "edicion", atajos: [ctrl("x", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "cortar" }, habilitado: hay },
+  { id: "copiar", menu: { forma: { grupo: "portapapeles" } }, etiqueta: "Copiar", icono: ClipboardCopy, grupo: "edicion", atajos: [ctrl("c", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "copiar" }, habilitado: hay },
+  { id: "pegar", menu: { forma: { grupo: "portapapeles" }, vacio: { grupo: "portapapeles" } }, etiqueta: "Pegar", icono: ClipboardPaste, grupo: "edicion", atajos: [ctrl("v", { shift: false, alt: false })], atajoNativo: true, orden: { tipo: "pegar" } },
+  { id: "pegar-en-sitio", sinMenu: true, etiqueta: "Pegar en el mismo sitio", icono: ClipboardType, grupo: "edicion", atajos: [ctrl("v", { shift: true, alt: false })], atajoNativo: true, orden: { tipo: "pegar-en-sitio" } },
   // Organizar automáticamente (Y13)
   ...ORGANIZAR,
   // Esquema → diagrama (Y14)
-  { id: "esquema", etiqueta: "Esquema…", icono: ListOrdered, grupo: "edicion", orden: { tipo: "esquema" } },
+  { id: "esquema", sinMenu: true, etiqueta: "Esquema…", icono: ListOrdered, grupo: "edicion", orden: { tipo: "esquema" } },
   // Pincel (Y12b)
-  { id: "copiar-formato", etiqueta: "Copiar formato", icono: Paintbrush, grupo: "edicion", atajos: [ctrl("c", { shift: false, alt: true })], orden: { tipo: "copiar-formato" }, habilitado: hay, activo: (c) => (c.pincel ?? null) !== null },
+  { id: "copiar-formato", sinMenu: true, etiqueta: "Copiar formato", icono: Paintbrush, grupo: "edicion", atajos: [ctrl("c", { shift: false, alt: true })], orden: { tipo: "copiar-formato" }, habilitado: hay, activo: (c) => (c.pincel ?? null) !== null },
   {
-    id: "aplicar-formato",
+    id: "aplicar-formato", sinMenu: true,
     etiqueta: "Aplicar formato",
     icono: PaintBucket,
     grupo: "edicion",
@@ -251,10 +279,10 @@ export const COMANDOS: readonly DefinicionComando[] = [
     orden: { tipo: "aplicar-formato" },
     habilitado: (c) => (c.formatoGuardado !== true ? "Copia un formato primero" : c.seleccion.length > 0 ? true : "Elige un elemento"),
   },
-  { id: "duplicar", etiqueta: "Duplicar", icono: Copy, grupo: "edicion", atajos: [ctrl("d")], orden: { tipo: "duplicar" }, habilitado: hay },
-  { id: "eliminar", etiqueta: "Eliminar", icono: Trash2, grupo: "edicion", atajos: [{ tecla: "Delete" }, { tecla: "Backspace" }], orden: { tipo: "eliminar" }, habilitado: hay },
+  { id: "duplicar", menu: { forma: { grupo: "edicion" } }, etiqueta: "Duplicar", icono: Copy, grupo: "edicion", atajos: [ctrl("d")], orden: { tipo: "duplicar" }, habilitado: hay },
+  { id: "eliminar", menu: { forma: { grupo: "edicion" }, conector: { grupo: "edicion" } }, etiqueta: "Eliminar", icono: Trash2, grupo: "edicion", atajos: [{ tecla: "Delete" }, { tecla: "Backspace" }], orden: { tipo: "eliminar" }, habilitado: hay },
   {
-    id: "crear-hijo",
+    id: "crear-hijo", menu: { forma: { grupo: "jerarquia" } },
     etiqueta: "Agregar hijo",
     icono: GitBranchPlus,
     grupo: "edicion",
@@ -264,7 +292,7 @@ export const COMANDOS: readonly DefinicionComando[] = [
     habilitado: unaForma,
   },
   {
-    id: "crear-hermano",
+    id: "crear-hermano", menu: { forma: { grupo: "jerarquia" } },
     etiqueta: "Agregar hermano",
     icono: GitBranch,
     grupo: "edicion",
@@ -280,7 +308,7 @@ export const COMANDOS: readonly DefinicionComando[] = [
     },
   },
   {
-    id: "eliminar-rama",
+    id: "eliminar-rama", sinMenu: true,
     etiqueta: "Borrar rama",
     icono: ListTree,
     grupo: "edicion",
@@ -290,7 +318,7 @@ export const COMANDOS: readonly DefinicionComando[] = [
     habilitado: unaForma,
   },
   {
-    id: "conectar-cadena",
+    id: "conectar-cadena", sinMenu: true,
     etiqueta: "Conectar en cadena",
     icono: Link2,
     grupo: "edicion",
@@ -300,7 +328,7 @@ export const COMANDOS: readonly DefinicionComando[] = [
     habilitado: dosFormas,
   },
   {
-    id: "pegar-al-mas-cercano",
+    id: "pegar-al-mas-cercano", menu: { conector: { grupo: "conector", si: conExtremoLibre } },
     etiqueta: "Pegar al más cercano",
     icono: Anchor,
     grupo: "edicion",
@@ -311,15 +339,17 @@ export const COMANDOS: readonly DefinicionComando[] = [
     },
   },
   ...ELEGIR,
-  { id: "seleccionar-todo", etiqueta: "Seleccionar todo", icono: BoxSelect, grupo: "edicion", atajos: [ctrl("a")], orden: { tipo: "seleccionar-todo" } },
-  { id: "agrupar", etiqueta: "Agrupar", icono: Group, grupo: "edicion", atajos: [ctrl("g", { shift: false })], orden: { tipo: "agrupar" }, habilitado: varios },
-  { id: "desagrupar", etiqueta: "Desagrupar", icono: Ungroup, grupo: "edicion", atajos: [ctrl("g", { shift: true })], orden: { tipo: "desagrupar" }, habilitado: hayGrupo },
+  { id: "seleccionar-todo", menu: { vacio: { grupo: "seleccion" } }, etiqueta: "Seleccionar todo", icono: BoxSelect, grupo: "edicion", atajos: [ctrl("a")], orden: { tipo: "seleccionar-todo" } },
+  { id: "bloquear", etiqueta: "Bloquear", icono: Lock, grupo: "edicion", orden: { tipo: "bloquear" }, habilitado: hay, soloMenu: true, menu: { forma: { grupo: "estado" } } },
+  { id: "ocultar", etiqueta: "Ocultar", icono: EyeOff, grupo: "edicion", orden: { tipo: "ocultar" }, habilitado: hay, soloMenu: true, menu: { forma: { grupo: "estado" } } },
+  { id: "agrupar", menu: { forma: { grupo: "agrupar" } }, etiqueta: "Agrupar", icono: Group, grupo: "edicion", atajos: [ctrl("g", { shift: false })], orden: { tipo: "agrupar" }, habilitado: varios },
+  { id: "desagrupar", menu: { forma: { grupo: "agrupar" } }, etiqueta: "Desagrupar", icono: Ungroup, grupo: "edicion", atajos: [ctrl("g", { shift: true })], orden: { tipo: "desagrupar" }, habilitado: hayGrupo },
 
   // Orden de capas
-  { id: "orden-frente", etiqueta: "Traer al frente", icono: BringToFront, grupo: "orden", atajos: [ctrl("]", { shift: true })], orden: { tipo: "orden", modo: "frente" }, habilitado: hay },
-  { id: "orden-subir", etiqueta: "Subir un nivel", icono: ChevronUp, grupo: "orden", atajos: [ctrl("]", { shift: false })], orden: { tipo: "orden", modo: "subir" }, habilitado: hay },
-  { id: "orden-bajar", etiqueta: "Bajar un nivel", icono: ChevronDown, grupo: "orden", atajos: [ctrl("[", { shift: false })], orden: { tipo: "orden", modo: "bajar" }, habilitado: hay },
-  { id: "orden-fondo", etiqueta: "Enviar al fondo", icono: SendToBack, grupo: "orden", atajos: [ctrl("[", { shift: true })], orden: { tipo: "orden", modo: "fondo" }, habilitado: hay },
+  { id: "orden-frente", menu: { forma: { grupo: "orden", submenu: "Orden" }, conector: { grupo: "orden", submenu: "Orden" } }, etiqueta: "Traer al frente", icono: BringToFront, grupo: "orden", atajos: [ctrl("]", { shift: true })], orden: { tipo: "orden", modo: "frente" }, habilitado: hay },
+  { id: "orden-subir", menu: { forma: { grupo: "orden", submenu: "Orden" }, conector: { grupo: "orden", submenu: "Orden" } }, etiqueta: "Subir un nivel", icono: ChevronUp, grupo: "orden", atajos: [ctrl("]", { shift: false })], orden: { tipo: "orden", modo: "subir" }, habilitado: hay },
+  { id: "orden-bajar", menu: { forma: { grupo: "orden", submenu: "Orden" }, conector: { grupo: "orden", submenu: "Orden" } }, etiqueta: "Bajar un nivel", icono: ChevronDown, grupo: "orden", atajos: [ctrl("[", { shift: false })], orden: { tipo: "orden", modo: "bajar" }, habilitado: hay },
+  { id: "orden-fondo", menu: { forma: { grupo: "orden", submenu: "Orden" }, conector: { grupo: "orden", submenu: "Orden" } }, etiqueta: "Enviar al fondo", icono: SendToBack, grupo: "orden", atajos: [ctrl("[", { shift: true })], orden: { tipo: "orden", modo: "fondo" }, habilitado: hay },
 
   // Alinear y distribuir
   alineacion("alinear-izquierda", "Alinear a la izquierda", "izquierda", AlignStartVertical),
@@ -328,22 +358,22 @@ export const COMANDOS: readonly DefinicionComando[] = [
   alineacion("alinear-arriba", "Alinear arriba", "arriba", AlignStartHorizontal),
   alineacion("alinear-medio", "Centrar verticalmente", "medio", AlignCenterHorizontal),
   alineacion("alinear-abajo", "Alinear abajo", "abajo", AlignEndHorizontal),
-  { id: "distribuir-horizontal", etiqueta: "Distribuir horizontalmente", icono: AlignHorizontalSpaceBetween, grupo: "distribuir", orden: { tipo: "distribuir", eje: "horizontal" }, habilitado: tres },
-  { id: "distribuir-vertical", etiqueta: "Distribuir verticalmente", icono: AlignVerticalSpaceBetween, grupo: "distribuir", orden: { tipo: "distribuir", eje: "vertical" }, habilitado: tres },
+  { id: "distribuir-horizontal", sinMenu: true, etiqueta: "Distribuir horizontalmente", icono: AlignHorizontalSpaceBetween, grupo: "distribuir", orden: { tipo: "distribuir", eje: "horizontal" }, habilitado: tres },
+  { id: "distribuir-vertical", sinMenu: true, etiqueta: "Distribuir verticalmente", icono: AlignVerticalSpaceBetween, grupo: "distribuir", orden: { tipo: "distribuir", eje: "vertical" }, habilitado: tres },
 
   // Vista
-  { id: "alejar", etiqueta: "Alejar", icono: ZoomOut, grupo: "vista", orden: { tipo: "zoom", factor: 1 / 1.25 }, habilitado: (c) => (c.zoom > ZOOM_MIN ? true : "Ya está al zoom mínimo") },
-  { id: "acercar", etiqueta: "Acercar", icono: ZoomIn, grupo: "vista", orden: { tipo: "zoom", factor: 1.25 }, habilitado: (c) => (c.zoom < ZOOM_MAX ? true : "Ya está al zoom máximo") },
-  { id: "ajustar-vista", etiqueta: "Ajustar a la ventana", icono: Maximize, grupo: "vista", orden: { tipo: "ajustar-vista" } },
-  { id: "cuadricula", etiqueta: "Cuadrícula", icono: Grid3x3, grupo: "vista", orden: { tipo: "cuadricula" }, activo: (c) => c.cuadricula },
-  { id: "reglas", etiqueta: "Reglas", icono: Ruler, grupo: "vista", orden: { tipo: "reglas" }, activo: (c) => c.reglas === true },
-  { id: "quitar-guias", etiqueta: "Quitar guías", icono: Eraser, grupo: "vista", orden: { tipo: "quitar-guias" }, habilitado: (c) => ((c.guias ?? 0) > 0 ? true : "No hay guías") },
-  { id: "imantar", etiqueta: "Imantar a otros elementos", icono: Magnet, grupo: "vista", orden: { tipo: "imantar" }, activo: (c) => c.imantar },
-  { id: "buscar-comando", etiqueta: "Buscar comando", icono: Search, grupo: "vista", atajos: [ctrl("k")], orden: { tipo: "buscar-comando" } },
-  { id: "atajos", etiqueta: "Atajos de teclado", icono: Keyboard, grupo: "vista", atajos: [{ tecla: "?", shift: true }], orden: { tipo: "ver-atajos" } },
+  { id: "alejar", sinMenu: true, etiqueta: "Alejar", icono: ZoomOut, grupo: "vista", orden: { tipo: "zoom", factor: 1 / 1.25 }, habilitado: (c) => (c.zoom > ZOOM_MIN ? true : "Ya está al zoom mínimo") },
+  { id: "acercar", sinMenu: true, etiqueta: "Acercar", icono: ZoomIn, grupo: "vista", orden: { tipo: "zoom", factor: 1.25 }, habilitado: (c) => (c.zoom < ZOOM_MAX ? true : "Ya está al zoom máximo") },
+  { id: "ajustar-vista", sinMenu: true, etiqueta: "Ajustar a la ventana", icono: Maximize, grupo: "vista", orden: { tipo: "ajustar-vista" } },
+  { id: "cuadricula", menu: { vacio: { grupo: "vista" } }, etiqueta: "Cuadrícula", icono: Grid3x3, grupo: "vista", orden: { tipo: "cuadricula" }, activo: (c) => c.cuadricula },
+  { id: "imantar", menu: { vacio: { grupo: "vista" } }, etiqueta: "Imantar a otros elementos", icono: Magnet, grupo: "vista", orden: { tipo: "imantar" }, activo: (c) => c.imantar },
+  { id: "reglas", menu: { vacio: { grupo: "vista" } }, etiqueta: "Reglas", icono: Ruler, grupo: "vista", orden: { tipo: "reglas" }, activo: (c) => c.reglas === true },
+  { id: "quitar-guias", sinMenu: true, etiqueta: "Quitar guías", icono: Eraser, grupo: "vista", orden: { tipo: "quitar-guias" }, habilitado: (c) => ((c.guias ?? 0) > 0 ? true : "No hay guías") },
+  { id: "buscar-comando", sinMenu: true, etiqueta: "Buscar comando", icono: Search, grupo: "vista", atajos: [ctrl("k")], orden: { tipo: "buscar-comando" } },
+  { id: "atajos", sinMenu: true, etiqueta: "Atajos de teclado", icono: Keyboard, grupo: "vista", atajos: [{ tecla: "?", shift: true }], orden: { tipo: "ver-atajos" } },
 
   // Cierre
-  { id: "listo", etiqueta: "Listo", icono: Check, grupo: "cierre", orden: { tipo: "terminar" } },
+  { id: "listo", sinMenu: true, etiqueta: "Listo", icono: Check, grupo: "cierre", orden: { tipo: "terminar" } },
 ];
 
 const POR_ID = new Map(COMANDOS.map((c) => [c.id, c]));
@@ -393,4 +423,52 @@ export function textosDeAtajos(def: DefinicionComando): string[] {
 /** El atajo en texto para mostrar («Ctrl+Mayús+G»), o `undefined` si el comando no tiene. */
 export function textoDeAtajo(def: DefinicionComando): string | undefined {
   return textosDeAtajos(def)[0];
+}
+
+// ─── Menú contextual (Y17) ────────────────────────────────────────────────────
+// El menú sale del registro: las etiquetas, los atajos, los iconos y los motivos de «no se puede» son los de siempre.
+
+/** El orden de los grupos de cada menú; entre grupos va una línea. */
+export const ORDEN_GRUPOS_MENU: Readonly<Record<ContextoMenu, readonly string[]>> = {
+  forma: ["portapapeles", "edicion", "jerarquia", "orden", "agrupar", "estado"],
+  conector: ["conector", "edicion", "orden"],
+  vacio: ["portapapeles", "seleccion", "vista"],
+};
+
+export interface ItemDeMenu {
+  def: DefinicionComando;
+  estado: EstadoComando;
+}
+
+export type ElementoDeMenu = { clase: "comando"; item: ItemDeMenu } | { clase: "submenu"; etiqueta: string; items: ItemDeMenu[] } | { clase: "separador" };
+
+/** Qué contexto de menú corresponde a una selección: sin nada, «vacío»; solo conectores, «conector»; si no, «forma». */
+export function contextoDeMenu(escena: Escena, seleccion: readonly string[]): ContextoMenu {
+  const elegidos = escena.elementos.filter((e) => seleccion.includes(e.id));
+  if (elegidos.length === 0) return "vacio";
+  return elegidos.every((e) => e.tipo === "linea") ? "conector" : "forma";
+}
+
+/** Lo que muestra el menú de un contexto, en orden y con líneas entre grupos. Un grupo sin nada que mostrar no deja línea de más. */
+export function menuDe(en: ContextoMenu, ctx: ContextoComando): ElementoDeMenu[] {
+  const salida: ElementoDeMenu[] = [];
+  for (const grupo of ORDEN_GRUPOS_MENU[en]) {
+    const delGrupo: ElementoDeMenu[] = [];
+    for (const def of COMANDOS) {
+      const entrada = def.menu?.[en];
+      if (!entrada || entrada.grupo !== grupo || (entrada.si && !entrada.si(ctx))) continue;
+      const item: ItemDeMenu = { def, estado: estadoComando(def, ctx) };
+      if (!entrada.submenu) {
+        delGrupo.push({ clase: "comando", item });
+        continue;
+      }
+      const previo = delGrupo.find((x): x is Extract<ElementoDeMenu, { clase: "submenu" }> => x.clase === "submenu" && x.etiqueta === entrada.submenu);
+      if (previo) previo.items.push(item);
+      else delGrupo.push({ clase: "submenu", etiqueta: entrada.submenu, items: [item] });
+    }
+    if (delGrupo.length === 0) continue;
+    if (salida.length > 0) salida.push({ clase: "separador" });
+    salida.push(...delGrupo);
+  }
+  return salida;
 }

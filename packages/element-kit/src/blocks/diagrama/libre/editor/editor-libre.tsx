@@ -51,7 +51,7 @@ import {
   type PuertoCercano,
 } from "@lumina/drawing";
 import { NodosSvg } from "../dibujo-render.js";
-import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
+import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, centroDelMarco, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
 import { BuscadorComandos } from "./buscador-comandos.js";
 import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO, type OpcionesOrden } from "./cinta-editor.js";
 import { CapaFantasmaForma } from "./fantasma-forma.js";
@@ -61,10 +61,11 @@ import { PanelAtajos } from "./panel-atajos.js";
 import { DialogoEsquema } from "./dialogo-esquema.js";
 import { CapaGuiasUsuario, ReglaEje, GROSOR_REGLA } from "./reglas-capa.js";
 import { MedidasCapa, type MedidaEnVivo } from "./medidas-capa.js";
+import { MenuContextual } from "./menu-contextual.js";
 import { agregarGuia, guiaCerca, guiasParaImantar, MAX_GUIAS, moverGuia, quitarGuia, type GuiaUsuario, type OrientacionGuia } from "./reglas.js";
 import { esquemaAEscena, type Esquema } from "../esquema-a-escena.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, seleccionPorCriterio, padreConectorDe, type Comando, type CriterioSeleccion, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
-import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
+import { comandoDeTecla, contextoDeMenu, type ContextoComando, type ContextoMenu } from "./comandos-registro.js";
 import {
   SELECCIONAR,
   TEXTO_NUEVO,
@@ -325,6 +326,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const arrastreGuia = useRef<{ cancelar: () => void } | null>(null);
   /** El polígono del lazo mientras se dibuja (Y15). */
   const [lazo, setLazo] = useState<Punto[] | null>(null);
+  /** Menú contextual (Y17): qué menú se arma y si está abierto (mientras lo está, las teclas son suyas). */
+  const [menuEn, setMenuEn] = useState<ContextoMenu>("vacio");
+  const [menuAbierto, setMenuAbierto] = useState(false);
   /** Medidas en vivo (Y16b): la etiqueta junto al cursor y las cotas, solo mientras dura el gesto. */
   const [medida, setMedida] = useState<MedidaEnVivo | null>(null);
   const [cotas, setCotas] = useState<Cota[]>([]);
@@ -1365,6 +1369,46 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
   };
 
+  /**
+   * Clic derecho o la tecla de menú (Y17). Sobre algo sin elegir, lo elige primero; sobre una selección, la conserva; sobre un
+   * vacío, no deja nada elegido. Con una edición de texto abierta, el pincel o un gesto en curso no se abre nuestro menú.
+   */
+  const alMenuContextual = (e: RatonReact<SVGSVGElement>): void => {
+    if (edicionRef.current || pincelRef.current || accion.current) {
+      e.preventDefault(); // Radix no abre un menú cuyo evento ya quedó cancelado
+      return;
+    }
+    const { escena: actual, seleccion: sel, vista: v } = vivo.current;
+    // Un clic derecho trae `button === 2`; el evento de la tecla (que lanza `abrirMenuConTeclado`) trae 0 y usa la selección.
+    if (e.button !== 2) {
+      setMenuEn(contextoDeMenu(actual, sel));
+      return;
+    }
+    const id = elementoEn(escenaConRutas(actual), pantallaAEscena(v, aPantalla(e)), { tolerancia: 6 / v.zoom });
+    if (id === undefined) {
+      setSeleccion([]);
+      setMenuEn("vacio");
+      return;
+    }
+    const nueva = sel.includes(id) ? sel : [id];
+    if (nueva !== sel) {
+      setSeleccion(nueva);
+      setAnuncio(describirSeleccion(actual, nueva));
+    }
+    setMenuEn(contextoDeMenu(actual, nueva));
+  };
+
+  /** La tecla Menú o Mayús+F10 sobre el lienzo: abre el menú junto a lo elegido (o en el centro de la vista si no hay nada). */
+  const abrirMenuConTeclado = (): void => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const { escena: actual, seleccion: sel, vista: v } = vivo.current;
+    const r = svg.getBoundingClientRect();
+    const marco = sel.length > 0 ? marcoDeSeleccion(escenaConRutas(actual), sel) : null;
+    const centro = marco ? escenaAPantalla(v, centroDelMarco(marco)) : { x: r.width / 2, y: r.height / 2 };
+    svg.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: r.left + centro.x, clientY: r.top + centro.y, button: 0 }));
+  };
+
   const alDobleClic = (e: RatonReact<SVGSVGElement>): void => {
     if (pincelRef.current) return; // con el pincel, el doble clic no abre el texto
     const { herramienta: h, enCurso: curso, escena: actual, vista: v } = vivo.current;
@@ -1623,8 +1667,13 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     e.stopPropagation();
     const objetivo = e.target as HTMLElement;
     const esCampo = objetivo.tagName === "INPUT" || objetivo.tagName === "TEXTAREA" || objetivo.tagName === "SELECT" || objetivo.isContentEditable;
-    if (buscadorAbierto || atajosAbiertos || esquemaAbierto) return;
+    if (buscadorAbierto || atajosAbiertos || esquemaAbierto || menuAbierto) return;
     if (esCampo) return;
+    if ((e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) && (objetivo as Element) === svgRef.current) {
+      e.preventDefault();
+      abrirMenuConTeclado();
+      return;
+    }
     if (e.key === " " && (objetivo as Element) === svgRef.current) {
       espacio.current = true;
       setCursor("grab");
@@ -1752,6 +1801,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       <div className="flex min-h-0 min-w-0 flex-1">
       {reglas ? <ReglaEje eje="y" vista={vista} longitud={medidaVentana.alto} guias={guiasUsuario} onNuevaGuia={(o, e) => iniciarArrastreGuia(o, null, e)} onMoverGuia={(g, e) => iniciarArrastreGuia(g.orientacion, g.id, e)} onQuitarGuia={(g) => { setGuiasUsuario((x) => quitarGuia(x, g.id)); setAnuncio("Guía quitada."); }} /> : null}
       <div ref={ventanaRef} className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-muted/50">
+        <MenuContextual en={menuEn} contexto={contextoCinta} onOrden={ejecutarOrden} onAbierto={setMenuAbierto} focoLienzo={() => svgRef.current?.focus()}>
         <svg
           ref={svgRef}
           tabIndex={0}
@@ -1769,6 +1819,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
             setFormaHover(null);
           }}
           onDoubleClick={alDobleClic}
+          onContextMenu={alMenuContextual}
         >
           <g transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
             <rect width={escena.ancho} height={escena.alto} fill="var(--background, #fff)" stroke="var(--border, #e2e8f0)" strokeWidth={1 / vista.zoom} data-dibujo-pagina="" />
@@ -1824,6 +1875,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
             />
           ) : null}
         </svg>
+        </MenuContextual>
         {edicion ? (
           <TextoEnSitio
             area={edicion.area}

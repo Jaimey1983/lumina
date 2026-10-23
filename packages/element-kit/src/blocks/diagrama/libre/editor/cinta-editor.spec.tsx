@@ -27,7 +27,7 @@ describe("cinta del editor", () => {
   it("todos los comandos que antes tenían botón siguen teniéndolo, cada uno en su pestaña (ningún botón desaparece)", () => {
     montar();
     // Las variantes de «Organizar automáticamente» (Y13) viven en el menú de su flecha, no como botones sueltos.
-    const sinBoton = new Set(["seleccionar-todo", ...ELEGIR.map((c) => c.id), "listo", "buscar-comando", "pegar-al-mas-cercano", ...ORGANIZAR.filter((c) => c.id !== "organizar-auto").map((c) => c.id)]);
+    const sinBoton = new Set(["seleccionar-todo", ...ELEGIR.map((c) => c.id), ...COMANDOS.filter((c) => c.soloMenu).map((c) => c.id), "listo", "buscar-comando", "pegar-al-mas-cercano", ...ORGANIZAR.filter((c) => c.id !== "organizar-auto").map((c) => c.id)]);
     const faltan: string[] = [];
     for (const nombre of ["Inicio", "Insertar", "Organizar", "Vista"]) {
       irAPestana(nombre);
