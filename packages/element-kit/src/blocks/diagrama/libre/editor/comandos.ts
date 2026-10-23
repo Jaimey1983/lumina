@@ -124,7 +124,10 @@ export type Orden =
   /** Pegar esquema (Y14): abre el diálogo que convierte un texto con sangría en un diagrama. */
   | { tipo: "esquema" }
   /** Selección avanzada (Y15): por tipo, iguales a la elegida, invertir o la rama de la forma elegida. */
-  | { tipo: "elegir"; criterio: CriterioSeleccion };
+  | { tipo: "elegir"; criterio: CriterioSeleccion }
+  /** Reglas y guías (Y16a): mostrar u ocultar las reglas, y quitar todas las guías. Viven en el editor, no en la escena. */
+  | { tipo: "reglas" }
+  | { tipo: "quitar-guias" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {

@@ -48,6 +48,8 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "ajustar-vista": "Vista",
   cuadricula: "Vista",
   imantar: "Vista",
+  reglas: "Vista",
+  "quitar-guias": "Vista",
   "buscar-comando": "Edición general",
   atajos: "Vista",
   "seleccionar-todo": "Inicio",
@@ -331,6 +333,8 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
           <RibbonGroup label="Ayudas">
             {boton("cuadricula", "large")}
             {boton("imantar", "large")}
+            {boton("reglas", "large")}
+            {boton("quitar-guias", "medium")}
             {boton("atajos", "medium")}
           </RibbonGroup>
         </>
