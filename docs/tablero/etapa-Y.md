@@ -205,7 +205,7 @@ Redactada el 2026-10-22, al cerrar la fase B (Y6–Y11 en revisión y mergeadas)
 
 #### Y16b — Medidas en vivo y espaciado igual
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y16a `hecho`.
 - **Alcance — PUEDE tocar:** `packages/drawing/src/operaciones/ajuste.ts` (espaciado igual y cotas), `editor/medidas-capa.tsx` (nuevo), `editor/editor-libre.tsx` (solo mostrar/ocultar), specs.
 - **Entregable:** (1) mientras se **mueve** una forma, una etiqueta junto al cursor con su **X · Y**; al **redimensionar**, **ancho × alto**; al **girar**, el ángulo. (2) **Guías de espaciado igual:** al mover una forma entre otras dos (en fila o en columna), si el hueco izquierdo y el derecho van a ser **iguales**, se marcan con cotas y la forma se **imanta** al reparto exacto; vale también para tres o más formas en fila. (3) Las **cotas de distancia** a la vecina más cercana alineada se muestran mientras se arrastra. Todo con el mismo imán y las mismas reglas de `Ctrl` y de zoom que el resto de guías. **Rendimiento (DW9): con 500 elementos cada movimiento calcula en menos de 2 ms por fotograma; si no, la ficha para y lo reporta.** No hay entradas de historial extra. Pruebas: espaciado igual con 3 formas, con zoom 0,25 y 4 (la tolerancia es en píxeles de pantalla, no de escena), en fila y en columna, con tamaños distintos, con bloqueadas (no cuentan como vecinas), con **propiedad barrida** contra una referencia ingenua; etiquetas con los valores correctos al mover, redimensionar y girar; no aparecen con `Ctrl`; no quedan residuos al soltar ni con Escape; medición de tiempo con 500 elementos.
