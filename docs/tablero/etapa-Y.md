@@ -288,7 +288,7 @@ Redactada el 2026-10-23, al cerrar la fase C (Y12a–Y17 en revisión y mergeada
 
 #### Y19 — Cambiar de forma sin perder nada
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y18 en `main` (la pestaña «Formato de forma» ya existe y recibe el grupo nuevo).
 - **Hechos del código que la condicionan (comprobados, no supuestos):**
   - **No existe «cambiar forma» en ninguna parte del editor.** `actualizar(escena, ids, { forma })` ya cambia el tipo (conserva `transformacion`, `estilo`, `estiloTexto`, `texto`, `nombre` y `descripcion`, y todo pasa por el normalizador), pero **deja los `parametros` de la forma vieja**: el normalizador guarda cualquier clave numérica (hasta 8) y `resolverParametros` solo lee las que la forma nueva declara, así que quedan **huérfanos en el modelo** (y reaparecerían si se vuelve a una forma que los declara).
