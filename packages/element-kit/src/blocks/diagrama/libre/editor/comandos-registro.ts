@@ -5,7 +5,7 @@
 // lado. Sin React: los iconos son componentes de `lucide-react` (referencias, no JSX).
 
 import type { ComponentType } from "react";
-import { FORMAS, TIPOS_FORMA, type Escena } from "@lumina/drawing";
+import { FORMAS, TIPOS_FORMA, type Escena, type TipoForma } from "@lumina/drawing";
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -70,7 +70,7 @@ import {
 import { seleccionPorCriterio, type CriterioSeleccion, type Orden, type TeclaEvento } from "./comandos.js";
 import { formasAOrganizar, type DireccionOrganizar, type ModoOrganizar } from "./organizar-auto.js";
 import { hayConectorConExtremoLibre, lineasElegidas } from "./conectores.js";
-import { hayFormato, hojasDeFormato, valorComun, type FormatoDeTexto } from "./propiedades.js";
+import { hayFormato, hojasDeFormato, hojasEditables, valorComun, type FormatoDeTexto } from "./propiedades.js";
 import { esMismaHerramienta, SELECCIONAR, type Herramienta } from "./herramientas.js";
 import { ZOOM_MAX, ZOOM_MIN } from "./vista.js";
 
@@ -198,6 +198,31 @@ const formatoDeTexto = (id: FormatoDeTexto, etiqueta: string, icono: ComponentTy
   },
   sinMenu: true,
 });
+
+/** Las formas (no textos ni conectores) editables de la selección, grupos incluidos (Y19). */
+const formasEditables = (c: ContextoComando) => hojasEditables(c.escena, c.seleccion).filter((h) => h.tipo === "forma");
+const hayFormaEditable = (c: ContextoComando): boolean => formasEditables(c).length > 0;
+
+/** «Cambiar a Rombo»: sin botón suelto; sale en el desplegable «Cambiar forma», en el menú contextual y en `Ctrl+K`. */
+const cambiarForma = (forma: TipoForma): DefinicionComando => ({
+  id: `cambiar-forma-${forma}`,
+  etiqueta: `Cambiar a ${FORMAS[forma].nombre}`,
+  grupo: "formas",
+  orden: { tipo: "cambiar-forma", forma },
+  habilitado: (c) => {
+    const formas = formasEditables(c);
+    if (formas.length === 0) return "Elige una forma";
+    return formas.every((h) => h.tipo === "forma" && h.forma === forma) ? "Ya tiene esa forma" : true;
+  },
+  activo: (c) => {
+    const formas = formasEditables(c);
+    return formas.length > 0 && formas.every((h) => h.tipo === "forma" && h.forma === forma);
+  },
+  menu: { forma: { grupo: "edicion", submenu: "Cambiar forma", si: hayFormaEditable } },
+});
+
+/** Los 22 comandos «Cambiar a …», en el orden del catálogo (Y19). */
+export const CAMBIAR_FORMA: readonly DefinicionComando[] = TIPOS_FORMA.map(cambiarForma);
 
 const varias = (c: ContextoComando): boolean => c.seleccion.length > 1;
 const conExtremoLibre = (c: ContextoComando): boolean => hayConectorConExtremoLibre(c.escena, c.seleccion);
@@ -366,6 +391,9 @@ export const COMANDOS: readonly DefinicionComando[] = [
   { id: "ocultar", etiqueta: "Ocultar", icono: EyeOff, grupo: "edicion", orden: { tipo: "ocultar" }, habilitado: hay, soloMenu: true, menu: { forma: { grupo: "estado" } } },
   { id: "agrupar", menu: { forma: { grupo: "agrupar" } }, etiqueta: "Agrupar", icono: Group, grupo: "edicion", atajos: [ctrl("g", { shift: false })], orden: { tipo: "agrupar" }, habilitado: varios },
   { id: "desagrupar", menu: { forma: { grupo: "agrupar" } }, etiqueta: "Desagrupar", icono: Ungroup, grupo: "edicion", atajos: [ctrl("g", { shift: true })], orden: { tipo: "desagrupar" }, habilitado: hayGrupo },
+
+  // Cambiar la forma de lo elegido (Y19)
+  ...CAMBIAR_FORMA,
 
   // Formato de texto (Y18): sin atajo; Ctrl+B/I/U se evalúan al tocar el texto en el sitio.
   formatoDeTexto("negrita", "Negrita", Bold),

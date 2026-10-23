@@ -1,4 +1,15 @@
+import { TIPOS_FORMA, type TipoForma } from "@lumina/drawing";
+
 // Sinónimos de búsqueda por id de comando (Y5). La etiqueta oficial sigue en el registro; acá solo ayudas al buscador.
+
+/** Palabras con las que se busca una forma además de su nombre. */
+const PALABRAS_DE_FORMA: Partial<Record<TipoForma, readonly string[]>> = {
+  rectangulo: ["caja", "cuadro"],
+  "rectangulo-redondeado": ["caja", "cuadro"],
+  "flecha-derecha": ["flecha"],
+  "flecha-izquierda": ["flecha"],
+  "flecha-doble": ["flecha"],
+};
 
 /** Palabras alternativas por comando (minúsculas, sin acentos en el mapa; la consulta se normaliza igual). */
 export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> = {
@@ -39,6 +50,7 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   "forma-flecha-doble": ["flecha"],
   "forma-rectangulo": ["caja", "cuadro"],
   "forma-rectangulo-redondeado": ["caja", "cuadro"],
+  ...Object.fromEntries(TIPOS_FORMA.map((t) => [`cambiar-forma-${t}`, ["transformar", "convertir", ...(PALABRAS_DE_FORMA[t] ?? [])]] as const)),
   listo: ["terminar", "cerrar", "guardar"],
   deshacer: ["atras"],
   rehacer: ["adelante"],

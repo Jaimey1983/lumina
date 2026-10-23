@@ -134,7 +134,9 @@ export type Orden =
   | { tipo: "reglas" }
   | { tipo: "quitar-guias" }
   /** Negrita, cursiva o subrayado de lo elegido (Y18): un interruptor sobre todo lo editable. */
-  | { tipo: "formato-texto"; propiedad: "negrita" | "cursiva" | "subrayado" };
+  | { tipo: "formato-texto"; propiedad: "negrita" | "cursiva" | "subrayado" }
+  /** Cambiar la forma de lo elegido (Y19): conserva todo lo demás y deja los conectores por el mismo lado. */
+  | { tipo: "cambiar-forma"; forma: TipoForma };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
