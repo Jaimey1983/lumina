@@ -37,6 +37,7 @@ export {
   type OpcionesAlinear,
 } from './organizar.js';
 export { asasDeAjuste, fijarParametro, rangoDeAjuste, valorDeAsa, valoresDeForma, type AsaDeAjuste, type OpcionesValorDeAsa, type RangoDeAjuste } from './ajuste-forma.js';
+export { aplicarPaleta, coloresPorRama, ALFA_TINTE, COLOR_TEXTO_TEMA, type PaletaColores } from './tema.js';
 export { cambiarForma, puertoEquivalente } from './cambiar-forma.js';
 export { crearHijo, crearHijoEn, DISTANCIA_HIJO_POR_DEFECTO, LADO_HIJO_TECLADO, type ResultadoCrearHijo } from './hijo.js';
 export { conectarEnCadena, filtrarFormasParaCadena, ordenEspacialParaCadena, ordenParaCadena } from './cadena.js';

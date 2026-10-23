@@ -59,7 +59,10 @@ import { asaAjusteEn, formaConAsasAjuste } from "./asas-ajuste.js";
 import { CapaAsasAjuste } from "./asas-ajuste-capa.js";
 import { circulosDeAsasHijo, miniBarraVisible } from "./mini-barra.js";
 import { datosDeFormato, enfocarMiniBarra, MiniBarra } from "./mini-barra-capa.js";
-import { alternarTexto, hayFormato as hayQueFormatear } from "./propiedades.js";
+import { alternarTexto, hayFormato as hayQueFormatear, hojasEditables } from "./propiedades.js";
+import { aplicarEstiloForma, estiloPorId } from "./estilos-forma.js";
+import { ambitoDeTema, aplicarTema } from "./temas-escena.js";
+import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import { CapaFantasmaForma } from "./fantasma-forma.js";
 import { NOMBRE_MODO, organizarAuto, type ModoOrganizar } from "./organizar-auto.js";
 import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, type EscribirDatos, type Lectura } from "./portapapeles.js";
@@ -1678,6 +1681,27 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         aplicarFormatoA(vivo.current.seleccion, false);
         svgRef.current?.focus();
         return;
+      case "aplicar-estilo": {
+        const e = estiloPorId(orden.estilo);
+        if (!e) return;
+        const { escena: actual, seleccion: sel } = vivo.current;
+        if (aplicarEstiloForma(actual, hojasEditables(actual, sel), e) === actual) return;
+        aplicarDelPanel((x) => aplicarEstiloForma(x, hojasEditables(x, sel), e));
+        setAnuncio(`Estilo ${e.nombre} aplicado a ${hojasEditables(actual, sel).length} elemento${hojasEditables(actual, sel).length === 1 ? "" : "s"}.`);
+        return;
+      }
+      case "aplicar-tema": {
+        const { escena: actual, seleccion: sel } = vivo.current;
+        const ambito = ambitoDeTema(actual, sel);
+        const nombre = PALETAS_DIAGRAMA[orden.paleta]?.nombre ?? "";
+        if (aplicarTema(actual, sel, orden.paleta) === actual) {
+          setAnuncio(ambito.ids.length === 0 ? "No hay formas que colorear." : `Ese tema ya está aplicado.`);
+          return;
+        }
+        aplicarDelPanel((x) => aplicarTema(x, sel, orden.paleta));
+        setAnuncio(`Tema ${nombre} aplicado ${ambito.deSeleccion ? `a ${ambito.ids.length} forma${ambito.ids.length === 1 ? "" : "s"}` : "al diagrama"}.`);
+        return;
+      }
       case "cambiar-forma": {
         const { escena: actual, seleccion: sel } = vivo.current;
         if (cambiarForma(actual, sel, orden.forma) === actual) return;

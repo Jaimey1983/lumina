@@ -6,22 +6,26 @@
 // Pestañas: Inicio · Insertar · Organizar · Vista, y las contextuales «Formato de forma» (formas o textos elegidos, Y18)
 // y «Formato de conector» (líneas elegidas). Una pestaña sin contenido no se muestra (DY1).
 
-import { useState, type KeyboardEvent, type PointerEvent, type ReactElement, type ReactNode } from "react";
+import { useId, useState, type KeyboardEvent, type PointerEvent, type ReactElement, type ReactNode } from "react";
 import { formasPorGrupo, trazadoForma, type Escena, type Linea, type TipoForma } from "@lumina/drawing";
 import { Popover, PopoverContent, PopoverTrigger } from "@lumina/ui/popover";
 import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup, RibbonSplitButton } from "@lumina/ui/ribbon";
 import { CornerDownRight, Minus, Shapes, Spline } from "lucide-react";
-import { CAMBIAR_FORMA, COMANDOS, comando, ELEGIR, estadoComando, ORGANIZAR, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
+import { CAMBIAR_FORMA, COMANDOS, ESTILOS_COMANDOS, TEMAS_COMANDOS, comando, ELEGIR, estadoComando, ORGANIZAR, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { Orden } from "./comandos.js";
+import type { DiagramaPaletaId } from "@lumina/types/slide";
+import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
+import { ESTILOS_FORMA } from "./estilos-forma.js";
 import { AlineacionHorizontal, BotonFormatoTexto, ColorContorno, ColorRelleno, datosDeFormato, GrosorContorno, TamanoLetra, type AccionesDeFormato } from "./mini-barra-capa.js";
 import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, hayExtremoLibre, valorComun } from "./conectores.js";
 
 export const PESTANA_INICIO = "inicio";
 export const PESTANA_CONECTOR = "conector";
 export const PESTANA_FORMATO = "formato-forma";
+export const PESTANA_DISENO = "diseno";
 
 /** Orden de secciones en el panel de atajos (Y5); una sola fuente con la cinta. */
-export const ORDEN_PESTANAS_ATAJOS = ["Historial", "Inicio", "Insertar", "Organizar", "Vista", "Edición general", "Navegación y ratón"] as const;
+export const ORDEN_PESTANAS_ATAJOS = ["Historial", "Inicio", "Insertar", "Organizar", "Diseño", "Vista", "Edición general", "Navegación y ratón"] as const;
 
 const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   deshacer: "Historial",
@@ -70,6 +74,8 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "eliminar-rama": "Inicio",
   ...Object.fromEntries(ELEGIR.map((c) => [c.id, "Inicio"])),
   ...Object.fromEntries(CAMBIAR_FORMA.map((c) => [c.id, "Formato de forma"])),
+  ...Object.fromEntries(ESTILOS_COMANDOS.map((c) => [c.id, "Formato de forma"])),
+  ...Object.fromEntries(TEMAS_COMANDOS.map((c) => [c.id, "Diseño"])),
   "pegar-al-mas-cercano": "Formato de conector",
   negrita: "Formato de forma",
   cursiva: "Formato de forma",
@@ -155,6 +161,107 @@ function SelectorForma({ contexto, onOrden }: { contexto: ContextoComando; onOrd
 }
 
 const COLUMNAS_FORMAS = 4;
+
+/** Flechas dentro de una galería de botones (`data-galeria-item`): izquierda y derecha de uno en uno, arriba y abajo de a una fila. */
+function navegarGaleria(e: KeyboardEvent<HTMLElement>, columnas: number): void {
+  const paso = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : e.key === "ArrowDown" ? columnas : e.key === "ArrowUp" ? -columnas : 0;
+  if (paso === 0) return;
+  const botones = [...e.currentTarget.querySelectorAll<HTMLButtonElement>("button[data-galeria-item]")];
+  const i = botones.indexOf(e.target as HTMLButtonElement);
+  if (i === -1) return;
+  e.preventDefault();
+  e.stopPropagation(); // las flechas de la galería no mueven lo elegido en el lienzo
+  botones[Math.min(botones.length - 1, Math.max(0, i + paso))]?.focus();
+}
+
+/** Miniatura de un estilo: un rectángulo con su relleno, contorno y la «A» del color de su texto (los tokens siguen al modo del editor). */
+function MiniaturaEstilo({ estilo }: { estilo: (typeof ESTILOS_FORMA)[number] }): ReactElement {
+  const id = useId();
+  const { relleno, contorno, sombra } = estilo.parche.estilo;
+  const fill = relleno.tipo === "solido" ? relleno.color : relleno.tipo === "degradado" ? `url(#${id})` : "none";
+  return (
+    <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true">
+      {relleno.tipo === "degradado" ? (
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor={relleno.desde} />
+            <stop offset="1" stopColor={relleno.hasta} />
+          </linearGradient>
+        </defs>
+      ) : null}
+      {sombra ? <rect x="4" y="5" width="22" height="14" rx="3" fill="currentColor" opacity="0.25" /> : null}
+      <rect x="3" y="3" width="22" height="14" rx="3" fill={fill} stroke={contorno?.grosor ? contorno.color : "none"} strokeWidth={Math.min(2, contorno?.grosor ?? 0)} />
+      <text x="14" y="13.5" textAnchor="middle" fontSize="9" fontWeight="600" fill={estilo.parche.estiloTexto.color}>
+        A
+      </text>
+    </svg>
+  );
+}
+
+/** Galería «Estilos» (Y21): los 12 estilos, el activo marcado; cada uno es un comando del registro. */
+function GaleriaEstilos({ contexto, onOrden }: { contexto: ContextoComando; onOrden: (orden: Orden) => void }): ReactElement {
+  return (
+    <div role="group" aria-label="Estilos de forma" data-galeria-estilos="" className="grid grid-cols-6 gap-1" onKeyDown={(e) => navegarGaleria(e, 6)}>
+      {ESTILOS_FORMA.map((estilo, i) => {
+        const def = ESTILOS_COMANDOS[i];
+        if (!def) return null;
+        const estado = estadoComando(def, contexto);
+        return (
+          <button
+            key={estilo.id}
+            type="button"
+            data-galeria-item=""
+            data-comando={def.id}
+            title={estado.habilitado ? def.etiqueta : `${def.etiqueta} — ${estado.motivo}`}
+            aria-label={def.etiqueta}
+            aria-pressed={estado.activo === true}
+            aria-disabled={!estado.habilitado || undefined}
+            className="flex h-8 w-9 items-center justify-center rounded-md border outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-disabled:opacity-40 aria-pressed:bg-accent aria-pressed:ring-2 aria-pressed:ring-primary"
+            onClick={() => {
+              if (estado.habilitado) onOrden(def.orden);
+            }}
+          >
+            <MiniaturaEstilo estilo={estilo} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Galería «Temas» (Y21): las 10 paletas con su nombre y siete pastillas (el acento y los seis colores). */
+function GaleriaTemas({ contexto, onOrden }: { contexto: ContextoComando; onOrden: (orden: Orden) => void }): ReactElement {
+  return (
+    <div role="group" aria-label="Temas del diagrama" data-galeria-temas="" className="grid grid-cols-5 gap-1" onKeyDown={(e) => navegarGaleria(e, 5)}>
+      {TEMAS_COMANDOS.map((def) => {
+        const paleta = PALETAS_DIAGRAMA[def.id.slice("tema-".length) as DiagramaPaletaId];
+        const estado = estadoComando(def, contexto);
+        return (
+          <button
+            key={def.id}
+            type="button"
+            data-galeria-item=""
+            data-comando={def.id}
+            title={estado.habilitado ? `${def.etiqueta} — ${paleta.descripcion}` : `${def.etiqueta} — ${estado.motivo}`}
+            aria-label={def.etiqueta}
+            aria-disabled={!estado.habilitado || undefined}
+            className="flex w-32 flex-col items-start gap-1 rounded-md border px-2 py-1 text-left text-[11px] outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-disabled:opacity-40"
+            onClick={() => {
+              if (estado.habilitado) onOrden(def.orden);
+            }}
+          >
+            <span className="truncate">{paleta.nombre}</span>
+            <svg width="112" height="10" viewBox="0 0 112 10" aria-hidden="true">
+              {[paleta.acentoPrincipal, ...paleta.colores].map((c, i) => (
+                <rect key={i} x={i * 16} width="16" height="10" fill={c} />
+              ))}
+            </svg>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 /** Cómo se pidió una orden: `fija` deja la herramienta elegida hasta que se elija otra (Mayús al elegirla, o doble clic en su botón). */
 export interface OpcionesOrden {
@@ -392,6 +499,17 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
       ),
     },
     {
+      id: PESTANA_DISENO,
+      label: "Diseño",
+      content: (
+        <div data-cinta-diseno="" className="flex items-stretch">
+          <RibbonGroup label="Temas">
+            <GaleriaTemas contexto={contexto} onOrden={onOrden} />
+          </RibbonGroup>
+        </div>
+      ),
+    },
+    {
       id: "vista",
       label: "Vista",
       content: (
@@ -430,6 +548,9 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
                     <SelectorForma contexto={contexto} onOrden={onOrden} />
                   </RibbonGroup>
                 ) : null}
+                <RibbonGroup label="Estilos">
+                  <GaleriaEstilos contexto={contexto} onOrden={onOrden} />
+                </RibbonGroup>
                 <RibbonGroup label="Contorno">
                   <ColorContorno datos={datosFormato} sufijo="(cinta)" {...formato} />
                   <GrosorContorno datos={datosFormato} sufijo="(cinta)" {...formato} />
