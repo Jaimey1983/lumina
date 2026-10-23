@@ -100,6 +100,15 @@ describe("asaAjusteEn", () => {
     expect(asaAjusteEn(f, aEscena(TOLERANCIA_ASA_AJUSTE_PX + 2, 0), v, false)).toBeNull();
     expect(asaAjusteEn(f, aEscena(TOLERANCIA_ASA_AJUSTE_PX + 2, 0), v, true)).not.toBeNull(); // con el dedo, más tolerancia
   });
+  it("con dos asas dentro de la tolerancia (zoom muy bajo) gana la más cercana al puntero", () => {
+    const f = una("flecha-derecha", {}, 0, 160, 40);
+    const v = { zoom: 0.1, x: 0, y: 0 };
+    const [cabeza, cuerpo] = asasAjusteEnPantalla(f, v) as [ReturnType<typeof asasAjusteEnPantalla>[0], ReturnType<typeof asasAjusteEnPantalla>[0]];
+    expect(Math.hypot(cabeza.centro.x - cuerpo.centro.x, cabeza.centro.y - cuerpo.centro.y)).toBeLessThan(2 * TOLERANCIA_ASA_AJUSTE_PX);
+    const aEscena = (p: { x: number; y: number }) => ({ x: p.x / 0.1, y: p.y / 0.1 });
+    expect(asaAjusteEn(f, aEscena(cabeza.centro), v, false)?.clave).toBe("cabeza");
+    expect(asaAjusteEn(f, aEscena(cuerpo.centro), v, false)?.clave).toBe("cuerpo");
+  });
   it("con dos asas cercanas gana la más cercana", () => {
     const f = una("flecha-derecha");
     const v = { zoom: 1, x: 0, y: 0 };

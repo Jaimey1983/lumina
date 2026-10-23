@@ -662,8 +662,8 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
         etiqueta: 'Posición de la cola',
         lado: 'abajo',
         punto: (ancho, alto, v) => ({ x: geometriaCallout(ancho, alto, { cola: v.cola ?? 0 }).x1, y: alto }),
-        // La cola no pasa del recorte de `geometriaCallout`: el asa tampoco.
-        valor: (ancho, alto, l) => Math.min(l.x / ancho, (ancho - geometriaCallout(ancho, alto, { cola: 0 }).r - 0.14 * ancho) / ancho),
+        // El recorte de `geometriaCallout` (`ancho − r − 0,14·ancho`, con `r` ≤ 0,15·ancho) queda siempre por encima del máximo (0,7).
+        valor: (ancho, _alto, l) => l.x / ancho,
       },
     ],
     trazado: (ancho, alto, p) => {

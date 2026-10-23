@@ -57,6 +57,17 @@ describe('el catálogo de asas de ajuste', () => {
   });
 });
 
+describe('el recorte de la cola del globo', () => {
+  it('nunca se activa dentro del rango: el asa en el máximo está donde dice el parámetro, para cualquier tamaño', () => {
+    const max = FORMAS.callout.parametros[0]?.max ?? 0;
+    for (const [ancho, alto] of [[40, 100], [180, 110], [600, 40], [60, 60], [1000, 1000], [20, 300]] as const) {
+      const g = unaForma('callout', { parametros: { cola: max } }, 0, ancho, alto);
+      const asa = asasDeAjuste(g)[0];
+      expect(((asa?.borde.x ?? 0) - 100) / ancho, `${ancho}×${alto}`).toBeCloseTo(max, 6);
+    }
+  });
+});
+
 describe('valorDeAsa', () => {
   it('acota a los dos extremos del rango', () => {
     const t = unaForma('trapecio');

@@ -1042,7 +1042,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     const formaAj = formaConAsasAjuste({ escena: actual, herramienta: h, seleccion: sel, gestoEnCurso: false, edicionAbierta: edicionRef.current !== null, menuAbierto, pincel: false });
     const asaAj = formaAj ? asaAjusteEn(formaAj, p, v, tipoPuntero.current === "touch") : null;
     if (formaAj && asaAj) {
-      const ajuste = iniciarAjuste(actual, formaAj.id, asaAj.clave, p);
+      const ajuste = iniciarAjuste(actual, formaAj.id, asaAj.clave);
       if (ajuste) {
         setGestoEnCurso(true);
         accion.current = { modo: "gesto", gesto: ajuste, activo: false, origen: pantalla, ultimo: pantalla, shift: e.shiftKey };
