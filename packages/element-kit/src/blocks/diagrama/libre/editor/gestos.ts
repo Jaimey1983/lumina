@@ -6,14 +6,17 @@
 import {
   ajustar,
   ajustarCaja,
+  asasDeAjuste,
   cajaDeSeleccion,
   elementoEn,
   elementosEn,
   elementosEnPoligono,
+  fijarParametro,
   mover,
   redimensionar,
   rotar,
   rotarA,
+  valorDeAsa,
   type Asa,
   type Caja,
   type Cota,
@@ -22,6 +25,7 @@ import {
   type Punto,
 } from "@lumina/drawing";
 import { bloqueadosEfectivos, centroDelMarco, marcoDeSeleccion } from "./asas.js";
+import { textoDeValor } from "./asas-ajuste.js";
 
 export interface Modificadores {
   shift: boolean;
@@ -46,7 +50,12 @@ export type Gesto =
   | { tipo: "rotar"; base: Escena; ids: string[]; inicio: Punto; centro: Punto; unico: boolean }
   | { tipo: "recuadro"; base: Escena; inicio: Punto; previa: string[]; aditivo: boolean }
   /** Lazo (Y15): `Alt` + arrastrar en un vacío dibuja un polígono libre; `puntos` crece con el arrastre y `inicial` es la selección de antes. */
-  | { tipo: "lazo"; base: Escena; puntos: Punto[]; inicial: string[]; aditivo: boolean };
+  | { tipo: "lazo"; base: Escena; puntos: Punto[]; inicial: string[]; aditivo: boolean }
+  /**
+   * Asa amarilla de ajuste (Y20). El asa se dibuja a 14 px hacia dentro de su borde, pero siempre **perpendicular** al eje por el
+   * que se desliza, así que el puntero se usa tal cual: la distancia entre el asa dibujada y el borde no cambia el valor.
+   */
+  | { tipo: "ajustar-forma"; base: Escena; id: string; clave: string; etiqueta: string };
 
 export interface ResultadoGesto {
   escena: Escena;
@@ -97,6 +106,15 @@ export function iniciarRotar(base: Escena, seleccion: readonly string[], inicio:
   const solo = ids.length === 1 ? base.elementos.find((e) => e.id === ids[0]) : undefined;
   const unico = solo?.tipo === "forma" || solo?.tipo === "texto";
   return { tipo: "rotar", base, ids, inicio, centro: centroDelMarco(marco), unico };
+}
+
+/** Agarra el asa de ajuste `clave` de una forma; `null` si la forma no existe, está bloqueada o no tiene esa asa. */
+export function iniciarAjuste(base: Escena, id: string, clave: string): Gesto | null {
+  const forma = base.elementos.find((e) => e.id === id && e.tipo === "forma");
+  if (forma?.tipo !== "forma" || bloqueadosEfectivos(base).has(id)) return null;
+  const asa = asasDeAjuste(forma).find((a) => a.clave === clave);
+  if (!asa) return null;
+  return { tipo: "ajustar-forma", base, id, clave, etiqueta: asa.etiqueta };
 }
 
 export function iniciarRecuadro(base: Escena, inicio: Punto, aditivo: boolean, seleccionActual: readonly string[]): Gesto {
@@ -215,6 +233,15 @@ function avanzarLazo(g: Extract<Gesto, { tipo: "lazo" }>, p: Punto): ResultadoGe
   return { escena: g.base, seleccion, guias: [], lazo: [...g.puntos] };
 }
 
+function avanzarAjuste(g: Extract<Gesto, { tipo: "ajustar-forma" }>, p: Punto, mod: Modificadores): ResultadoGesto {
+  const forma = g.base.elementos.find((e) => e.id === g.id && e.tipo === "forma");
+  if (forma?.tipo !== "forma") return { escena: g.base, guias: [] };
+  // Mayús ajusta al paso del catálogo; sin Mayús el valor es continuo.
+  const valor = valorDeAsa(forma, g.clave, p, { alPaso: mod.shift });
+  if (!Number.isFinite(valor)) return { escena: g.base, guias: [] };
+  return { escena: fijarParametro(g.base, [g.id], g.clave, valor), guias: [], etiqueta: `${g.etiqueta}: ${textoDeValor(valor)}` };
+}
+
 export function avanzarGesto(g: Gesto, punto: Punto, mod: Modificadores, opciones: OpcionesGesto): ResultadoGesto {
   switch (g.tipo) {
     case "mover":
@@ -227,6 +254,8 @@ export function avanzarGesto(g: Gesto, punto: Punto, mod: Modificadores, opcione
       return avanzarRecuadro(g, punto);
     case "lazo":
       return avanzarLazo(g, punto);
+    case "ajustar-forma":
+      return avanzarAjuste(g, punto, mod);
   }
 }
 

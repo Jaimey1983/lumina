@@ -6,6 +6,8 @@
 import {
   FORMAS,
   actualizar,
+  fijarParametro,
+  resolverParametros,
   bloquear,
   cajaDeSeleccion,
   cambiarEstilo,
@@ -115,6 +117,38 @@ export function alternarTexto(escena: Escena, seleccion: readonly string[], prop
   if (actual === null) return escena;
   return fijarTexto(escena, destino, { [propiedad]: actual.mixto || !actual.valor });
 }
+
+/** Un campo de la sección «Forma» del panel: un parámetro de la forma elegida (Y20). */
+export interface CampoDeForma {
+  clave: string;
+  etiqueta: string;
+  min: number;
+  max: number;
+  paso: number;
+  valor: Valor<number>;
+}
+
+/**
+ * Los parámetros que se pueden ajustar con la selección: las formas editables elegidas deben ser **todas del mismo tipo** y ese tipo
+ * tener parámetros (si no, `[]`). El valor es «mixto» si difiere. Las asas amarillas del lienzo y estos campos llaman a la misma
+ * `fijarParametro`.
+ */
+export function camposDeForma(escena: Escena, seleccion: readonly string[]): CampoDeForma[] {
+  const formas = hojasEditables(escena, seleccion).filter((h): h is Forma => h.tipo === "forma");
+  const tipo = formas[0]?.forma;
+  if (!tipo || formas.some((f) => f.forma !== tipo)) return [];
+  return FORMAS[tipo].parametros.map((p) => ({
+    clave: p.clave,
+    etiqueta: p.etiqueta,
+    min: p.min,
+    max: p.max,
+    paso: p.paso,
+    valor: valorComun(formas, (h) => resolverParametros(tipo, (h as Forma).parametros)[p.clave] ?? p.porDefecto) as Valor<number>,
+  }));
+}
+
+/** Pone el parámetro `clave` en todas las formas editables elegidas. */
+export const fijarParametroDeForma = (escena: Escena, destino: readonly Hoja[], clave: string, valor: number): Escena => fijarParametro(escena, ids(destino), clave, valor);
 
 /** Relleno al cambiar de tipo: conserva el color que ya había si lo hay. */
 export function rellenoDeTipo(tipo: Relleno["tipo"], actual: Relleno | null): Relleno {

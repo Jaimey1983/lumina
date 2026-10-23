@@ -3,7 +3,7 @@ import { TIPOS_FORMA } from '../tipos.js';
 import { FORMAS, type DefinicionForma, type GrupoForma, type Rectangulo, type ValoresParametros } from './catalogo.js';
 
 export { FORMAS, trazadoPoligono } from './catalogo.js';
-export type { DefinicionForma, GrupoForma, ParametroForma, Rectangulo, ValoresParametros } from './catalogo.js';
+export type { AsaAjuste, DefinicionForma, GrupoForma, LadoAsaAjuste, ParametroForma, Rectangulo, ValoresParametros } from './catalogo.js';
 
 export interface OpcionesForma {
   /** Valores propios de la forma (`Forma.parametros`); lo que falte o esté fuera de rango se corrige. */

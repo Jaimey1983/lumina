@@ -9,6 +9,8 @@ import { ALINEACION_H, CampoNumero, Conmutador, Deslizador, Fila, Opciones, Fila
 import { PanelCapas } from "./propiedades-capas.js";
 import {
   SOMBRA_POR_DEFECTO,
+  camposDeForma,
+  fijarParametroDeForma,
   conRadio,
   conRelleno,
   conSombra,
@@ -149,6 +151,7 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
   const fuente = et("fuente");
   const fuenteConocida = fuente && !fuente.mixto && FUENTES.some((f) => f.valor === fuente.valor);
 
+  const camposForma = camposDeForma(escena, seleccion);
   const unico = elementoUnico(escena, seleccion);
   const geometria = leerGeometria(escena, seleccion);
   const geometriaBloqueada = bloqueadas;
@@ -220,6 +223,18 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
               </div>
             </div>
           </Seccion>
+
+          {camposForma.length > 0 ? (
+            <Seccion title="Forma" storageKey="dibujo-forma" defaultOpen>
+              <div className="space-y-2">
+                {camposForma.map((c) => (
+                  <Fila key={c.clave} etiqueta={c.etiqueta}>
+                    <CampoNumero etiqueta={c.etiqueta} valor={c.valor} min={c.min} max={c.max} paso={c.paso} ancho="w-24" onConfirmar={(n) => onAplicar((e) => fijarParametroDeForma(e, editables, c.clave, n))} />
+                  </Fila>
+                ))}
+              </div>
+            </Seccion>
+          ) : null}
 
           {conRell.length > 0 ? (
             <Seccion title="Relleno" storageKey="dibujo-relleno" defaultOpen>
