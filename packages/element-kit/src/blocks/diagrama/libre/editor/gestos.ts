@@ -16,6 +16,7 @@ import {
   rotarA,
   type Asa,
   type Caja,
+  type Cota,
   type Escena,
   type Guia,
   type Punto,
@@ -55,7 +56,15 @@ export interface ResultadoGesto {
   recuadro?: Caja;
   /** El polígono del lazo hasta ahora (solo el gesto de lazo). */
   lazo?: Punto[];
+  /** Cotas de espaciado igual y de distancia a las vecinas (solo al mover, con el imán a otros elementos; Y16b). */
+  cotas?: Cota[];
+  /** Lo que se está midiendo, para la etiqueta junto al cursor: «X 120 · Y 45», «200 × 80» o «45°» (Y16b). */
+  etiqueta?: string;
 }
+
+/** Un número para la etiqueta: hasta un decimal, con coma. */
+const num = (v: number): string => String(Math.round(v * 10) / 10).replace(".", ",");
+const gradosPositivos = (g: number): number => ((g % 360) + 360) % 360;
 
 const grados = (r: number): number => (r * 180) / Math.PI;
 const angulo = (centro: Punto, p: Punto): number => grados(Math.atan2(p.y - centro.y, p.x - centro.x));
@@ -111,20 +120,27 @@ function avanzarMover(g: Extract<Gesto, { tipo: "mover" }>, p: Punto, mod: Modif
     else dx = 0;
   }
   let guias: Guia[] = [];
+  let cotas: Cota[] = [];
   if (!mod.ctrl && (o.guias || o.cuadricula || hayGuiasUsuario(o))) {
     const movida: Caja = { ...g.caja, x: g.caja.x + dx, y: g.caja.y + dy };
     const r = ajustarCaja(movida, g.base, {
       excluir: g.ids,
       guias: o.guias,
       umbral: 6 / o.zoom,
+      // El reparto igual y las cotas son parte del imán a otros elementos: lo siguen en el interruptor y en Ctrl.
+      espaciado: o.guias,
       ...(o.cuadricula ? { cuadricula: o.cuadricula } : {}),
       ...(hayGuiasUsuario(o) ? { guiasUsuario: o.guiasUsuario } : {}),
     });
     if (!mod.shift || dx !== 0) dx += r.dx;
     if (!mod.shift || dy !== 0) dy += r.dy;
     guias = r.guias;
+    // Con Mayús un eje queda fijo y las cotas del otro ya no describen la posición final: no se muestran.
+    cotas = mod.shift ? [] : (r.cotas ?? []);
   }
-  return { escena: mover(g.base, g.ids, dx, dy), guias };
+  const escena = mover(g.base, g.ids, dx, dy);
+  const caja = cajaDeSeleccion(escena, g.ids);
+  return { escena, guias, cotas, ...(caja ? { etiqueta: `X ${num(caja.x)} · Y ${num(caja.y)}` } : {}) };
 }
 
 function avanzarRedimensionar(g: Extract<Gesto, { tipo: "redimensionar" }>, p: Punto, mod: Modificadores, o: OpcionesGesto): ResultadoGesto {
@@ -151,10 +167,9 @@ function avanzarRedimensionar(g: Extract<Gesto, { tipo: "redimensionar" }>, p: P
     if (mueveY) dy = r.punto.y - arrastrado.y;
     guias = r.guias.filter((gu) => (gu.orientacion === "vertical" ? mueveX : mueveY));
   }
-  return {
-    escena: redimensionar(g.base, g.ids, g.asa, dx, dy, { proporcional: mod.shift, desdeCentro: mod.alt }),
-    guias,
-  };
+  const escena = redimensionar(g.base, g.ids, g.asa, dx, dy, { proporcional: mod.shift, desdeCentro: mod.alt });
+  const caja = cajaDeSeleccion(escena, g.ids);
+  return { escena, guias, ...(caja ? { etiqueta: `${num(caja.ancho)} × ${num(caja.alto)}` } : {}) };
 }
 
 function avanzarRotar(g: Extract<Gesto, { tipo: "rotar" }>, p: Punto, mod: Modificadores): ResultadoGesto {
@@ -164,9 +179,14 @@ function avanzarRotar(g: Extract<Gesto, { tipo: "rotar" }>, p: Punto, mod: Modif
     const id = g.ids[0];
     const actual = g.base.elementos.find((e) => e.id === id);
     const rotacionInicial = actual && (actual.tipo === "forma" || actual.tipo === "texto") ? actual.transformacion.rotacion : 0;
-    return { escena: id ? rotarA(g.base, id, rotacionInicial + delta, ajuste ? { ajustar: ajuste } : {}) : g.base, guias: [] };
+    const escena = id ? rotarA(g.base, id, rotacionInicial + delta, ajuste ? { ajustar: ajuste } : {}) : g.base;
+    const girada = escena.elementos.find((e) => e.id === id);
+    const grados = girada && (girada.tipo === "forma" || girada.tipo === "texto") ? girada.transformacion.rotacion : rotacionInicial + delta;
+    return { escena, guias: [], etiqueta: `${num(gradosPositivos(grados))}°` };
   }
-  return { escena: rotar(g.base, g.ids, delta, { centro: g.centro, ...(ajuste ? { ajustar: ajuste } : {}) }), guias: [] };
+  // Varios elementos: lo que se llevan girado desde que se apretó.
+  const girado = ajuste ? Math.round(delta / ajuste) * ajuste : delta;
+  return { escena: rotar(g.base, g.ids, delta, { centro: g.centro, ...(ajuste ? { ajustar: ajuste } : {}) }), guias: [], etiqueta: `${num(gradosPositivos(girado))}°` };
 }
 
 function avanzarRecuadro(g: Extract<Gesto, { tipo: "recuadro" }>, p: Punto): ResultadoGesto {

@@ -44,6 +44,7 @@ import {
   type TipoForma,
   type Elemento,
   type EntradaElemento,
+  type Cota,
   type Escena,
   type Guia,
   type Punto,
@@ -59,6 +60,7 @@ import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, 
 import { PanelAtajos } from "./panel-atajos.js";
 import { DialogoEsquema } from "./dialogo-esquema.js";
 import { CapaGuiasUsuario, ReglaEje, GROSOR_REGLA } from "./reglas-capa.js";
+import { MedidasCapa, type MedidaEnVivo } from "./medidas-capa.js";
 import { agregarGuia, guiaCerca, guiasParaImantar, MAX_GUIAS, moverGuia, quitarGuia, type GuiaUsuario, type OrientacionGuia } from "./reglas.js";
 import { esquemaAEscena, type Esquema } from "../esquema-a-escena.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, seleccionPorCriterio, padreConectorDe, type Comando, type CriterioSeleccion, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
@@ -323,6 +325,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const arrastreGuia = useRef<{ cancelar: () => void } | null>(null);
   /** El polígono del lazo mientras se dibuja (Y15). */
   const [lazo, setLazo] = useState<Punto[] | null>(null);
+  /** Medidas en vivo (Y16b): la etiqueta junto al cursor y las cotas, solo mientras dura el gesto. */
+  const [medida, setMedida] = useState<MedidaEnVivo | null>(null);
+  const [cotas, setCotas] = useState<Cota[]>([]);
   const [cursor, setCursor] = useState("default");
   const [anuncio, setAnuncio] = useState("");
   const [, setVersionHistorial] = useState(0);
@@ -1171,6 +1176,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setGuias(r.guias);
     setRecuadro(r.recuadro ?? null);
     setLazo(r.lazo ?? null);
+    setCotas(r.cotas ?? []);
+    setMedida(r.etiqueta ? { texto: r.etiqueta, x: pantalla.x, y: pantalla.y } : null);
     if (r.seleccion) setSeleccion(r.seleccion);
     // Al mover formas se resalta entera la que hay debajo del puntero (sin contar lo que se mueve) y, si al soltar
     // se conectaría (halo de un puerto o Alt), se ve el conector que se crearía. Si no, soltar solo mueve.
@@ -1196,6 +1203,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setGuias([]);
     setRecuadro(null);
     setLazo(null);
+    setMedida(null);
+    setCotas([]);
     const base = vivo.current.herramienta.tipo === "seleccionar" ? "default" : vivo.current.herramienta.tipo === "texto" ? "text" : "crosshair";
     setCursor(espacio.current ? "grab" : base);
     if (!a || a.modo === "pan") return;
@@ -1336,6 +1345,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setGuias([]);
     setRecuadro(null);
     setLazo(null);
+    setMedida(null);
+    setCotas([]);
     setPrevia(null);
     fijarObjetivo(null);
     setArrastrandoExtremo(false);
@@ -1782,6 +1793,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           <CapaDestino escena={escena} vista={vista} formaId={objetivoPuerto?.elementoId ?? destinoArrastre} modo={objetivoPuerto ? "conecta" : destinoModo} />
           <CapaConexionPrevia vista={vista} previa={conexionPrevia} />
           <CapaGuias guias={guias} vista={vista} />
+          <MedidasCapa vista={vista} medida={medida} cotas={cotas} />
           {reglas ? <CapaGuiasUsuario guias={guiasUsuario} vista={vista} quitando={guiaQuitando} previa={guiaPrevia} /> : null}
           <CapaPrevia previa={previa} vista={vista} />
           {lazo && lazo.length >= 2 ? (

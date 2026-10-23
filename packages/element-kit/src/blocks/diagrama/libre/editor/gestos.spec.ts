@@ -195,6 +195,100 @@ describe("recuadro de selección", () => {
   });
 });
 
+describe("medidas en vivo (Y16b)", () => {
+  const base = escena(forma("a", 100, 100, 100, 50), forma("b", 400, 100, 100, 50), forma("c", 700, 100, 100, 50));
+  const imanado: OpcionesGesto = { guias: true, zoom: 1 };
+
+  it("al mover: «X · Y» de lo que se mueve, con coma decimal", () => {
+    const g = iniciarMover(base, ["a"], { x: 150, y: 125 })!;
+    expect(avanzarGesto(g, { x: 190, y: 135 }, sin, libre).etiqueta).toBe("X 140 · Y 110");
+    expect(avanzarGesto(g, { x: 190.25, y: 135.5 }, sin, libre).etiqueta).toBe("X 140,3 · Y 110,5");
+  });
+
+  it("al mover varios: la esquina del conjunto", () => {
+    const g = iniciarMover(base, ["a", "b"], { x: 0, y: 0 })!;
+    expect(avanzarGesto(g, { x: 10, y: 20 }, sin, libre).etiqueta).toBe("X 110 · Y 120");
+  });
+
+  it("al redimensionar: ancho × alto", () => {
+    const g = iniciarRedimensionar(base, ["a"], "se", { x: 200, y: 150 })!;
+    expect(avanzarGesto(g, { x: 260, y: 190 }, sin, libre).etiqueta).toBe("160 × 90");
+    expect(avanzarGesto(g, { x: 260, y: 190 }, { ...sin, shift: true }, libre).etiqueta).toMatch(/^\d+ × \d+$/);
+  });
+
+  it("al girar una forma: su ángulo; con Mayús, de 15 en 15", () => {
+    const g = iniciarRotar(base, ["a"], { x: 150, y: 50 })!;
+    // Desde arriba del centro (150, 125) hacia la derecha: 90°.
+    expect(avanzarGesto(g, { x: 300, y: 125 }, sin, libre).etiqueta).toBe("90°");
+    expect(avanzarGesto(g, { x: 300, y: 140 }, { ...sin, shift: true }, libre).etiqueta).toBe("90°");
+    const angulo = avanzarGesto(g, { x: 290, y: 100 }, { ...sin, shift: true }, libre).etiqueta ?? "";
+    expect(Number(angulo.replace("°", "").replace(",", ".")) % 15).toBe(0);
+  });
+
+  it("al girar varios hacia la izquierda: el ángulo es positivo (−90° se lee 270°)", () => {
+    const g = iniciarRotar(base, ["a", "b", "c"], { x: 900, y: 125 })!;
+    // El centro del conjunto es (450, 125): de la derecha hacia arriba es un giro de −90°.
+    expect(avanzarGesto(g, { x: 450, y: 0 }, sin, libre).etiqueta).toBe("270°");
+  });
+
+  it("al girar varios: lo girado desde que se apretó; nunca negativo", () => {
+    const g = iniciarRotar(base, ["a", "b"], { x: 300, y: 0 })!;
+    const e = avanzarGesto(g, { x: 0, y: 125 }, sin, libre).etiqueta ?? "";
+    const n = Number(e.replace("°", "").replace(",", "."));
+    expect(n).toBeGreaterThanOrEqual(0);
+    expect(n).toBeLessThan(360);
+  });
+
+  it("al mover con el imán a otros elementos: reparto igual entre dos formas y sus cotas", () => {
+    const g = iniciarMover(base, ["a"], { x: 150, y: 125 })!;
+    // «a» (100 de ancho) entre «b» (400–500) y «c» (700–800): el hueco libre es 100 → 50 a cada lado, «a» en x = 550. Se suelta a 3.
+    const r = avanzarGesto(g, { x: 150 + 453, y: 125 }, sin, imanado);
+    expect(r.cotas?.filter((c) => c.igual).map((c) => c.valor)).toEqual([50, 50]);
+    expect((r.escena.elementos.find((e) => e.id === "a") as { transformacion: { x: number } }).transformacion.x).toBeCloseTo(550, 6);
+  });
+
+  it("las cotas siguen al interruptor del imán y a Ctrl; la etiqueta, no", () => {
+    const g = iniciarMover(base, ["a"], { x: 150, y: 125 })!;
+    const punto = { x: 150 + 453, y: 125 };
+    expect(avanzarGesto(g, punto, sin, imanado).cotas?.length).toBeGreaterThan(0);
+    expect(avanzarGesto(g, punto, sin, { guias: false, zoom: 1 }).cotas).toEqual([]);
+    const conCtrl = avanzarGesto(g, punto, { ...sin, ctrl: true }, imanado);
+    expect(conCtrl.cotas).toEqual([]);
+    expect(conCtrl.etiqueta).toMatch(/^X /);
+  });
+
+  it("la tolerancia del reparto sigue al zoom (en píxeles de pantalla)", () => {
+    const g = iniciarMover(base, ["a"], { x: 150, y: 125 })!;
+    // A 20 unidades del reparto (x = 550): con zoom 0,25 el umbral es de 24 unidades y se pega; con zoom 4 (1,5) no.
+    const cerca = { x: 150 + 450 - 20, y: 125 };
+    const x = (r: ReturnType<typeof avanzarGesto>): number => (r.escena.elementos.find((e) => e.id === "a") as { transformacion: { x: number } }).transformacion.x;
+    expect(x(avanzarGesto(g, cerca, sin, { guias: true, zoom: 0.25 }))).toBeCloseTo(550, 6);
+    expect(x(avanzarGesto(g, cerca, sin, { guias: true, zoom: 4 }))).toBeCloseTo(530, 6);
+  });
+
+  it("con Mayús no hay cotas (un eje queda fijo)", () => {
+    const g = iniciarMover(base, ["a"], { x: 150, y: 125 })!;
+    expect(avanzarGesto(g, { x: 600, y: 125 }, { ...sin, shift: true }, imanado).cotas).toEqual([]);
+  });
+
+  it("rendimiento (DW9): con 500 elementos, cada movimiento (imán, reparto, cotas y etiqueta) calcula en menos de 2 ms", () => {
+    const crudas = Array.from({ length: 500 }, (_, i) => forma(`f${i}`, (i % 25) * 140, Math.floor(i / 25) * 90, 100, 60));
+    const grande = escena(...crudas);
+    const g = iniciarMover(grande, ["f0"], { x: 50, y: 30 })!;
+    for (let i = 0; i < 30; i++) avanzarGesto(g, { x: 500 + i, y: 300 }, sin, imanado);
+    const veces = 300;
+    const t0 = performance.now();
+    for (let i = 0; i < veces; i++) avanzarGesto(g, { x: 500 + (i % 40), y: 300 + (i % 7) }, sin, imanado);
+    expect((performance.now() - t0) / veces).toBeLessThan(2);
+  });
+
+  it("no cambia la escena base ni suma nada al historial (el gesto sigue siendo uno)", () => {
+    const g = iniciarMover(base, ["a"], { x: 150, y: 125 })!;
+    avanzarGesto(g, { x: 600, y: 125 }, sin, imanado);
+    expect(g.base).toBe(base);
+  });
+});
+
 describe("lazo de selección (Y15)", () => {
   // Centros: a (125,125), b (325,125), c (625,425).
   const e = escena(forma("a", 100, 100, 50, 50), forma("b", 300, 100, 50, 50), forma("c", 600, 400, 50, 50));
