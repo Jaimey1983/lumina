@@ -39,6 +39,16 @@ export {
 export { crearHijo, crearHijoEn, DISTANCIA_HIJO_POR_DEFECTO, LADO_HIJO_TECLADO, type ResultadoCrearHijo } from './hijo.js';
 export { conectarEnCadena, filtrarFormasParaCadena, ordenEspacialParaCadena, ordenParaCadena } from './cadena.js';
 export { eliminarRama } from './rama.js';
+export {
+  elementosEnPoligono,
+  invertirSeleccion,
+  puntoEnPoligono,
+  seleccionarIguales,
+  seleccionarPorTipo,
+  seleccionarRama,
+  unidadesElegibles,
+  type TipoSeleccionable,
+} from './seleccion.js';
 export { aplicarFormato, extraerFormato, type FormatoCopiado, type ResultadoFormato } from './formato.js';
 export {
   cajaDeFragmento,

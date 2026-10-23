@@ -59,7 +59,7 @@ import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, 
 import { PanelAtajos } from "./panel-atajos.js";
 import { DialogoEsquema } from "./dialogo-esquema.js";
 import { esquemaAEscena, type Esquema } from "../esquema-a-escena.js";
-import { depurarSeleccion, ejecutarComando, ordenDeTecla, padreConectorDe, type Comando, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
+import { depurarSeleccion, ejecutarComando, ordenDeTecla, seleccionPorCriterio, padreConectorDe, type Comando, type CriterioSeleccion, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
 import {
   SELECCIONAR,
@@ -105,6 +105,7 @@ import { TextoEnSitio } from "./texto-en-sitio.js";
 import {
   avanzarGesto,
   iniciarMover,
+  iniciarLazo,
   iniciarRecuadro,
   iniciarRedimensionar,
   iniciarRotar,
@@ -114,6 +115,17 @@ import {
 import { ajustarAVentana, desplazar, escenaAPantalla, pantallaAEscena, zoomEn, type Vista } from "./vista.js";
 
 const COLOR_SELECCION = "#2563eb";
+
+/** «N elementos elegidos» (Y15), para el aviso a lectores de pantalla. */
+const textoElegidos = (n: number): string => `${n} ${n === 1 ? "elemento elegido" : "elementos elegidos"}.`;
+const SIN_ELEGIR: Record<CriterioSeleccion, string> = {
+  formas: "No hay formas que elegir.",
+  conectores: "No hay conectores que elegir.",
+  textos: "No hay textos que elegir.",
+  iguales: "Elige una forma para buscar las que son iguales.",
+  invertir: "",
+  rama: "Elige una sola forma para elegir su rama.",
+};
 const COLOR_GUIA = "#db2777";
 const LADO_CUADRICULA = 20;
 const UMBRAL_ARRASTRE_PX = 4;
@@ -299,6 +311,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
   const [atajosAbiertos, setAtajosAbiertos] = useState(false);
   const [esquemaAbierto, setEsquemaAbierto] = useState(false);
+  /** El polígono del lazo mientras se dibuja (Y15). */
+  const [lazo, setLazo] = useState<Punto[] | null>(null);
   const [cursor, setCursor] = useState("default");
   const [anuncio, setAnuncio] = useState("");
   const [, setVersionHistorial] = useState(0);
@@ -900,7 +914,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     } else {
       const bajo = elementoEn(rutas, p, { tolerancia: 6 / v.zoom });
       const nueva = seleccionAlHacerClic(rutas, sel, p, e.shiftKey, v.zoom);
-      if (bajo === undefined) {
+      if (bajo === undefined && e.altKey) {
+        // Alt en un vacío: lazo (Y15). Alt al arrastrar una FORMA es conectar (Y7): ese caso entra por la rama de abajo.
+        gesto = iniciarLazo(actual, p, e.shiftKey, sel);
+      } else if (bajo === undefined) {
         // En el vacío: sin Mayús se limpia la selección; con Mayús se conserva y el recuadro suma.
         if (!e.shiftKey) {
           setSeleccion([]);
@@ -1041,6 +1058,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setEscena(sincronizarConectores(r.escena));
     setGuias(r.guias);
     setRecuadro(r.recuadro ?? null);
+    setLazo(r.lazo ?? null);
     if (r.seleccion) setSeleccion(r.seleccion);
     // Al mover formas se resalta entera la que hay debajo del puntero (sin contar lo que se mueve) y, si al soltar
     // se conectaría (halo de un puerto o Alt), se ve el conector que se crearía. Si no, soltar solo mueve.
@@ -1065,6 +1083,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setFantasmaHijo(null);
     setGuias([]);
     setRecuadro(null);
+    setLazo(null);
     const base = vivo.current.herramienta.tipo === "seleccionar" ? "default" : vivo.current.herramienta.tipo === "texto" ? "text" : "crosshair";
     setCursor(espacio.current ? "grab" : base);
     if (!a || a.modo === "pan") return;
@@ -1154,6 +1173,17 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       }
       return;
     }
+    if (a.gesto?.tipo === "lazo") {
+      // Elegir no es una entrada de historial (DY9): se cierra el gesto sin registrar nada. La selección se recalcula
+      // hasta el punto exacto en que se suelta (la de `vivo` puede ir un movimiento por detrás).
+      const { vista: v } = vivo.current;
+      const r = avanzarGesto(a.gesto, pantallaAEscena(v, aPantalla(e)), { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey }, { guias: false, zoom: v.zoom });
+      historial.current.cancelarGesto();
+      const ids = r.seleccion ?? [];
+      setSeleccion(ids);
+      setAnuncio(a.gesto.puntos.length < 3 ? "El lazo es muy corto: no se cambió la selección." : ids.length === 0 ? "El lazo no abarca nada." : textoElegidos(ids.length));
+      return;
+    }
     let final = vivo.current.escena;
     let anuncioFinal: string | null = null;
     // Soltar una forma sobre el halo de un puerto de otra (o con Alt) las conecta: el movimiento y el conector son UNA entrada de historial.
@@ -1193,9 +1223,15 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setFantasmaHijo(null);
     setGuias([]);
     setRecuadro(null);
+    setLazo(null);
     setPrevia(null);
     fijarObjetivo(null);
     setArrastrandoExtremo(false);
+    if (a?.gesto?.tipo === "lazo" && a.activo) {
+      // Escape (o perder el puntero) cancela el lazo: la selección vuelve a ser la de antes.
+      setSeleccion(a.gesto.inicial);
+      setAnuncio("Lazo cancelado.");
+    }
     if (a?.gesto && a.activo) {
       historial.current.cancelarGesto();
       setEscena(a.gesto.base);
@@ -1392,6 +1428,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         setAtajosAbiertos(false);
         setEsquemaAbierto(true);
         return;
+      case "elegir": {
+        // Selección avanzada (Y15): no cambia la escena ni toca el historial.
+        const { escena: actual, seleccion: sel } = vivo.current;
+        const ids = seleccionPorCriterio(actual, sel, orden.criterio);
+        if (ids.length === 0 && orden.criterio !== "invertir") setAnuncio(SIN_ELEGIR[orden.criterio]);
+        else {
+          setSeleccion(ids);
+          setAnuncio(textoElegidos(ids.length));
+        }
+        svgRef.current?.focus();
+        return;
+      }
       case "copiar-formato":
         iniciarPincel(opciones?.fija === true);
         return;
@@ -1598,6 +1646,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           <CapaConexionPrevia vista={vista} previa={conexionPrevia} />
           <CapaGuias guias={guias} vista={vista} />
           <CapaPrevia previa={previa} vista={vista} />
+          {lazo && lazo.length >= 2 ? (
+            <polygon
+              data-capa="lazo"
+              pointerEvents="none"
+              points={porVista(vista, lazo)}
+              fill={COLOR_SELECCION}
+              fillOpacity={0.08}
+              stroke={COLOR_SELECCION}
+              strokeWidth={1}
+              strokeDasharray="4 3"
+            />
+          ) : null}
           {recuadro ? (
             <rect
               data-capa="recuadro"

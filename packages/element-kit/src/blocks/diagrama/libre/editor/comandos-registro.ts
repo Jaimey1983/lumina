@@ -50,13 +50,17 @@ import {
   GitBranch,
   Link2,
   ListOrdered,
+  BoxSelect,
+  FlipHorizontal2,
+  Shapes,
+  Equal,
   ListTree,
   Undo2,
   Ungroup,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import type { Orden, TeclaEvento } from "./comandos.js";
+import { seleccionPorCriterio, type CriterioSeleccion, type Orden, type TeclaEvento } from "./comandos.js";
 import { formasAOrganizar, type DireccionOrganizar, type ModoOrganizar } from "./organizar-auto.js";
 import { hayConectorConExtremoLibre, lineasElegidas } from "./conectores.js";
 import { esMismaHerramienta, SELECCIONAR, type Herramienta } from "./herramientas.js";
@@ -134,6 +138,18 @@ const tres = (c: ContextoComando): true | string => (c.seleccion.length > 2 ? tr
 const hayGrupo = (c: ContextoComando): true | string =>
   c.escena.elementos.some((e) => e.tipo === "grupo" && c.seleccion.includes(e.id)) ? true : "Elige un grupo";
 
+const hayFormaElegida = (c: ContextoComando): true | string => {
+  const ids = new Set(c.seleccion);
+  const porId = new Map(c.escena.elementos.map((e) => [e.id, e]));
+  const visitar = (id: string): boolean => {
+    const e = porId.get(id);
+    return e?.tipo === "forma" || (e?.tipo === "grupo" && e.hijos.some(visitar));
+  };
+  return [...ids].some(visitar) ? true : "Elige una forma";
+};
+/** «Seleccionar…» (Y15): habilitado si el criterio elegiría algo (invertir, siempre que haya algo elegible). */
+const eligeAlgo = (criterio: CriterioSeleccion, vacio: string) => (c: ContextoComando): true | string => (seleccionPorCriterio(c.escena, c.seleccion, criterio).length > 0 ? true : vacio);
+
 const ctrl = (tecla: string, extra: Omit<Atajo, "tecla" | "ctrl"> = {}): Atajo => ({ tecla, ctrl: true, ...extra });
 const letra = (tecla: string): Atajo => ({ tecla, shift: false, alt: false });
 
@@ -184,6 +200,16 @@ export const ORGANIZAR: readonly DefinicionComando[] = [
   organizar("organizar-arbol-derecha", "Árbol: hacia la derecha", "arbol", "derecha", Network),
   organizar("organizar-arbol-abajo", "Árbol: hacia abajo", "arbol", "abajo", Network),
   organizar("organizar-radial", "Radial", "radial", undefined, Orbit),
+];
+
+/** El desplegable «Seleccionar» (Y15): «Seleccionar todo» es el botón principal y estos, las variantes de su flecha. */
+export const ELEGIR: readonly DefinicionComando[] = [
+  { id: "elegir-formas", etiqueta: "Seleccionar formas", icono: Shapes, grupo: "edicion", orden: { tipo: "elegir", criterio: "formas" }, habilitado: eligeAlgo("formas", "No hay formas que elegir") },
+  { id: "elegir-conectores", etiqueta: "Seleccionar conectores", icono: Spline, grupo: "edicion", orden: { tipo: "elegir", criterio: "conectores" }, habilitado: eligeAlgo("conectores", "No hay conectores que elegir") },
+  { id: "elegir-textos", etiqueta: "Seleccionar textos", icono: Type, grupo: "edicion", orden: { tipo: "elegir", criterio: "textos" }, habilitado: eligeAlgo("textos", "No hay textos que elegir") },
+  { id: "elegir-iguales", etiqueta: "Seleccionar iguales a la elegida", icono: Equal, grupo: "edicion", orden: { tipo: "elegir", criterio: "iguales" }, habilitado: hayFormaElegida },
+  { id: "elegir-invertir", etiqueta: "Invertir selección", icono: FlipHorizontal2, grupo: "edicion", orden: { tipo: "elegir", criterio: "invertir" }, habilitado: (c) => (c.escena.elementos.length > 0 ? true : "No hay nada que elegir") },
+  { id: "elegir-rama", etiqueta: "Seleccionar rama de la elegida", icono: ListTree, grupo: "edicion", orden: { tipo: "elegir", criterio: "rama" }, habilitado: unaForma },
 ];
 
 export const COMANDOS: readonly DefinicionComando[] = [
@@ -278,7 +304,8 @@ export const COMANDOS: readonly DefinicionComando[] = [
       return hayConectorConExtremoLibre(c.escena, c.seleccion) ? true : "El conector no tiene un extremo libre";
     },
   },
-  { id: "seleccionar-todo", etiqueta: "Seleccionar todo", grupo: "edicion", atajos: [ctrl("a")], orden: { tipo: "seleccionar-todo" } },
+  ...ELEGIR,
+  { id: "seleccionar-todo", etiqueta: "Seleccionar todo", icono: BoxSelect, grupo: "edicion", atajos: [ctrl("a")], orden: { tipo: "seleccionar-todo" } },
   { id: "agrupar", etiqueta: "Agrupar", icono: Group, grupo: "edicion", atajos: [ctrl("g", { shift: false })], orden: { tipo: "agrupar" }, habilitado: varios },
   { id: "desagrupar", etiqueta: "Desagrupar", icono: Ungroup, grupo: "edicion", atajos: [ctrl("g", { shift: true })], orden: { tipo: "desagrupar" }, habilitado: hayGrupo },
 

@@ -12,11 +12,15 @@ import {
   eliminar,
   eliminarRama,
   filtrarFormasParaCadena,
+  invertirSeleccion,
   LADO_HIJO_TECLADO,
   mover,
   ordenEspacialParaCadena,
   ordenParaCadena,
   reordenar,
+  seleccionarIguales,
+  seleccionarPorTipo,
+  seleccionarRama,
   type Escena,
   type ModoAlineacion,
   type ModoOrden,
@@ -65,6 +69,29 @@ const unaFormaElegida = (escena: Escena, seleccion: readonly string[]): string |
   return el?.tipo === "forma" ? id : null;
 };
 
+/** Qué elegir con el desplegable «Seleccionar» (Y15). Elegir no cambia la escena ni toca el historial (DY9). */
+export type CriterioSeleccion = "formas" | "conectores" | "textos" | "iguales" | "invertir" | "rama";
+
+/** Los ids que quedan elegidos con un criterio, o `[]` si no hay nada que elegir (entonces la selección no cambia). */
+export function seleccionPorCriterio(escena: Escena, seleccion: readonly string[], criterio: CriterioSeleccion): string[] {
+  switch (criterio) {
+    case "formas":
+      return seleccionarPorTipo(escena, "forma");
+    case "conectores":
+      return seleccionarPorTipo(escena, "linea");
+    case "textos":
+      return seleccionarPorTipo(escena, "texto");
+    case "iguales":
+      return seleccionarIguales(escena, seleccion);
+    case "invertir":
+      return invertirSeleccion(escena, seleccion);
+    case "rama": {
+      const raiz = unaFormaElegida(escena, seleccion);
+      return raiz ? seleccionarRama(escena, raiz) : [];
+    }
+  }
+}
+
 /** Lo que el teclado puede pedir además de los comandos de escena. */
 export type NombreHerramienta = "seleccionar" | "linea" | "flecha" | "texto";
 
@@ -95,7 +122,9 @@ export type Orden =
   /** Organizar automáticamente (Y13): jerárquico, árbol o radial, con dirección. */
   | { tipo: "organizar"; modo: ModoOrganizar; direccion?: DireccionOrganizar }
   /** Pegar esquema (Y14): abre el diálogo que convierte un texto con sangría en un diagrama. */
-  | { tipo: "esquema" };
+  | { tipo: "esquema" }
+  /** Selección avanzada (Y15): por tipo, iguales a la elegida, invertir o la rama de la forma elegida. */
+  | { tipo: "elegir"; criterio: CriterioSeleccion };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cajaDeSeleccion, Historial } from "@lumina/drawing";
-import { avanzarGesto, iniciarMover, iniciarRecuadro, iniciarRedimensionar, iniciarRotar, seleccionAlHacerClic, type Modificadores, type OpcionesGesto } from "./gestos.js";
+import { avanzarGesto, iniciarLazo, iniciarMover, iniciarRecuadro, iniciarRedimensionar, iniciarRotar, seleccionAlHacerClic, type Modificadores, type OpcionesGesto } from "./gestos.js";
 import { escena, forma, getForma, getLinea, grupo, linea } from "./util-pruebas.js";
 
 const sin: Modificadores = { shift: false, alt: false, ctrl: false };
@@ -192,6 +192,57 @@ describe("recuadro de selección", () => {
 
   it("un recuadro vacío no selecciona nada", () => {
     expect(avanzarGesto(iniciarRecuadro(e, { x: 700, y: 10 }, false, []), { x: 900, y: 50 }, sin, libre).seleccion).toEqual([]);
+  });
+});
+
+describe("lazo de selección (Y15)", () => {
+  // Centros: a (125,125), b (325,125), c (625,425).
+  const e = escena(forma("a", 100, 100, 50, 50), forma("b", 300, 100, 50, 50), forma("c", 600, 400, 50, 50));
+  const dibujar = (g: ReturnType<typeof iniciarLazo>, puntos: Array<[number, number]>) => {
+    let r = avanzarGesto(g, { x: puntos[0]![0], y: puntos[0]![1] }, sin, libre);
+    for (const [x, y] of puntos.slice(1)) r = avanzarGesto(g, { x, y }, sin, libre);
+    return r;
+  };
+
+  it("elige lo que tiene el centro dentro del polígono y muestra el polígono que se lleva dibujado", () => {
+    const g = iniciarLazo(e, { x: 80, y: 80 }, false, []);
+    const r = dibujar(g, [[400, 80], [400, 200], [80, 200]]);
+    expect(r.seleccion).toEqual(["a", "b"]);
+    expect(r.lazo?.length).toBe(4);
+    expect(r.escena).toBe(e);
+  });
+
+  it("el polígono acumula los puntos del arrastre (a diferencia de los demás gestos, tiene memoria)", () => {
+    const g = iniciarLazo(e, { x: 80, y: 80 }, false, []);
+    // Un lazo cóncavo en «C»: el centro de «b» queda en la muesca.
+    const r = dibujar(g, [[400, 80], [400, 200], [250, 200], [250, 110], [350, 110], [350, 160], [80, 160]]);
+    expect(r.seleccion).toEqual(["a"]);
+  });
+
+  it("con menos de 3 puntos se ignora: la selección queda como estaba", () => {
+    const g = iniciarLazo(e, { x: 120, y: 120 }, false, ["c"]);
+    expect(avanzarGesto(g, { x: 120, y: 120 }, sin, libre).seleccion).toEqual(["c"]);
+    expect(avanzarGesto(g, { x: 130, y: 130 }, sin, libre).seleccion).toEqual(["c"]);
+  });
+
+  it("con Mayús suma a lo que ya estaba elegido; sin Mayús lo reemplaza", () => {
+    const pts: Array<[number, number]> = [[80, 80], [200, 80], [200, 200], [80, 200]];
+    expect(dibujar(iniciarLazo(e, { x: 80, y: 80 }, true, ["c"]), pts).seleccion).toEqual(["c", "a"]);
+    expect(dibujar(iniciarLazo(e, { x: 80, y: 80 }, false, ["c"]), pts).seleccion).toEqual(["a"]);
+  });
+
+  it("un lazo que no abarca nada deja la selección vacía; los puntos casi iguales no engordan el polígono", () => {
+    const g = iniciarLazo(e, { x: 700, y: 10 }, false, []);
+    const r = dibujar(g, [[900, 10], [900, 50], [900.5, 50.5], [901, 50.9]]);
+    expect(r.seleccion).toEqual([]);
+    expect(r.lazo?.length).toBe(3);
+  });
+
+  it("no cambia la escena ni toca el historial", () => {
+    const h = new Historial();
+    const g = iniciarLazo(e, { x: 80, y: 80 }, false, []);
+    expect(dibujar(g, [[400, 80], [400, 200], [80, 200]]).escena).toBe(e);
+    expect(h.puedeDeshacer).toBe(false);
   });
 });
 

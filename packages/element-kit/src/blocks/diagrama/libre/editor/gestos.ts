@@ -9,6 +9,7 @@ import {
   cajaDeSeleccion,
   elementoEn,
   elementosEn,
+  elementosEnPoligono,
   mover,
   redimensionar,
   rotar,
@@ -40,7 +41,9 @@ export type Gesto =
   | { tipo: "mover"; base: Escena; ids: string[]; inicio: Punto; caja: Caja }
   | { tipo: "redimensionar"; base: Escena; ids: string[]; asa: Asa; inicio: Punto }
   | { tipo: "rotar"; base: Escena; ids: string[]; inicio: Punto; centro: Punto; unico: boolean }
-  | { tipo: "recuadro"; base: Escena; inicio: Punto; previa: string[]; aditivo: boolean };
+  | { tipo: "recuadro"; base: Escena; inicio: Punto; previa: string[]; aditivo: boolean }
+  /** Lazo (Y15): `Alt` + arrastrar en un vacío dibuja un polígono libre; `puntos` crece con el arrastre y `inicial` es la selección de antes. */
+  | { tipo: "lazo"; base: Escena; puntos: Punto[]; inicial: string[]; aditivo: boolean };
 
 export interface ResultadoGesto {
   escena: Escena;
@@ -48,6 +51,8 @@ export interface ResultadoGesto {
   seleccion?: string[];
   guias: Guia[];
   recuadro?: Caja;
+  /** El polígono del lazo hasta ahora (solo el gesto de lazo). */
+  lazo?: Punto[];
 }
 
 const grados = (r: number): number => (r * 180) / Math.PI;
@@ -85,6 +90,10 @@ export function iniciarRotar(base: Escena, seleccion: readonly string[], inicio:
 
 export function iniciarRecuadro(base: Escena, inicio: Punto, aditivo: boolean, seleccionActual: readonly string[]): Gesto {
   return { tipo: "recuadro", base, inicio, previa: aditivo ? [...seleccionActual] : [], aditivo };
+}
+
+export function iniciarLazo(base: Escena, inicio: Punto, aditivo: boolean, seleccionActual: readonly string[]): Gesto {
+  return { tipo: "lazo", base, puntos: [inicio], inicial: [...seleccionActual], aditivo };
 }
 
 // ─── Avance ───────────────────────────────────────────────────────────────────
@@ -166,6 +175,20 @@ function avanzarRecuadro(g: Extract<Gesto, { tipo: "recuadro" }>, p: Punto): Res
   return { escena: g.base, seleccion, guias: [], recuadro };
 }
 
+/** Un punto nuevo del lazo solo se anota si se movió lo suficiente (el polígono no crece sin tope). */
+const SEPARACION_MIN_LAZO = 2;
+const MAX_PUNTOS_LAZO = 2000;
+
+function avanzarLazo(g: Extract<Gesto, { tipo: "lazo" }>, p: Punto): ResultadoGesto {
+  // El lazo es el único gesto con memoria: el polígono es lo que se fue dibujando, no solo el último punto.
+  const ultimo = g.puntos[g.puntos.length - 1];
+  if (!ultimo || (g.puntos.length < MAX_PUNTOS_LAZO && Math.hypot(p.x - ultimo.x, p.y - ultimo.y) >= SEPARACION_MIN_LAZO)) g.puntos.push(p);
+  // Con menos de 3 puntos no hay área: se ignora y la selección queda como estaba.
+  const dentro = elementosEnPoligono(g.base, g.puntos);
+  const seleccion = g.puntos.length < 3 ? g.inicial : g.aditivo ? [...new Set([...g.inicial, ...dentro])] : dentro;
+  return { escena: g.base, seleccion, guias: [], lazo: [...g.puntos] };
+}
+
 export function avanzarGesto(g: Gesto, punto: Punto, mod: Modificadores, opciones: OpcionesGesto): ResultadoGesto {
   switch (g.tipo) {
     case "mover":
@@ -176,6 +199,8 @@ export function avanzarGesto(g: Gesto, punto: Punto, mod: Modificadores, opcione
       return avanzarRotar(g, punto, mod);
     case "recuadro":
       return avanzarRecuadro(g, punto);
+    case "lazo":
+      return avanzarLazo(g, punto);
   }
 }
 
