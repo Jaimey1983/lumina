@@ -197,7 +197,7 @@ Redactada el 2026-10-22, al cerrar la fase B (Y6–Y11 en revisión y mergeadas)
 
 #### Y16a — Reglas y guías arrastrables
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y15 `hecho` (comparte `editor-libre.tsx`).
 - **Alcance — PUEDE tocar:** `packages/drawing/src/operaciones/ajuste.ts` (solo aceptar `guiasUsuario` en `OpcionesAjuste`) + spec, `editor/reglas.ts` (nuevo: marcas «bonitas» 1-2-5 según el zoom) + spec, `editor/reglas-capa.tsx` (nuevo), `editor/comandos-registro.ts` (Vista → Reglas, Quitar guías), `editor/editor-libre.tsx`, `editor/cinta-editor.tsx` (Vista), specs.
 - **Entregable:** **«Reglas»** (Vista, activable): reglas horizontal y vertical con marcas y números en unidades de escena, que siguen al zoom y al desplazamiento. **Arrastrar desde una regla crea una guía** (línea de ancho completo); las guías se **arrastran**, se **quitan** arrastrándolas de vuelta a la regla o con doble clic, y **«Quitar guías»** las borra todas. **Las formas se imantan a las guías** (con `Ctrl` se suspende el imán, como ahora). Máximo 50 guías. **DY9:** viven en el estado del editor, no se guardan en la escena ni van al historial; no salen en la exportación. Pruebas: marcas para cada nivel de zoom (0,25 a 4) sin superponerse ni saltarse; crear, mover, quitar, quitar todas; imán a una guía y `Ctrl` lo suspende; tope de 50; las reglas no tapan el lienzo ni cambian el hit-test; **la exportación no incluye guías**; teclado: el comando de la cinta alterna las reglas.
