@@ -118,7 +118,7 @@ export interface MiniBarraProps extends AccionesDeFormato {
   raizRef: RefObject<HTMLDivElement | null>;
 }
 
-const Separador = (): ReactElement => <span role="separator" aria-orientation="vertical" className="mx-0.5 h-5 w-px shrink-0 bg-border" />;
+const Separador = (): ReactElement => <span aria-hidden="true" className="mx-0.5 h-5 w-px shrink-0 bg-border" />;
 
 /**
  * Barra flotante con los formatos más usados, colocada por `posicionDeMiniBarra`. Nunca roba el foco (DY16): se llega con

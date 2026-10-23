@@ -80,6 +80,7 @@ describe("Y15 — el desplegable «Seleccionar»", () => {
     const m = montar(base());
     fireEvent.click(botonCinta("Seleccionar todo"));
     expect(m.barra()).toBe("4"); // a, b, c y t (d está bloqueado)
+    irAPestana("Inicio"); // al elegir formas la cinta salta sola a «Formato de forma» (Y18)
     fireEvent.click(screen.getByRole("button", { name: "Más selecciones" }));
     const items = await screen.findAllByRole("menuitem");
     expect(items.map((i) => i.textContent)).toEqual(["Seleccionar formas", "Seleccionar conectores", "Seleccionar textos", "Seleccionar iguales a la elegida", "Invertir selección", "Seleccionar rama de la elegida"]);
@@ -132,6 +133,7 @@ describe("Y15 — el desplegable «Seleccionar»", () => {
   it("invertir con todo elegido deja la selección vacía", async () => {
     const m = montar(base());
     fireEvent.click(botonCinta("Seleccionar todo"));
+    irAPestana("Inicio"); // al elegir formas la cinta salta sola a «Formato de forma» (Y18)
     fireEvent.click(screen.getByRole("button", { name: "Más selecciones" }));
     fireEvent.click((await screen.findAllByRole("menuitem"))[4] as HTMLElement);
     expect(m.barra()).toBe("0");
