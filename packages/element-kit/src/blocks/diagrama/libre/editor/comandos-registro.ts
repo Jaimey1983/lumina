@@ -51,6 +51,8 @@ import {
   Link2,
   ListOrdered,
   BoxSelect,
+  Ruler,
+  Eraser,
   FlipHorizontal2,
   Shapes,
   Equal,
@@ -80,6 +82,10 @@ export interface ContextoComando {
   formatoGuardado?: boolean;
   /** El pincel está en uso: una vez, o fijo hasta salir (Y12b). */
   pincel?: "una-vez" | "fijo" | null;
+  /** Las reglas están a la vista (Y16a). */
+  reglas?: boolean;
+  /** Cuántas guías hay puestas (Y16a). */
+  guias?: number;
 }
 
 /** Una combinación de teclas. `ctrl` vale por Ctrl o ⌘ y es exacto (por defecto, sin Ctrl); `shift` y `alt` solo se exigen si se indican. */
@@ -330,6 +336,8 @@ export const COMANDOS: readonly DefinicionComando[] = [
   { id: "acercar", etiqueta: "Acercar", icono: ZoomIn, grupo: "vista", orden: { tipo: "zoom", factor: 1.25 }, habilitado: (c) => (c.zoom < ZOOM_MAX ? true : "Ya está al zoom máximo") },
   { id: "ajustar-vista", etiqueta: "Ajustar a la ventana", icono: Maximize, grupo: "vista", orden: { tipo: "ajustar-vista" } },
   { id: "cuadricula", etiqueta: "Cuadrícula", icono: Grid3x3, grupo: "vista", orden: { tipo: "cuadricula" }, activo: (c) => c.cuadricula },
+  { id: "reglas", etiqueta: "Reglas", icono: Ruler, grupo: "vista", orden: { tipo: "reglas" }, activo: (c) => c.reglas === true },
+  { id: "quitar-guias", etiqueta: "Quitar guías", icono: Eraser, grupo: "vista", orden: { tipo: "quitar-guias" }, habilitado: (c) => ((c.guias ?? 0) > 0 ? true : "No hay guías") },
   { id: "imantar", etiqueta: "Imantar a otros elementos", icono: Magnet, grupo: "vista", orden: { tipo: "imantar" }, activo: (c) => c.imantar },
   { id: "buscar-comando", etiqueta: "Buscar comando", icono: Search, grupo: "vista", atajos: [ctrl("k")], orden: { tipo: "buscar-comando" } },
   { id: "atajos", etiqueta: "Atajos de teclado", icono: Keyboard, grupo: "vista", atajos: [{ tecla: "?", shift: true }], orden: { tipo: "ver-atajos" } },

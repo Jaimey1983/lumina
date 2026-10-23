@@ -35,6 +35,8 @@ export interface OpcionesGesto {
   guias: boolean;
   /** Zoom actual: las tolerancias están en píxeles de pantalla. */
   zoom: number;
+  /** Las guías que puso la persona (Y16a): imantan aunque `guias` esté apagado. Ctrl lo suspende, como todo el imán. */
+  guiasUsuario?: ReadonlyArray<{ orientacion: "vertical" | "horizontal"; posicion: number }>;
 }
 
 export type Gesto =
@@ -98,6 +100,8 @@ export function iniciarLazo(base: Escena, inicio: Punto, aditivo: boolean, selec
 
 // ─── Avance ───────────────────────────────────────────────────────────────────
 
+const hayGuiasUsuario = (o: OpcionesGesto): boolean => (o.guiasUsuario?.length ?? 0) > 0;
+
 function avanzarMover(g: Extract<Gesto, { tipo: "mover" }>, p: Punto, mod: Modificadores, o: OpcionesGesto): ResultadoGesto {
   let dx = p.x - g.inicio.x;
   let dy = p.y - g.inicio.y;
@@ -107,13 +111,14 @@ function avanzarMover(g: Extract<Gesto, { tipo: "mover" }>, p: Punto, mod: Modif
     else dx = 0;
   }
   let guias: Guia[] = [];
-  if (!mod.ctrl && (o.guias || o.cuadricula)) {
+  if (!mod.ctrl && (o.guias || o.cuadricula || hayGuiasUsuario(o))) {
     const movida: Caja = { ...g.caja, x: g.caja.x + dx, y: g.caja.y + dy };
     const r = ajustarCaja(movida, g.base, {
       excluir: g.ids,
       guias: o.guias,
       umbral: 6 / o.zoom,
       ...(o.cuadricula ? { cuadricula: o.cuadricula } : {}),
+      ...(hayGuiasUsuario(o) ? { guiasUsuario: o.guiasUsuario } : {}),
     });
     if (!mod.shift || dx !== 0) dx += r.dx;
     if (!mod.shift || dy !== 0) dy += r.dy;
@@ -128,7 +133,7 @@ function avanzarRedimensionar(g: Extract<Gesto, { tipo: "redimensionar" }>, p: P
   let guias: Guia[] = [];
   const marco = marcoDeSeleccion(g.base, g.ids);
   // Solo se imanta cuando el marco no está girado: con giro, el borde arrastrado no es horizontal ni vertical.
-  if (marco && marco.rotacion === 0 && !mod.ctrl && (o.guias || o.cuadricula)) {
+  if (marco && marco.rotacion === 0 && !mod.ctrl && (o.guias || o.cuadricula || hayGuiasUsuario(o))) {
     const mueveX = g.asa.includes("e") || g.asa.includes("w");
     const mueveY = g.asa.includes("n") || g.asa.includes("s");
     const arrastrado: Punto = {
@@ -140,6 +145,7 @@ function avanzarRedimensionar(g: Extract<Gesto, { tipo: "redimensionar" }>, p: P
       guias: o.guias,
       umbral: 6 / o.zoom,
       ...(o.cuadricula ? { cuadricula: o.cuadricula } : {}),
+      ...(hayGuiasUsuario(o) ? { guiasUsuario: o.guiasUsuario } : {}),
     });
     if (mueveX) dx = r.punto.x - arrastrado.x;
     if (mueveY) dy = r.punto.y - arrastrado.y;

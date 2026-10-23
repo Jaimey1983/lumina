@@ -40,7 +40,7 @@ const PESTANA_DE_COMANDO: Array<[RegExp, string]> = [
   [/^(Conectar en cadena|Esquema…)$/, "Insertar"],
   [/^Insertar /, "Insertar"],
   [/^(Organizar automáticamente|Agrupar|Desagrupar|Traer al frente|Subir un nivel|Bajar un nivel|Enviar al fondo|Alinear |Centrar |Distribuir )/, "Organizar"],
-  [/^(Alejar|Acercar|Ajustar a la ventana|Cuadrícula|Imantar a otros elementos|Atajos de teclado)$/, "Vista"],
+  [/^(Alejar|Acercar|Ajustar a la ventana|Cuadrícula|Imantar a otros elementos|Reglas|Quitar guías|Atajos de teclado)$/, "Vista"],
 ];
 
 /** Abre una pestaña de la cinta por su nombre. */

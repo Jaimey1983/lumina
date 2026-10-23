@@ -58,6 +58,8 @@ import { NOMBRE_MODO, organizarAuto, type ModoOrganizar } from "./organizar-auto
 import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, type EscribirDatos, type Lectura } from "./portapapeles.js";
 import { PanelAtajos } from "./panel-atajos.js";
 import { DialogoEsquema } from "./dialogo-esquema.js";
+import { CapaGuiasUsuario, ReglaEje, GROSOR_REGLA } from "./reglas-capa.js";
+import { agregarGuia, guiaCerca, guiasParaImantar, MAX_GUIAS, moverGuia, quitarGuia, type GuiaUsuario, type OrientacionGuia } from "./reglas.js";
 import { esquemaAEscena, type Esquema } from "../esquema-a-escena.js";
 import { depurarSeleccion, ejecutarComando, ordenDeTecla, seleccionPorCriterio, padreConectorDe, type Comando, type CriterioSeleccion, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, type ContextoComando } from "./comandos-registro.js";
@@ -311,6 +313,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
   const [atajosAbiertos, setAtajosAbiertos] = useState(false);
   const [esquemaAbierto, setEsquemaAbierto] = useState(false);
+  /** Reglas y guías (Y16a, DY9): viven en el editor; no van a la escena, al historial ni a la exportación. */
+  const [reglas, setReglas] = useState(false);
+  const [guiasUsuario, setGuiasUsuario] = useState<GuiaUsuario[]>([]);
+  /** La guía que se está llevando de vuelta a la regla (se quita al soltar) y la nueva que se arrastra desde una regla. */
+  const [guiaQuitando, setGuiaQuitando] = useState<number | null>(null);
+  const [guiaPrevia, setGuiaPrevia] = useState<{ orientacion: OrientacionGuia; posicion: number } | null>(null);
+  const [medidaVentana, setMedidaVentana] = useState({ ancho: 1000, alto: 600 });
+  const arrastreGuia = useRef<{ cancelar: () => void } | null>(null);
   /** El polígono del lazo mientras se dibuja (Y15). */
   const [lazo, setLazo] = useState<Punto[] | null>(null);
   const [cursor, setCursor] = useState("default");
@@ -372,8 +382,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const ayudaId = useId();
 
   // Estado «actual» para los manejadores de eventos (evita cierres con valores viejos).
-  const vivo = useRef({ escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso });
-  vivo.current = { escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso };
+  const guiasActivas = reglas ? guiasUsuario : [];
+  const vivo = useRef({ escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso, guias: guiasActivas });
+  vivo.current = { escena, seleccion, vista, cuadricula, imantar, herramienta, enCurso, guias: guiasActivas };
 
   // El panel de propiedades detiene la propagación del teclado; Ctrl+K debe abrir el buscador igual desde sus campos.
   useEffect(() => {
@@ -590,10 +601,104 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
 
   /** Punto de la escena con el imán de las guías y de la cuadrícula (Ctrl lo suspende). */
   const imantarPunto = (p: Punto, ctrl: boolean, excluir?: readonly string[]): Punto => {
-    const { escena: actual, vista: v, cuadricula: grilla, imantar: iman } = vivo.current;
-    if (ctrl || (!iman && !grilla)) return p;
-    return ajustarPunto(p, actual, { guias: iman, umbral: 6 / v.zoom, ...(excluir ? { excluir } : {}), ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}) }).punto;
+    const { escena: actual, vista: v, cuadricula: grilla, imantar: iman, guias: deUsuario } = vivo.current;
+    if (ctrl || (!iman && !grilla && deUsuario.length === 0)) return p;
+    return ajustarPunto(p, actual, {
+      guias: iman,
+      umbral: 6 / v.zoom,
+      ...(excluir ? { excluir } : {}),
+      ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}),
+      ...(deUsuario.length > 0 ? { guiasUsuario: guiasParaImantar(deUsuario) } : {}),
+    }).punto;
   };
+
+  /** Las guías de la persona para el imán de un gesto (vacío si las reglas están ocultas). */
+  const opcionesGuiasUsuario = (): { guiasUsuario?: ReturnType<typeof guiasParaImantar> } => (vivo.current.guias.length > 0 ? { guiasUsuario: guiasParaImantar(vivo.current.guias) } : {});
+
+  /**
+   * Arrastrar una guía: nueva (`id === null`, desde una regla) o existente (desde su marcador o desde el lienzo). Una guía nueva
+   * solo se crea si se suelta sobre el lienzo; una existente se quita llevándola de vuelta hacia su regla. Escape cancela.
+   */
+  const iniciarArrastreGuia = (orientacion: OrientacionGuia, id: number | null, e: { button: number }): void => {
+    if (e.button !== 0) return;
+    arrastreGuia.current?.cancelar();
+    const original = id === null ? null : (vivo.current.guias.find((g) => g.id === id)?.posicion ?? null);
+    const medir = (ev: { clientX: number; clientY: number }): { dentro: boolean; haciaRegla: boolean; posicion: number } | null => {
+      const r = svgRef.current?.getBoundingClientRect();
+      if (!r) return null;
+      const p = pantallaAEscena(vivo.current.vista, { x: ev.clientX - r.left, y: ev.clientY - r.top });
+      const dentro = ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom;
+      return { dentro, haciaRegla: orientacion === "vertical" ? ev.clientX < r.left : ev.clientY < r.top, posicion: orientacion === "vertical" ? p.x : p.y };
+    };
+    const limpiar = (): void => {
+      window.removeEventListener("pointermove", mover);
+      window.removeEventListener("pointerup", soltar);
+      window.removeEventListener("pointercancel", cancelar);
+      window.removeEventListener("keydown", tecla, true);
+      setGuiaQuitando(null);
+      setGuiaPrevia(null);
+      arrastreGuia.current = null;
+    };
+    const cancelar = (): void => {
+      if (id !== null && original !== null) setGuiasUsuario((g) => moverGuia(g, id, original));
+      limpiar();
+    };
+    const mover = (ev: PointerEvent): void => {
+      const m = medir(ev);
+      if (!m) return;
+      if (id === null) {
+        setGuiaPrevia(m.dentro ? { orientacion, posicion: Math.round(m.posicion) } : null);
+        return;
+      }
+      setGuiaQuitando(m.haciaRegla ? id : null);
+      if (m.dentro) setGuiasUsuario((g) => moverGuia(g, id, m.posicion));
+    };
+    const soltar = (ev: PointerEvent): void => {
+      const m = medir(ev);
+      limpiar();
+      if (!m) return;
+      if (id === null) {
+        if (!m.dentro) return;
+        const nuevas = agregarGuia(vivo.current.guias, orientacion, m.posicion);
+        if (!nuevas) setAnuncio(`Ya hay ${MAX_GUIAS} guías: quita alguna para poner otra.`);
+        else {
+          setGuiasUsuario(nuevas);
+          setAnuncio(`Guía ${orientacion === "vertical" ? "vertical" : "horizontal"} en ${Math.round(m.posicion)}.`);
+        }
+        return;
+      }
+      if (m.haciaRegla) {
+        setGuiasUsuario((g) => quitarGuia(g, id));
+        setAnuncio("Guía quitada.");
+      } else if (m.dentro) setGuiasUsuario((g) => moverGuia(g, id, m.posicion));
+    };
+    const tecla = (ev: globalThis.KeyboardEvent): void => {
+      if (ev.key !== "Escape") return;
+      ev.preventDefault();
+      ev.stopPropagation(); // el Escape cancela el arrastre de la guía y nada más (no cierra el editor)
+      cancelar();
+    };
+    window.addEventListener("pointermove", mover);
+    window.addEventListener("pointerup", soltar);
+    window.addEventListener("pointercancel", cancelar);
+    window.addEventListener("keydown", tecla, true);
+    arrastreGuia.current = { cancelar };
+  };
+  useEffect(() => () => arrastreGuia.current?.cancelar(), []);
+
+  // El tamaño de la ventana, para saber hasta dónde llegan las marcas de las reglas.
+  useEffect(() => {
+    if (!reglas) return;
+    const actualizar = (): void => setMedidaVentana(medir());
+    actualizar();
+    window.addEventListener("resize", actualizar);
+    const observador = typeof ResizeObserver !== "undefined" ? new ResizeObserver(actualizar) : null;
+    if (ventanaRef.current) observador?.observe(ventanaRef.current);
+    return () => {
+      window.removeEventListener("resize", actualizar);
+      observador?.disconnect();
+    };
+  }, [reglas, medir]);
 
   /** Termina la línea de varios puntos. (Un doble clic no suma un punto de más: cada clic ya descarta los repetidos.) */
   const terminarLinea = (puntos: readonly Punto[], flecha: boolean): void => {
@@ -884,6 +989,12 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       return;
     }
     const p = pantallaAEscena(v, pantalla);
+    // Una guía se agarra en el lienzo solo si no hay ningún elemento debajo: los elementos mandan (el hit-test no cambia).
+    const guiaBajo = guiaCerca(vivo.current.guias, p, 5 / v.zoom);
+    if (guiaBajo && elementoEn(escenaConRutas(actual), p, { tolerancia: 6 / v.zoom, entrarEnGrupos: true }) === undefined) {
+      iniciarArrastreGuia(guiaBajo.orientacion, guiaBajo.id, e);
+      return;
+    }
     const ctxAsasHijo: ContextoAsasHijo = { escena: actual, herramienta: h, seleccion: sel, gestoEnCurso: false, edicionAbierta: edicionRef.current !== null };
     const padreAsas = formaConAsasHijo(ctxAsasHijo);
     const ladoHijo = padreAsas ? asaHijoEn(actual, padreAsas, p, v.zoom, tipoPuntero.current === "touch") : null;
@@ -973,7 +1084,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       const sobreAgarre = lineaSel ? agarreEn(actual, lineaSel, puntoEscena, v.zoom) : null;
       const m = lineaSel ? null : marcoDeSeleccion(escenaConRutas(actual), sel);
       const asa: TipoAsa | null = m ? asaEn(m, puntoEscena, v.zoom) : null;
-      setCursor(espacio.current ? "grab" : sobreAgarre ? "pointer" : asa && m ? cursorDeAsa(asa, m.rotacion) : "default");
+      const guiaSobre = asa || sobreAgarre ? null : guiaCerca(vivo.current.guias, puntoEscena, 5 / v.zoom);
+      setCursor(espacio.current ? "grab" : sobreAgarre ? "pointer" : asa && m ? cursorDeAsa(asa, m.rotacion) : guiaSobre ? (guiaSobre.orientacion === "vertical" ? "col-resize" : "row-resize") : "default");
       return;
     }
     if (a.modo === "pan") {
@@ -1053,7 +1165,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       a.gesto,
       pantallaAEscena(v, pantalla),
       { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey },
-      { guias: iman, zoom: v.zoom, ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}) },
+      { guias: iman, zoom: v.zoom, ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}), ...opcionesGuiasUsuario() },
     );
     setEscena(sincronizarConectores(r.escena));
     setGuias(r.guias);
@@ -1193,7 +1305,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       // La escena de `vivo` es la de la última pintura de React, que con el ratón rápido puede ir un movimiento por detrás:
       // se recalcula el arrastre hasta el punto exacto en que se suelta, y de ahí salen la posición final y los puertos.
       final = sincronizarConectores(
-        avanzarGesto(a.gesto, puntoSuelta, { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey }, { guias: iman, zoom: v.zoom, ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}) }).escena,
+        avanzarGesto(a.gesto, puntoSuelta, { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey }, { guias: iman, zoom: v.zoom, ...(grilla ? { cuadricula: LADO_CUADRICULA } : {}), ...opcionesGuiasUsuario() }).escena,
       );
       setEscena(final);
       const i = intencionDeArrastre(final, puntoSuelta, v.zoom, a.gesto.ids, a.agarrada, e.altKey, radioDePuertoPx(tipoPuntero.current));
@@ -1245,6 +1357,13 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const alDobleClic = (e: RatonReact<SVGSVGElement>): void => {
     if (pincelRef.current) return; // con el pincel, el doble clic no abre el texto
     const { herramienta: h, enCurso: curso, escena: actual, vista: v } = vivo.current;
+    // Doble clic sobre una guía (sin elementos debajo): se quita.
+    const guiaDoble = guiaCerca(vivo.current.guias, pantallaAEscena(v, aPantalla(e)), 5 / v.zoom);
+    if (guiaDoble && elementoEn(escenaConRutas(actual), pantallaAEscena(v, aPantalla(e)), { tolerancia: 6 / v.zoom, entrarEnGrupos: true }) === undefined) {
+      setGuiasUsuario((g) => quitarGuia(g, guiaDoble.id));
+      setAnuncio("Guía quitada.");
+      return;
+    }
     // Con la herramienta de línea, el doble clic cierra la línea de varios puntos.
     if (h.tipo === "linea") {
       if (curso) terminarLinea(curso, h.flecha);
@@ -1428,6 +1547,15 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         setAtajosAbiertos(false);
         setEsquemaAbierto(true);
         return;
+      case "reglas":
+        setReglas(!reglas);
+        setAnuncio(reglas ? "Reglas ocultas." : "Reglas activadas.");
+        return;
+      case "quitar-guias":
+        setGuiasUsuario([]);
+        setAnuncio("Guías quitadas.");
+        svgRef.current?.focus();
+        return;
       case "elegir": {
         // Selección avanzada (Y15): no cambia la escena ni toca el historial.
         const { escena: actual, seleccion: sel } = vivo.current;
@@ -1534,7 +1662,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const cantidad = escena.elementos.filter((x) => x.tipo !== "grupo").length;
   const puedeDeshacer = historial.current.puedeDeshacer;
   const puedeRehacer = historial.current.puedeRehacer;
-  const contextoCinta: ContextoComando = { escena, seleccion, herramienta, puedeDeshacer, puedeRehacer, zoom: vista.zoom, cuadricula, imantar, formatoGuardado: hayFormato, pincel: pincel === null ? null : pincel.fijo ? "fijo" : "una-vez" };
+  const contextoCinta: ContextoComando = { escena, seleccion, herramienta, puedeDeshacer, puedeRehacer, zoom: vista.zoom, cuadricula, imantar, formatoGuardado: hayFormato, pincel: pincel === null ? null : pincel.fijo ? "fijo" : "una-vez", reglas, guias: guiasUsuario.length };
 
   // Al elegir un conector se muestra su pestaña contextual, pero solo si el usuario estaba en Inicio: no le quita la pestaña a quien trabaja en otra.
   const [pestana, setPestana] = useState(PESTANA_INICIO);
@@ -1603,6 +1731,15 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       />
 
       <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      {reglas ? (
+        <div className="flex shrink-0">
+          <div aria-hidden="true" className="shrink-0 border-b border-r bg-muted" style={{ width: GROSOR_REGLA, height: GROSOR_REGLA }} />
+          <ReglaEje eje="x" vista={vista} longitud={medidaVentana.ancho} guias={guiasUsuario} onNuevaGuia={(o, e) => iniciarArrastreGuia(o, null, e)} onMoverGuia={(g, e) => iniciarArrastreGuia(g.orientacion, g.id, e)} onQuitarGuia={(g) => { setGuiasUsuario((x) => quitarGuia(x, g.id)); setAnuncio("Guía quitada."); }} />
+        </div>
+      ) : null}
+      <div className="flex min-h-0 min-w-0 flex-1">
+      {reglas ? <ReglaEje eje="y" vista={vista} longitud={medidaVentana.alto} guias={guiasUsuario} onNuevaGuia={(o, e) => iniciarArrastreGuia(o, null, e)} onMoverGuia={(g, e) => iniciarArrastreGuia(g.orientacion, g.id, e)} onQuitarGuia={(g) => { setGuiasUsuario((x) => quitarGuia(x, g.id)); setAnuncio("Guía quitada."); }} /> : null}
       <div ref={ventanaRef} className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-muted/50">
         <svg
           ref={svgRef}
@@ -1645,6 +1782,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           <CapaDestino escena={escena} vista={vista} formaId={objetivoPuerto?.elementoId ?? destinoArrastre} modo={objetivoPuerto ? "conecta" : destinoModo} />
           <CapaConexionPrevia vista={vista} previa={conexionPrevia} />
           <CapaGuias guias={guias} vista={vista} />
+          {reglas ? <CapaGuiasUsuario guias={guiasUsuario} vista={vista} quitando={guiaQuitando} previa={guiaPrevia} /> : null}
           <CapaPrevia previa={previa} vista={vista} />
           {lazo && lazo.length >= 2 ? (
             <polygon
@@ -1684,6 +1822,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
             onCancelar={cancelarEdicion}
           />
         ) : null}
+      </div>
+      </div>
       </div>
       <ZonaRedimensionable etiqueta="Propiedades" clave="dibujo-panel">
         {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} />}

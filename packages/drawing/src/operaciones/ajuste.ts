@@ -23,6 +23,11 @@ export interface OpcionesAjuste {
   excluir?: Iterable<string>;
   /** Ajustar a los bordes y centros de los demás elementos y de la escena (por defecto sí). */
   guias?: boolean;
+  /**
+   * Guías que puso la persona (Y16a): una línea vertical (`posicion` = x) o horizontal (`posicion` = y) de lado a lado.
+   * Imantan siempre, aunque `guias` esté apagado (esas son las de los elementos); quien no quiera el imán (Ctrl) no las pasa.
+   */
+  guiasUsuario?: ReadonlyArray<{ orientacion: 'vertical' | 'horizontal'; posicion: number }>;
 }
 
 export interface ResultadoAjuste {
@@ -78,6 +83,21 @@ export function ajustarCaja(caja: Caja, escena: Escena, opciones: OpcionesAjuste
     const cy = mejorCorreccion(marcasY(caja), referencias.flatMap(marcasY), umbral);
     if (cy !== undefined) {
       dy = cy;
+      porGuiaY = true;
+    }
+  }
+
+  // Las guías de la persona compiten con las de los elementos: gana la más cercana (a igualdad, la de la persona).
+  const deUsuario = opciones.guiasUsuario ?? [];
+  if (deUsuario.length > 0) {
+    const ux = mejorCorreccion(marcasX(caja), deUsuario.filter((u) => u.orientacion === 'vertical').map((u) => u.posicion), umbral);
+    if (ux !== undefined && (!porGuiaX || Math.abs(ux) <= Math.abs(dx))) {
+      dx = ux;
+      porGuiaX = true;
+    }
+    const uy = mejorCorreccion(marcasY(caja), deUsuario.filter((u) => u.orientacion === 'horizontal').map((u) => u.posicion), umbral);
+    if (uy !== undefined && (!porGuiaY || Math.abs(uy) <= Math.abs(dy))) {
+      dy = uy;
       porGuiaY = true;
     }
   }
