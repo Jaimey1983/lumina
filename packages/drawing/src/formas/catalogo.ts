@@ -27,6 +27,23 @@ export interface ParametroForma {
 
 export type ValoresParametros = Record<string, number>;
 
+/** Borde de la forma al que pertenece un asa de ajuste; el asa se dibuja un poco hacia dentro de ese borde. */
+export type LadoAsaAjuste = 'arriba' | 'abajo' | 'izquierda' | 'derecha';
+
+/**
+ * Un asa amarilla de ajuste (Y20): dónde está, en coordenadas locales, el valor de un parámetro y cómo se vuelve valor un punto
+ * arrastrado. Es del catálogo (código), no de la escena. `clave` es la de un parámetro o `radio` (el `estilo.radio` del rectángulo).
+ */
+export interface AsaAjuste {
+  clave: string;
+  etiqueta: string;
+  lado: LadoAsaAjuste;
+  /** Punto local del asa. `valores` trae los parámetros ya resueltos y, además, `radio` (el del estilo). */
+  punto: (ancho: number, alto: number, valores: ValoresParametros) => Punto;
+  /** Valor que corresponde a un punto local; sin acotar (lo acota quien lo usa). */
+  valor: (ancho: number, alto: number, local: Punto) => number;
+}
+
 export interface DefinicionForma {
   id: TipoForma;
   nombre: string;
@@ -34,6 +51,8 @@ export interface DefinicionForma {
   /** Tamaño con el que se inserta con un clic. */
   tamano: { ancho: number; alto: number };
   parametros: readonly ParametroForma[];
+  /** Asas de ajuste que se arrastran en el lienzo (Y20); ninguna si la forma no tiene nada que ajustar (o no tiene asa fiel, como la estrella). */
+  asasAjuste?: readonly AsaAjuste[];
   /** Vértices, si la forma es un polígono (lo usan el trazado y las pruebas). */
   poligono?: (ancho: number, alto: number, p: ValoresParametros) => Punto[];
   /** Path SVG (`d`). `radio` solo lo usa el rectángulo. */
@@ -192,6 +211,26 @@ function geometriaCallout(ancho: number, alto: number, p: ValoresParametros) {
   return { cuerpoAlto, r, x1, x2 };
 }
 
+// ─── Asas de ajuste (Y20) ─────────────────────────────────────────────────────
+
+/** Asa sobre el borde de arriba o de abajo cuya posición es una fracción del ancho, medida desde `desde`. */
+const asaHorizontal = (clave: string, etiqueta: string, lado: 'arriba' | 'abajo', desde: 'izquierda' | 'derecha'): AsaAjuste => ({
+  clave,
+  etiqueta,
+  lado,
+  punto: (ancho, alto, v) => ({ x: (desde === 'izquierda' ? v[clave] ?? 0 : 1 - (v[clave] ?? 0)) * ancho, y: lado === 'arriba' ? 0 : alto }),
+  valor: (ancho, _alto, l) => (desde === 'izquierda' ? l.x / ancho : 1 - l.x / ancho),
+});
+
+/** Asa del grosor del cuerpo de una flecha: la altura del borde de arriba del cuerpo, `(1 − cuerpo) / 2` del alto. */
+const asaCuerpo = (lado: 'izquierda' | 'derecha' | 'arriba', x: (ancho: number) => number): AsaAjuste => ({
+  clave: 'cuerpo',
+  etiqueta: 'Grosor del cuerpo',
+  lado,
+  punto: (ancho, alto, v) => ({ x: x(ancho), y: ((1 - (v.cuerpo ?? 0)) / 2) * alto }),
+  valor: (_ancho, alto, l) => 1 - (2 * l.y) / alto,
+});
+
 // ─── Catálogo ─────────────────────────────────────────────────────────────────
 
 function poligonal(
@@ -207,6 +246,15 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'basicas',
     tamano: { ancho: 160, alto: 100 },
     parametros: [],
+    asasAjuste: [
+      {
+        clave: 'radio',
+        etiqueta: 'Esquinas',
+        lado: 'arriba',
+        punto: (ancho, alto, v) => ({ x: Math.min(v.radio ?? 0, Math.min(ancho, alto) / 2), y: 0 }),
+        valor: (_ancho, _alto, l) => l.x,
+      },
+    ],
     poligono: (ancho, alto) => [{ x: 0, y: 0 }, { x: ancho, y: 0 }, { x: ancho, y: alto }, { x: 0, y: alto }],
     trazado: (ancho, alto, _p, radio) => trazadoRectanguloRedondeado(ancho, alto, radio),
     rectanguloTexto: cajaCompleta,
@@ -218,6 +266,15 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'basicas',
     tamano: { ancho: 160, alto: 100 },
     parametros: [{ clave: 'esquina', etiqueta: 'Redondeo', min: 0.05, max: 0.5, porDefecto: 0.2, paso: 0.05 }],
+    asasAjuste: [
+      {
+        clave: 'esquina',
+        etiqueta: 'Redondeo',
+        lado: 'arriba',
+        punto: (ancho, alto, v) => ({ x: (v.esquina ?? 0) * Math.min(ancho, alto), y: 0 }),
+        valor: (ancho, alto, l) => l.x / Math.min(ancho, alto),
+      },
+    ],
     trazado: (ancho, alto, p) => trazadoRectanguloRedondeado(ancho, alto, p.esquina * Math.min(ancho, alto)),
     rectanguloTexto: (ancho, alto, p) => {
       const m = (p.esquina * Math.min(ancho, alto)) * 0.3;
@@ -298,6 +355,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'basicas',
     tamano: { ancho: 160, alto: 100 },
     parametros: [PARAMETRO_INCLINACION],
+    asasAjuste: [asaHorizontal('inclinacion', 'Inclinación', 'arriba', 'izquierda')],
     poligono: (ancho, alto, p) => [{ x: p.inclinacion * ancho, y: 0 }, { x: (1 - p.inclinacion) * ancho, y: 0 }, { x: ancho, y: alto }, { x: 0, y: alto }],
     rectanguloTexto: (ancho, alto, p) => ({ x: p.inclinacion * ancho, y: 0, ancho: (1 - 2 * p.inclinacion) * ancho, alto }),
     puertos: (ancho, alto, p) => [
@@ -313,6 +371,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'basicas',
     tamano: { ancho: 160, alto: 100 },
     parametros: [PARAMETRO_INCLINACION],
+    asasAjuste: [asaHorizontal('inclinacion', 'Inclinación', 'abajo', 'izquierda')],
     // Base ancha arriba y angosta abajo (el embudo); el texto sigue derecho.
     poligono: (ancho, alto, p) => [{ x: 0, y: 0 }, { x: ancho, y: 0 }, { x: (1 - p.inclinacion) * ancho, y: alto }, { x: p.inclinacion * ancho, y: alto }],
     rectanguloTexto: (ancho, alto, p) => ({ x: p.inclinacion * ancho, y: 0, ancho: (1 - 2 * p.inclinacion) * ancho, alto }),
@@ -329,6 +388,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'diagramas',
     tamano: { ancho: 160, alto: 90 },
     parametros: [PARAMETRO_INCLINACION],
+    asasAjuste: [asaHorizontal('inclinacion', 'Inclinación', 'arriba', 'izquierda')],
     poligono: (ancho, alto, p) => [{ x: p.inclinacion * ancho, y: 0 }, { x: ancho, y: 0 }, { x: (1 - p.inclinacion) * ancho, y: alto }, { x: 0, y: alto }],
     rectanguloTexto: (ancho, alto, p) => ({ x: p.inclinacion * ancho, y: 0, ancho: (1 - 2 * p.inclinacion) * ancho, alto }),
     puertos: (ancho, alto, p) => [
@@ -358,6 +418,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'basicas',
     tamano: { ancho: 150, alto: 100 },
     parametros: [{ clave: 'inclinacion', etiqueta: 'Puntas laterales', min: 0.1, max: 0.45, porDefecto: 0.25, paso: 0.05 }],
+    asasAjuste: [asaHorizontal('inclinacion', 'Puntas laterales', 'arriba', 'izquierda')],
     poligono: (ancho, alto, p) => [
       { x: p.inclinacion * ancho, y: 0 },
       { x: (1 - p.inclinacion) * ancho, y: 0 },
@@ -375,6 +436,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'basicas',
     tamano: { ancho: 120, alto: 120 },
     parametros: [{ clave: 'corte', etiqueta: 'Corte de esquinas', min: 0.1, max: 0.45, porDefecto: 0.29, paso: 0.01 }],
+    asasAjuste: [asaHorizontal('corte', 'Corte de esquinas', 'arriba', 'izquierda')],
     poligono: (ancho, alto, p) => {
       const c = p.corte;
       return [
@@ -435,6 +497,15 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'basicas',
     tamano: { ancho: 110, alto: 110 },
     parametros: [{ clave: 'grosor', etiqueta: 'Grosor de brazos', min: 0.2, max: 0.5, porDefecto: 0.33, paso: 0.01 }],
+    asasAjuste: [
+      {
+        clave: 'grosor',
+        etiqueta: 'Grosor de brazos',
+        lado: 'arriba',
+        punto: (ancho, _alto, v) => ({ x: ((1 - (v.grosor ?? 0)) / 2) * ancho, y: 0 }),
+        valor: (ancho, _alto, l) => 1 - (2 * l.x) / ancho,
+      },
+    ],
     poligono: (ancho, alto, p) => {
       const a = (1 - p.grosor) / 2;
       const b = 1 - a;
@@ -465,6 +536,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'flechas',
     tamano: { ancho: 160, alto: 80 },
     parametros: [PARAMETRO_CABEZA, PARAMETRO_CUERPO],
+    asasAjuste: [asaHorizontal('cabeza', 'Largo de la punta', 'arriba', 'derecha'), asaCuerpo('izquierda', () => 0)],
     poligono: flechaDerecha,
     rectanguloTexto: (ancho, alto, p) => ({ x: 0, y: ((1 - p.cuerpo) / 2) * alto, ancho: (1 - p.cabeza) * ancho, alto: p.cuerpo * alto }),
     puertos: (ancho, alto, p) => {
@@ -478,6 +550,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'flechas',
     tamano: { ancho: 160, alto: 80 },
     parametros: [PARAMETRO_CABEZA, PARAMETRO_CUERPO],
+    asasAjuste: [asaHorizontal('cabeza', 'Largo de la punta', 'arriba', 'izquierda'), asaCuerpo('derecha', (ancho) => ancho)],
     poligono: (ancho, alto, p) => flechaDerecha(ancho, alto, p).map((pt) => espejar(pt, ancho)),
     rectanguloTexto: (ancho, alto, p) => ({ x: p.cabeza * ancho, y: ((1 - p.cuerpo) / 2) * alto, ancho: (1 - p.cabeza) * ancho, alto: p.cuerpo * alto }),
     puertos: (ancho, alto, p) => {
@@ -493,6 +566,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'flechas',
     tamano: { ancho: 180, alto: 80 },
     parametros: [{ ...PARAMETRO_CABEZA, max: 0.45, porDefecto: 0.25 }, PARAMETRO_CUERPO],
+    asasAjuste: [asaHorizontal('cabeza', 'Largo de la punta', 'arriba', 'izquierda'), asaCuerpo('arriba', (ancho) => ancho / 2)],
     poligono: (ancho, alto, p) => {
       const x0 = p.cabeza * ancho;
       const x1 = (1 - p.cabeza) * ancho;
@@ -525,6 +599,15 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'diagramas',
     tamano: { ancho: 100, alto: 130 },
     parametros: [{ clave: 'tapa', etiqueta: 'Altura de la tapa', min: 0.1, max: 0.4, porDefecto: 0.2, paso: 0.05 }],
+    asasAjuste: [
+      {
+        clave: 'tapa',
+        etiqueta: 'Altura de la tapa',
+        lado: 'izquierda',
+        punto: (_ancho, alto, v) => ({ x: 0, y: (v.tapa ?? 0) * alto }),
+        valor: (_ancho, alto, l) => l.y / alto,
+      },
+    ],
     trazado: (ancho, alto, p) => {
       const ry = (p.tapa * alto) / 2;
       const silueta = `M${par(0, ry)} A${par(ancho / 2, ry)} 0 0 1 ${par(ancho, ry)} L${par(ancho, alto - ry)} A${par(ancho / 2, ry)} 0 0 1 ${par(0, alto - ry)} Z`;
@@ -557,6 +640,7 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'diagramas',
     tamano: { ancho: 50, alto: 160 },
     parametros: [{ clave: 'grosor', etiqueta: 'Grosor', min: 0.04, max: 0.3, porDefecto: 0.12, paso: 0.01 }],
+    asasAjuste: [asaHorizontal('grosor', 'Grosor', 'arriba', 'derecha')],
     trazado: (ancho, alto, p) => trazadoLlave(ancho, alto, p.grosor),
     // El texto de una llave va a su lado: se ofrece la zona a la derecha de la punta.
     rectanguloTexto: (ancho, alto) => ({ x: ancho * 0.55, y: alto * 0.35, ancho: ancho * 0.45, alto: alto * 0.3 }),
@@ -572,6 +656,16 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     grupo: 'diagramas',
     tamano: { ancho: 180, alto: 110 },
     parametros: [{ clave: 'cola', etiqueta: 'Posición de la cola', min: 0.1, max: 0.7, porDefecto: 0.25, paso: 0.05 }],
+    asasAjuste: [
+      {
+        clave: 'cola',
+        etiqueta: 'Posición de la cola',
+        lado: 'abajo',
+        punto: (ancho, alto, v) => ({ x: geometriaCallout(ancho, alto, { cola: v.cola ?? 0 }).x1, y: alto }),
+        // La cola no pasa del recorte de `geometriaCallout`: el asa tampoco.
+        valor: (ancho, alto, l) => Math.min(l.x / ancho, (ancho - geometriaCallout(ancho, alto, { cola: 0 }).r - 0.14 * ancho) / ancho),
+      },
+    ],
     trazado: (ancho, alto, p) => {
       const { cuerpoAlto, r, x1, x2 } = geometriaCallout(ancho, alto, p);
       return [

@@ -55,6 +55,8 @@ import { NodosSvg } from "../dibujo-render.js";
 import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, centroDelMarco, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
 import { BuscadorComandos } from "./buscador-comandos.js";
 import { CintaEditor, PESTANA_CONECTOR, PESTANA_FORMATO, PESTANA_INICIO, type OpcionesOrden } from "./cinta-editor.js";
+import { asaAjusteEn, formaConAsasAjuste } from "./asas-ajuste.js";
+import { CapaAsasAjuste } from "./asas-ajuste-capa.js";
 import { circulosDeAsasHijo, miniBarraVisible } from "./mini-barra.js";
 import { datosDeFormato, enfocarMiniBarra, MiniBarra } from "./mini-barra-capa.js";
 import { alternarTexto, hayFormato as hayQueFormatear } from "./propiedades.js";
@@ -113,6 +115,7 @@ import { ZonaRedimensionable } from "./zona-redimensionable.js";
 import { TextoEnSitio } from "./texto-en-sitio.js";
 import {
   avanzarGesto,
+  iniciarAjuste,
   iniciarMover,
   iniciarLazo,
   iniciarRecuadro,
@@ -1035,6 +1038,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       iniciarArrastreGuia(guiaBajo.orientacion, guiaBajo.id, e);
       return;
     }
+    // Un asa amarilla de ajuste (Y20) gana sobre mover la forma y sobre las asas de redimensionar y de girar.
+    const formaAj = formaConAsasAjuste({ escena: actual, herramienta: h, seleccion: sel, gestoEnCurso: false, edicionAbierta: edicionRef.current !== null, menuAbierto, pincel: false });
+    const asaAj = formaAj ? asaAjusteEn(formaAj, p, v, tipoPuntero.current === "touch") : null;
+    if (formaAj && asaAj) {
+      const ajuste = iniciarAjuste(actual, formaAj.id, asaAj.clave, p);
+      if (ajuste) {
+        setGestoEnCurso(true);
+        accion.current = { modo: "gesto", gesto: ajuste, activo: false, origen: pantalla, ultimo: pantalla, shift: e.shiftKey };
+        capturar(e);
+        return;
+      }
+    }
     const ctxAsasHijo: ContextoAsasHijo = { escena: actual, herramienta: h, seleccion: sel, gestoEnCurso: false, edicionAbierta: edicionRef.current !== null };
     const padreAsas = formaConAsasHijo(ctxAsasHijo);
     const ladoHijo = padreAsas ? asaHijoEn(actual, padreAsas, p, v.zoom, tipoPuntero.current === "touch") : null;
@@ -1124,8 +1139,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       const sobreAgarre = lineaSel ? agarreEn(actual, lineaSel, puntoEscena, v.zoom) : null;
       const m = lineaSel ? null : marcoDeSeleccion(escenaConRutas(actual), sel);
       const asa: TipoAsa | null = m ? asaEn(m, puntoEscena, v.zoom) : null;
-      const guiaSobre = asa || sobreAgarre ? null : guiaCerca(vivo.current.guias, puntoEscena, 5 / v.zoom);
-      setCursor(espacio.current ? "grab" : sobreAgarre ? "pointer" : asa && m ? cursorDeAsa(asa, m.rotacion) : guiaSobre ? (guiaSobre.orientacion === "vertical" ? "col-resize" : "row-resize") : "default");
+      const formaAj = formaConAsasAjuste({ escena: actual, herramienta: h, seleccion: sel, gestoEnCurso: false, edicionAbierta: edicionRef.current !== null, menuAbierto, pincel: false });
+      const sobreAjuste = formaAj ? asaAjusteEn(formaAj, puntoEscena, v, tipoPuntero.current === "touch") !== null : false;
+      const guiaSobre = asa || sobreAgarre || sobreAjuste ? null : guiaCerca(vivo.current.guias, puntoEscena, 5 / v.zoom);
+      setCursor(espacio.current ? "grab" : sobreAgarre || sobreAjuste ? "pointer" : asa && m ? cursorDeAsa(asa, m.rotacion) : guiaSobre ? (guiaSobre.orientacion === "vertical" ? "col-resize" : "row-resize") : "default");
       return;
     }
     if (a.modo === "pan") {
@@ -1888,6 +1905,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
             </g>
           ) : null}
           <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} />
+          <CapaAsasAjuste forma={formaConAsasAjuste({ escena, herramienta, seleccion, gestoEnCurso, edicionAbierta: edicion !== null, menuAbierto, pincel: pincel !== null })} vista={vista} tactil={tactil} />
           <CapaAsasHijo escena={escena} vista={vista} herramienta={herramienta} seleccion={seleccion} gestoEnCurso={gestoEnCurso} edicionAbierta={edicion !== null} tactil={tactil} />
           {fantasmaGaleria ? <CapaFantasmaForma vista={vista} forma={fantasmaGaleria.forma} centro={fantasmaGaleria.centro} /> : null}
           {fantasmaHijo ? <CapaFantasmaHijo escena={escena} vista={vista} padreId={fantasmaHijo.padreId} centro={fantasmaHijo.centro} /> : null}
