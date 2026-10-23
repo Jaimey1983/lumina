@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { escenaASvg, resolverColor, type Escena, type Forma, type Linea, type ModoColor } from "@lumina/drawing";
-import { ESTILOS_COMANDOS } from "./comandos-registro.js";
+import { ESTILOS_COMANDOS, estadoComando } from "./comandos-registro.js";
 import { ESTILOS_FORMA, aplicarEstiloForma, estiloActivo, estiloPorId } from "./estilos-forma.js";
 import { hojasEditables, type Hoja } from "./propiedades.js";
 import { escena, forma, grupo, linea } from "./util-pruebas.js";
@@ -151,6 +151,14 @@ describe("aplicarEstiloForma", () => {
 });
 
 describe("los comandos «Estilo: …»", () => {
+  it("habilitados con algo editable elegido (forma, texto o conector); con el motivo si no hay nada", () => {
+    const e = escena(forma("a", 0, 0), texto("t", 0, 200), linea("l", [[0, 400], [50, 400]]), forma("b", 300, 0, 100, 60, { bloqueado: true }));
+    const ctx = (sel: string[]) => ({ escena: e, seleccion: sel, herramienta: { tipo: "seleccionar" as const }, puedeDeshacer: false, puedeRehacer: false, zoom: 1, cuadricula: false, imantar: true });
+    const c = ESTILOS_COMANDOS[0]!;
+    for (const sel of [["a"], ["t"], ["l"]]) expect(estadoComando(c, ctx(sel)).habilitado, sel.join()).toBe(true);
+    for (const sel of [[], ["b"]]) expect(estadoComando(c, ctx(sel))).toMatchObject({ habilitado: false, motivo: "Elige una forma, un texto o un conector" });
+  });
+
   it("hay uno por estilo, en el grupo «formato», sin atajo y sin menú contextual", () => {
     expect(ESTILOS_COMANDOS).toHaveLength(12);
     ESTILOS_COMANDOS.forEach((c, i) => {

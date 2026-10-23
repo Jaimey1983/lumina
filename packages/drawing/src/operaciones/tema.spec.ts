@@ -94,6 +94,12 @@ describe('aplicarPaleta', () => {
     expect(l(parcial, 'rB').estilo.contorno.color).toBe('#1E3A8A');
     expect(l(parcial, 'a12').estilo).toEqual(l(arbol(), 'a12').estilo);
   });
+  it('un conector bloqueado no cambia de color', () => {
+    const e = escena(forma('R', 0, 0), forma('A', 200, 0), linea('c', [[0, 0], [10, 10]], { origen: { elementoId: 'R', puerto: 1 }, destino: { elementoId: 'A', puerto: 3 }, bloqueado: true }));
+    const r = aplicarPaleta(e, ['R', 'A'], PALETA);
+    expect(l(r, 'c').estilo).toEqual(l(e, 'c').estilo);
+    expect(f(r, 'A').estilo.contorno.color).toBe('#0D9488');
+  });
   it('los grupos aportan sus formas', () => {
     const e = escena(forma('a', 0, 0), forma('b', 200, 0), grupo('g', ['a', 'b']));
     const r = aplicarPaleta(e, ['g'], PALETA);
