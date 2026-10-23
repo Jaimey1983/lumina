@@ -11,12 +11,12 @@ const base = (): Escena =>
   escena(forma("a", 0, 0), forma("b", 200, 0, 100, 60, { forma: "rombo" }), forma("c", 400, 0, 100, 60, { bloqueado: true }), linea("l", [[0, 200], [100, 200]]), grupo("g", ["a", "b"]));
 
 describe("Y19 — los comandos «Cambiar a …»", () => {
-  it("hay uno por cada forma del catálogo, con su etiqueta, sin atajo y en el grupo «formas»", () => {
+  it("hay uno por cada forma del catálogo, con su etiqueta, sin atajo y en el grupo «edicion» (el de «formas» es solo el de insertar)", () => {
     expect(CAMBIAR_FORMA.map((c) => c.id)).toEqual(TIPOS_FORMA.map((t) => `cambiar-forma-${t}`));
     for (const t of TIPOS_FORMA) {
       const c = def(`cambiar-forma-${t}`);
       expect(c.etiqueta).toBe(`Cambiar a ${FORMAS[t].nombre}`);
-      expect(c.grupo).toBe("formas");
+      expect(c.grupo).toBe("edicion");
       expect(c.atajos).toBeUndefined();
       expect(textoDeAtajo(c)).toBeUndefined();
       expect(c.orden).toEqual({ tipo: "cambiar-forma", forma: t });

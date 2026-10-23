@@ -52,7 +52,7 @@ describe("Y17 — clic derecho", () => {
     expect(document.querySelector("[data-menu-contextual]")?.getAttribute("data-menu-contextual")).toBe("forma");
     expect(m.barra()).toBe("1");
     expect(ids).toEqual(["cortar", "copiar", "pegar", "duplicar", "eliminar", "crear-hijo", "crear-hermano", "agrupar", "desagrupar", "bloquear", "ocultar"]);
-    expect(submenus).toEqual(["Orden"]); // sin «Alinear»: hay una sola forma
+    expect(submenus).toEqual(["Cambiar forma", "Orden"]); // sin «Alinear»: hay una sola forma
     const agrupar = raiz.querySelector("[data-comando=agrupar]") as HTMLElement;
     expect(agrupar.getAttribute("aria-disabled")).toBe("true");
     expect(agrupar.textContent).toContain("Elige 2 o más elementos");
@@ -74,7 +74,7 @@ describe("Y17 — clic derecho", () => {
     m.derecho(50, 150); // sobre «a», que ya estaba elegida
     const { raiz, submenus } = await m.menu();
     expect(m.barra()).toBe("2");
-    expect(submenus).toEqual(["Orden", "Alinear"]);
+    expect(submenus).toEqual(["Cambiar forma", "Orden", "Alinear"]);
     fireEvent.click(raiz.querySelector("[data-comando=duplicar]") as HTMLElement);
     await vi.waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
     expect(m.onCambio).toHaveBeenCalledTimes(1);

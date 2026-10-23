@@ -207,7 +207,7 @@ const hayFormaEditable = (c: ContextoComando): boolean => formasEditables(c).len
 const cambiarForma = (forma: TipoForma): DefinicionComando => ({
   id: `cambiar-forma-${forma}`,
   etiqueta: `Cambiar a ${FORMAS[forma].nombre}`,
-  grupo: "formas",
+  grupo: "edicion", // «formas» son los de insertar (una prueba exige 22)
   orden: { tipo: "cambiar-forma", forma },
   habilitado: (c) => {
     const formas = formasEditables(c);
