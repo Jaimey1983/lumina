@@ -4,7 +4,7 @@
 
 ### Etapa Y — El editor libre se usa como una herramienta de ofimática, no como un lienzo suelto
 
-Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes. IDs `Y0–Y17` (la letra `X` está reservada a `X.n` fuera de hoja de ruta; no se usa `L`, `N`, `Q`). Redactada el 2026-10-20 a pedido del dueño, a partir de un análisis de mejoras de interactividad, apartado gráfico y configuración del editor de la etapa W.
+Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes. IDs `Y0–Y24` y siguientes (la letra `X` está reservada a `X.n` fuera de hoja de ruta; no se usa `L`, `N`, `Q`). Redactada el 2026-10-20 a pedido del dueño, a partir de un análisis de mejoras de interactividad, apartado gráfico y configuración del editor de la etapa W.
 
 **Por qué existe:** el editor de W5–W8 funciona (selección, transformar, conectores que siguen a las formas, panel de propiedades), pero (1) **conectar dos formas exige cambiar a la herramienta Línea y apuntar a un puerto de 14 px**; (2) la barra superior es **una sola fila de ~30 botones solo con iconos**, sin jerarquía ni etiquetas; (3) faltan lo básico de productividad (copiar/pegar, organizar automático, buscador de comandos). El público docente viene de Word, PowerPoint y Storyline: espera una **cinta por pestañas** y que **arrastrar una caja sobre otra la conecte**.
 
@@ -19,7 +19,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 - **DY5. Un gesto, una entrada de historial y una confirmación al bloque** (DW7), también cuando un gesto crea forma + conector (hijo rápido, conectar al soltar). Es el caso de prueba obligatorio de cada ficha de la fase B.
 - **DY6. Contenedores y carriles quedan para después de W10** (decisión del dueño, 2026-10-20): cambian el modelo (`padre`/`hijos` en `tipos.ts`) y se evalúan con `diagrama` ya migrado. Ninguna ficha de esta etapa los incluye.
 
-**Orden y concurrencia:** `Y1` (paquete `@lumina/ui`) es independiente y puede correr con cualquier otra. `Y2–Y11` tocan todas `editor-libre.tsx`: **van en serie, no en paralelo** (Regla 10). **`W9` (exportar) también toca el editor:** no corre en paralelo con `Y2`; si `Y2` llega primero, `W9` agrega su botón en la pestaña Exportar. La fase C (Y12a–Y17) se redactó al cerrar la fase B; las fases D–F quedan abajo como índice y **se redactan al cerrar la fase anterior** (Regla 10).
+**Orden y concurrencia:** `Y1` (paquete `@lumina/ui`) es independiente y puede correr con cualquier otra. `Y2–Y11` tocan todas `editor-libre.tsx`: **van en serie, no en paralelo** (Regla 10). **`W9` (exportar) también toca el editor:** no corre en paralelo con `Y2`; si `Y2` llega primero, `W9` agrega su botón en la pestaña Exportar. La fase C (Y12a–Y17) se redactó al cerrar la fase B; la **raíz de la fase D** se redactó al cerrar la C (sus fichas Y18–Y24, de a una); las fases E–F quedan abajo como índice y **se redactan al cerrar la fase anterior** (Regla 10).
 
 **Fuera de alcance de toda la etapa:** contenedores y carriles (DY6); colaboración en tiempo real; importar `.vsdx`; migrar o borrar el bloque `diagrama` (eso es W10).
 
@@ -221,12 +221,59 @@ Redactada el 2026-10-22, al cerrar la fase B (Y6–Y11 en revisión y mergeadas)
 
 ---
 
+## Fase D — Edición directa y apartado gráfico (raíz)
+
+Redactada el 2026-10-23, al cerrar la fase C (Y12a–Y17 en revisión y mergeadas en `main`). **Esta raíz no es un paso con ID** (igual que el encabezado de la fase C): fija el marco, lo que el código ya tiene, las decisiones y el orden. **Los pasos son Y18–Y24 y todavía no están redactados**: según la Regla 10, cada ficha se redacta completa (alcance, entregable, pruebas y comando de verificación) **antes** de asignarse, de a una y en el orden de abajo, en su propio commit `chore(tablero): …`.
+
+- **Operador de la raíz:** Claude Code. **Estado:** redactada. **Precondición:** fase C en `main` (Y17 incluida).
+- **Alcance — PUEDE tocar:** `docs/tablero/etapa-Y.md` y `AGENTS.md` (solo la fila del índice). **No toca código.**
+- **Entregable:** esta sección y la fila del índice. **Cierre:** ninguno.
+
+**Qué busca la fase:** hoy, para cambiar el aspecto de una forma hay que mirar el panel de la derecha, y casi todo lo gráfico es «relleno + contorno + sombra». La fase D acerca la edición a la forma (mini barra, asas, cambiar de forma sin rehacerla) y amplía el apartado gráfico (estilos y temas, colores a mano, más rellenos, mejor texto).
+
+**Lo que ya existe y se reutiliza (no se rehace):** `cambiarEstilo`, `actualizar` y `ParcheVisual` (`@lumina/drawing/src/operaciones/edicion.ts`); el panel (`propiedades-panel.tsx`, `propiedades.ts`: `fijarRelleno`, `fijarSombra`, `fijarContorno`, `fijarOpacidad`, `valorComun`) y `CampoColor` con sus pastillas (`propiedades-campos.tsx`); `COLORES_DEL_TEMA` (ocho tokens `var(--…)`) y `PALETAS_DIAGRAMA` (diez paletas, `diagrama-temas.ts`); el catálogo de formas con sus `parametros` (`formas/catalogo.ts`); `puertosForma`, `ladoDePuerto` y `sincronizarConectores` (conectores); `marcoDeSeleccion` y las asas (`asas.ts`); el registro de comandos y la cinta (Y2), el menú contextual (Y17), `useFocoAtrapado` (Y5); `texto-en-sitio.tsx` y `lineasDeTexto` (`render/texto.ts`).
+
+**Hechos del código que condicionan las fichas (comprobados, no supuestos):**
+- **No existe la pestaña «Formato de forma».** La cinta solo tiene la contextual «Formato de conector» (`PESTANA_CONECTOR`); el comentario de cabecera de `cinta-editor.tsx` la promete «con la fase D (estilos y mini barra)» y DY1 la nombra. Una pestaña sin contenido no se muestra.
+- **Los `parametros` de las formas no se editan en ninguna parte.** El panel cambia relleno, contorno, opacidad, sombra, esquinas (`estilo.radio`) y tipografía, pero ningún control toca `Forma.parametros`. Unas veinte formas del catálogo tienen uno o dos (`esquina`, `inclinacion`, `grosor`, `cabeza`, `cuerpo`, `corte`, `tapa`, `cola`…), con `min`, `max`, `porDefecto` y `paso`. Las asas de ajuste serán la **primera** interfaz para ellos, y el catálogo no dice **dónde** va cada asa ni cómo el arrastre se convierte en valor: eso hay que declararlo por forma.
+- **Un conector guarda el índice del puerto, no su lado.** Cada forma tiene sus puertos en otro número y orden (las básicas, los cuatro cardinales; otras, más o en otras posiciones). `puntoDePuerto` con un índice inexistente **cae en el primer puerto** sin avisar: cambiar la forma de algo con conectores puede moverlos o torcerlos si no se reasignan (por el lado: `ladoDePuerto`).
+- **Colores:** el modelo acepta hex **o** `var(--token)` (DW5, `esColorValido`) y descarta cualquier otra cosa. No hay colores recientes ni cuentagotas, y `EyeDropper` no se usa en ningún lugar del repo. `localStorage` sí se usa (el ancho del panel, `zona-redimensionable.tsx`), siempre protegido.
+- **Relleno y efectos:** `Relleno` es `ninguno | solido | degradado` (lineal, **dos** colores y un ángulo) y `Sombra` es `{ color, desenfoque, dx, dy }`. El renderizador los dibuja con ids internos únicos (`idNuevo`): un relleno o efecto nuevo toca `tipos.ts`, `normalizar.ts`, `render.ts` **y el exportador** (W9).
+- **Texto:** `EstiloTexto` es `{ tamano, negrita, cursiva, subrayado, alineacionH, alineacionV, color, fuente }`; no hay viñetas ni autoajuste. **El texto no se puede medir sin DOM:** `lineasDeTexto` usa un ancho medio por carácter (0,5 o 0,55 del tamaño). «Que la forma crezca al escribir» y «autoajuste» serán, en la capa pura, **estimaciones**; jsdom tampoco mide.
+
+**Decisiones de la fase (DY11–DY15). Las fija esta redacción; si el dueño no las objeta antes de tomar cada ficha, rigen:**
+- **DY11. Un solo camino para cambiar el aspecto.** La mini barra, los estilos predefinidos, la pestaña «Formato de forma» y el panel llaman a **las mismas funciones puras** (`cambiarEstilo`, `actualizar`). Un estilo predefinido es un **`ParcheVisual`**, no un tipo nuevo del modelo. Cada acción es **una** entrada de historial y una confirmación (DY5).
+- **DY12. Estilos y temas con tokens `var(--…)`** salvo los acentos de color: así siguen al modo claro y oscuro y la exportación ya los resuelve (DW5). Un estilo predefinido no fija blanco ni negro como hex.
+- **DY13. El texto se mide solo con estimación en la capa pura.** Si una ficha mide con DOM, es **solo en el editor**, con tope, y **nunca entra al modelo**: lo que se guarda es el tamaño resultante. «La forma crece al escribir» es **opcional por forma** (nunca por sorpresa: DY4 vale también aquí).
+- **DY14. Solo Y23 e Y24 pueden tocar el modelo** (`tipos.ts`, `normalizar.ts`, `render.ts`, exportación). Cada una declara el campo nuevo, su **valor por defecto que no cambia nada de lo viejo** y una prueba de que **una escena guardada antes se renderiza y se exporta idéntica** (Regla 7). Las demás fichas no agregan campos. **Pregunta abierta para el dueño:** si prefiere no ampliar el modelo ahora, Y23 se reduce a la interfaz de lo que ya existe (degradado con ángulo y sombra) y las viñetas de Y24 se difieren.
+- **DY15. Las preferencias del docente (colores recientes, último estilo usado) son del navegador** (`localStorage`, protegido, sin romper si falta) y **no viajan con el dibujo**. Se reevalúan en la fase E (Preferencias, Y26).
+
+**Los siete pasos (por redactar), en orden y con lo que cada uno resuelve:**
+
+| ID | Paso | Se apoya en | Toca el modelo | Riesgo a revisar al redactarla |
+|---|---|---|---|---|
+| **Y18** | **Mini barra flotante** junto a la selección y **pestaña contextual «Formato de forma»** (DY1) | `marcoDeSeleccion`, campos del panel, Y17 (posición junto a lo elegido) | No | Que no tape la forma ni choque con las asas, el menú de Y17 o las asas «+» de Y8; accesible (flechas, foco) y que **no aparezca durante un gesto** |
+| **Y19** | **Cambiar forma sin perder nada** (por la cinta y el menú contextual) | `actualizar(..., { forma })`, `ladoDePuerto` | No | **Reasignar los puertos por lado** para no torcer conectores; qué pasa con `parametros` de la forma vieja; texto, estilo y giro intactos; una entrada de historial |
+| **Y20** | **Asas amarillas de ajuste** (radio, punta, grosor) | `parametros` del catálogo, `asas.ts` | No (declara por forma dónde va el asa: catálogo) | Cuántas formas cubre la v1 (las de **un** parámetro) y cuáles quedan para el panel; conversión arrastre → valor con zoom, giro y `Mayús` |
+| **Y21** | **Estilos predefinidos y temas** (galería de estilos de forma y paletas de diagrama) | `ParcheVisual`, `COLORES_DEL_TEMA`, `PALETAS_DIAGRAMA` | No | Separar «estilo de una forma» de «tema de todo el diagrama»; tokens (DY12); que aplicar sea **una** entrada de historial y sea reversible |
+| **Y22** | **Colores recientes y cuentagotas** en el cuadro de color | `CampoColor`, `localStorage` (DY15) | No | `EyeDropper` **solo existe en Chromium**: detectarlo y ocultar el botón donde falte; el resultado es hex; tope de recientes; sin romper sin `localStorage` |
+| **Y23** | **Relleno y efectos ampliados** (candidatos: degradado radial y con más paradas, patrones, otro efecto de sombra) | `Relleno`, `Sombra`, render y exportador | **Sí (DY14)** | Paridad de exportación; normalización estricta; escena vieja idéntica; mutaciones en `normalizar.ts` |
+| **Y24** | **Texto:** autoajuste, viñetas y que la forma crezca al escribir | `EstiloTexto`, `lineasDeTexto`, `texto-en-sitio.tsx` | **Sí, solo las viñetas (DY14)** | La estimación sin DOM (DY13); el crecimiento no debe empujar ni pisar vecinas ni mover conectores; una entrada de historial por escritura confirmada |
+
+**Orden y concurrencia de la fase D:** Y18 → Y19 → Y20 → Y21 → Y22 → Y23 → Y24, **en serie** (todas tocan `editor-libre.tsx`, `comandos-registro.ts` o la cinta). Las partes **puras** —la reasignación de puertos de Y19, los estilos como parches de Y21, el modelo de Y23 y la estimación de texto de Y24— van en archivos disjuntos del editor y pueden adelantarse en paralelo **solo si** su ficha se parte en «pura» e «integración» y las dos no tocan el mismo archivo (Regla 10). Y18 va primera porque crea la pestaña «Formato de forma» que Y21 e Y22 usan. Cada ficha lleva **mutaciones y comprobación en Chromium real**, como en las fases B y C.
+
+**Verificación común (Y18–Y24), salvo que la ficha diga otra cosa:** la de la fase C (`pnpm --filter @lumina/drawing build && pnpm --filter @lumina/drawing test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && npx tsc --noEmit -p packages/element-kit`); Y23 e Y24 suman la prueba de **escena vieja idéntica** y, si tocan el exportador, la de exportación.
+
+**Fuera de alcance de la fase D:** contenedores y carriles (DY6); táctil, modo oscuro del editor, biblioteca de iconos y minimapa (fase F); ajustes de página, preferencias persistentes y guardado automático (fase E); pegar un dibujo como bloque vivo en el slide (DY10).
+
+---
+
 ## Fases D–F — Índice (fichas por redactar al cerrar la fase anterior, Regla 10)
 
 | Fase | Contenido | IDs reservados |
 |---|---|---|
 | **C — Productividad** | **Redactada (Y12a–Y17), ver arriba.** Portapapeles y copiar formato · organizar automáticamente · pegar esquema · selección avanzada · reglas, guías, medidas y espaciado igual · menú contextual | Y12a, Y12b, Y13, Y14, Y15, Y16a, Y16b, Y17 |
-| **D — Edición directa y apartado gráfico** | Mini barra flotante junto a la selección · Cambiar forma sin perder nada · Asas amarillas de ajuste (radio, punta, grosor) · Estilos predefinidos y temas (tokens `var(--…)`, DW5) · Colores recientes y cuentagotas · Relleno y efectos ampliados · Texto (autoajuste, viñetas, la forma crece al escribir) | Y18–Y24 |
+| **D — Edición directa y apartado gráfico** | **Raíz redactada (2026-10-23), ver arriba; las fichas Y18–Y24 se redactan una a una antes de asignarlas.** Mini barra flotante junto a la selección y pestaña «Formato de forma» · Cambiar forma sin perder nada · Asas amarillas de ajuste (radio, punta, grosor) · Estilos predefinidos y temas (tokens `var(--…)`, DW5) · Colores recientes y cuentagotas · Relleno y efectos ampliados · Texto (autoajuste, viñetas, la forma crece al escribir) | Y18–Y24 |
 | **E — Configuración y entorno** | Ajustes de página (tamaño, orientación, fondo, márgenes) · Preferencias y valores por defecto (guardadas por docente) · Panel de capas ampliado (bloquear, ocultar, buscar, virtualizar, DW9) · Guardado automático con indicador e historial visible · Modo prueba (ver como el alumno) | Y25–Y29 |
 | **F — Ampliaciones** | Táctil (pellizcar, dos dedos, objetivos de 44 px) · Modo oscuro del editor · Biblioteca de iconos mínima (`lucide`) · Hipervínculos y notas por elemento · Minimapa · Accesibilidad avanzada | Y30+ |
 | **Contenedores y carriles** | **Después de W10** (DY6). Ficha raíz: se redacta al cerrar W10. | — |
