@@ -3,8 +3,8 @@
 // ─── Cinta del editor de dibujo (Y2) ──────────────────────────────────────────
 // Arma las pestañas de la cinta (`@lumina/ui/ribbon`) desde el registro único de comandos: cada botón es
 // un comando del registro, así que su etiqueta, atajo y estado (habilitado, activo) salen de un solo sitio.
-// Pestañas: Inicio · Insertar · Organizar · Vista, y la contextual «Formato de conector» cuando lo elegido
-// son líneas. «Formato de forma» llega con la fase D (estilos y mini barra): una pestaña sin contenido no se muestra (DY1).
+// Pestañas: Inicio · Insertar · Organizar · Vista, y las contextuales «Formato de forma» (formas o textos elegidos, Y18)
+// y «Formato de conector» (líneas elegidas). Una pestaña sin contenido no se muestra (DY1).
 
 import type { KeyboardEvent, PointerEvent, ReactElement, ReactNode } from "react";
 import { formasPorGrupo, trazadoForma, type Escena, type Linea, type TipoForma } from "@lumina/drawing";
@@ -12,10 +12,12 @@ import { QuickAccessBar, Ribbon, RibbonButton, RibbonGroup, RibbonSplitButton } 
 import { CornerDownRight, Minus, Spline } from "lucide-react";
 import { COMANDOS, comando, ELEGIR, estadoComando, ORGANIZAR, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { Orden } from "./comandos.js";
+import { AlineacionHorizontal, BotonFormatoTexto, ColorContorno, ColorRelleno, datosDeFormato, GrosorContorno, TamanoLetra, type AccionesDeFormato } from "./mini-barra-capa.js";
 import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, hayExtremoLibre, valorComun } from "./conectores.js";
 
 export const PESTANA_INICIO = "inicio";
 export const PESTANA_CONECTOR = "conector";
+export const PESTANA_FORMATO = "formato-forma";
 
 /** Orden de secciones en el panel de atajos (Y5); una sola fuente con la cinta. */
 export const ORDEN_PESTANAS_ATAJOS = ["Historial", "Inicio", "Insertar", "Organizar", "Vista", "Edición general", "Navegación y ratón"] as const;
@@ -67,6 +69,9 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "eliminar-rama": "Inicio",
   ...Object.fromEntries(ELEGIR.map((c) => [c.id, "Inicio"])),
   "pegar-al-mas-cercano": "Formato de conector",
+  negrita: "Formato de forma",
+  cursiva: "Formato de forma",
+  subrayado: "Formato de forma",
 };
 
 /** Pestaña de la cinta donde vive cada comando (para el panel de atajos). */
@@ -109,13 +114,15 @@ export interface CintaEditorProps {
   onColocarForma?: (forma: TipoForma) => void;
   /** Cambio sobre los conectores elegidos: una sola entrada de historial. */
   onCambiarConector: (nueva: Escena) => void;
+  /** Cómo cambian los campos de «Formato de forma» la escena (los mismos que usa la mini barra, DY11). */
+  formato?: AccionesDeFormato;
   /** F6 más allá de la cinta: el foco vuelve al lienzo. */
   onSalirALienzo: () => void;
   /** Acciones propias del editor que van junto a «Listo» (hoy, «Exportar», de W9, con su propio desplegable). */
   acciones?: ReactNode;
 }
 
-export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, herramientaFija, pincelFijo, onArrastrarForma, onColocarForma, onCambiarConector, onSalirALienzo, acciones }: CintaEditorProps): ReactElement {
+export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, herramientaFija, pincelFijo, onArrastrarForma, onColocarForma, onCambiarConector, formato, onSalirALienzo, acciones }: CintaEditorProps): ReactElement {
   /** Botón de un comando del registro. */
   const boton = (id: string, size: "large" | "medium" | "small" = "medium", icono?: ReactNode): ReactElement => {
     const def = comando(id);
@@ -238,6 +245,8 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
     </label>
   );
 
+  const datosFormato = formato ? datosDeFormato(contexto.escena, contexto.seleccion) : null;
+
   const tabs = [
     {
       id: PESTANA_INICIO,
@@ -340,6 +349,33 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
         </>
       ),
     },
+    ...(datosFormato && formato
+      ? [
+          {
+            id: PESTANA_FORMATO,
+            label: "Formato de forma",
+            contextual: true,
+            content: (
+              <div data-cinta-formato="" className="flex items-stretch">
+                <RibbonGroup label="Relleno">
+                  <ColorRelleno datos={datosFormato} sufijo="(cinta)" {...formato} />
+                </RibbonGroup>
+                <RibbonGroup label="Contorno">
+                  <ColorContorno datos={datosFormato} sufijo="(cinta)" {...formato} />
+                  <GrosorContorno datos={datosFormato} sufijo="(cinta)" {...formato} />
+                </RibbonGroup>
+                <RibbonGroup label="Texto">
+                  <TamanoLetra datos={datosFormato} sufijo="(cinta)" {...formato} />
+                  <BotonFormatoTexto id="negrita" datos={datosFormato} sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
+                  <BotonFormatoTexto id="cursiva" datos={datosFormato} sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
+                  <BotonFormatoTexto id="subrayado" datos={datosFormato} sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
+                  <AlineacionHorizontal datos={datosFormato} sufijo="(cinta)" {...formato} />
+                </RibbonGroup>
+              </div>
+            ),
+          },
+        ]
+      : []),
     ...(lineas.length > 0
       ? [
           {

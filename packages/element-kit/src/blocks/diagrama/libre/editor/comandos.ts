@@ -132,7 +132,9 @@ export type Orden =
   | { tipo: "elegir"; criterio: CriterioSeleccion }
   /** Reglas y guías (Y16a): mostrar u ocultar las reglas, y quitar todas las guías. Viven en el editor, no en la escena. */
   | { tipo: "reglas" }
-  | { tipo: "quitar-guias" };
+  | { tipo: "quitar-guias" }
+  /** Negrita, cursiva o subrayado de lo elegido (Y18): un interruptor sobre todo lo editable. */
+  | { tipo: "formato-texto"; propiedad: "negrita" | "cursiva" | "subrayado" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {

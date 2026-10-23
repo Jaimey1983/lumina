@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { esColorValido } from "@lumina/drawing";
+import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@lumina/ui/popover";
 import { Slider, SliderThumb } from "@lumina/ui/slider";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import type { Valor } from "./propiedades.js";
@@ -33,9 +35,12 @@ export function CampoNumero({
   deshabilitado,
   unidad,
   ancho = "w-full",
+  sufijo,
   onConfirmar,
 }: {
   etiqueta: string;
+  /** Distingue el campo de su gemelo del panel para lectores de pantalla («(barra)»): el nombre accesible es `etiqueta sufijo`. */
+  sufijo?: string;
   valor: Valor<number> | null;
   /** Clase de ancho del campo (por defecto ocupa todo el espacio). */
   ancho?: string;
@@ -70,7 +75,7 @@ export function CampoNumero({
       <input
         type="number"
         inputMode="decimal"
-        aria-label={etiqueta}
+        aria-label={sufijo ? `${etiqueta} ${sufijo}` : etiqueta}
         className={`${claseCampo} min-w-0 flex-1`}
         value={borrador}
         placeholder={valor?.mixto ? "Mixto" : ""}
@@ -163,22 +168,32 @@ export interface Opcion<T> {
   icono?: ReactNode;
 }
 
+/** Alineación horizontal del texto: la usan el panel, la mini barra y la pestaña «Formato de forma». */
+export const ALINEACION_H = [
+  { valor: "izquierda", etiqueta: "Texto alineado a la izquierda", icono: <AlignLeft className="size-3.5" /> },
+  { valor: "centro", etiqueta: "Texto centrado", icono: <AlignCenter className="size-3.5" /> },
+  { valor: "derecha", etiqueta: "Texto alineado a la derecha", icono: <AlignRight className="size-3.5" /> },
+] as const;
+
 /** Botones excluyentes (p. ej. patrón del trazo). Con un valor mixto ninguno aparece marcado. */
 export function Opciones<T extends string>({
   etiqueta,
   opciones,
   valor,
   deshabilitado,
+  sufijo,
   onElegir,
 }: {
   etiqueta: string;
+  /** Como en `CampoNumero`: distingue el grupo de su gemelo del panel para lectores de pantalla. */
+  sufijo?: string;
   opciones: ReadonlyArray<Opcion<T>>;
   valor: Valor<T> | null;
   deshabilitado?: boolean;
   onElegir: (v: T) => void;
 }): ReactElement {
   return (
-    <div role="group" aria-label={etiqueta} className="flex overflow-hidden rounded-md border">
+    <div role="group" aria-label={sufijo ? `${etiqueta} ${sufijo}` : etiqueta} className="flex overflow-hidden rounded-md border">
       {opciones.map((o) => {
         const marcado = valor !== null && !valor.mixto && valor.valor === o.valor;
         return (
@@ -186,7 +201,7 @@ export function Opciones<T extends string>({
             key={o.valor}
             type="button"
             title={o.etiqueta}
-            aria-label={o.etiqueta}
+            aria-label={sufijo ? `${o.etiqueta} ${sufijo}` : o.etiqueta}
             aria-pressed={marcado}
             disabled={deshabilitado || valor === null}
             className={`flex h-7 min-w-7 items-center justify-center px-1.5 text-xs outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${marcado ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
@@ -206,9 +221,12 @@ export function Conmutador({
   valor,
   icono,
   deshabilitado,
+  sufijo,
   onCambiar,
 }: {
   etiqueta: string;
+  /** Como en `CampoNumero`: distingue el botón de su gemelo del panel para lectores de pantalla. */
+  sufijo?: string;
   valor: Valor<boolean> | null;
   icono: ReactNode;
   deshabilitado?: boolean;
@@ -219,7 +237,7 @@ export function Conmutador({
     <button
       type="button"
       title={etiqueta}
-      aria-label={etiqueta}
+      aria-label={sufijo ? `${etiqueta} ${sufijo}` : etiqueta}
       aria-pressed={valor?.mixto ? "mixed" : marcado}
       disabled={deshabilitado || valor === null}
       className={`flex h-7 min-w-7 items-center justify-center rounded-md border px-1.5 outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${marcado ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
@@ -290,21 +308,9 @@ export function FilaColor({
   onVista: (color: string) => void;
   onFin: () => void;
 }): ReactElement {
-  const id = useId();
   const actual = valor && !valor.mixto ? valor.valor : "";
-  const [texto, setTexto] = useState(actual);
-  useEffect(() => setTexto(actual), [actual]);
   const [abierto, setAbierto] = useState(false);
   const raiz = useRef<HTMLDivElement | null>(null);
-
-  const confirmarTexto = (): void => {
-    const limpio = texto.trim();
-    if (limpio === "" || limpio === actual || !esColorValido(limpio)) {
-      setTexto(actual);
-      return;
-    }
-    onElegir(limpio);
-  };
 
   const cerrar = (): void => {
     setAbierto(false);
@@ -351,6 +357,46 @@ export function FilaColor({
       {abierto ? (
         <div role="group" aria-label={`Elegir ${etiquetaColor.toLowerCase()}`} className="space-y-3 rounded-md border bg-muted/40 p-3">
           <AlCerrar onCerrar={onFin} />
+          <ContenidoColor etiquetaColor={etiquetaColor} actual={actual} onElegir={onElegir} onVista={onVista} onFin={onFin} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Lo que se elige dentro del selector de color: acentos de las paletas, neutros, colores del tema, el selector libre
+ * (con vista previa) y un campo para escribir `#RRGGBB` o `var(--token)`. Lo comparten la fila del panel (en línea)
+ * y el botón con selector emergente de la mini barra y la cinta.
+ */
+function ContenidoColor({
+  etiquetaColor,
+  actual,
+  onElegir,
+  onVista,
+  onFin,
+}: {
+  etiquetaColor: string;
+  actual: string;
+  onElegir: (color: string) => void;
+  onVista: (color: string) => void;
+  onFin: () => void;
+}): ReactElement {
+  const id = useId();
+  const [texto, setTexto] = useState(actual);
+  useEffect(() => setTexto(actual), [actual]);
+
+  const confirmarTexto = (): void => {
+    const limpio = texto.trim();
+    if (limpio === "" || limpio === actual || !esColorValido(limpio)) {
+      setTexto(actual);
+      return;
+    }
+    onElegir(limpio);
+  };
+
+  return (
+    <>
           <Grupo titulo="Paletas de diagrama">
             {COLORES_DE_PALETA.map((c) => (
               <Pastilla key={c} color={c} nombre={c} actual={actual} onElegir={onElegir} />
@@ -395,9 +441,103 @@ export function FilaColor({
               }}
             />
           </div>
-        </div>
-      ) : null}
-    </div>
+    </>
+  );
+}
+
+/**
+ * Color con selector emergente (Y18): un botón con la muestra del color que abre un `Popover`, así cabe en una barra
+ * flotante y en la cinta sin recortarse. El selector libre da vista previa (`onVista`) y confirma al cerrarse
+ * (`onFin`, una sola entrada de historial); **Escape cierra sin cambiar nada** (`onCancelar` descarta la vista previa).
+ * Elegir una pastilla o escribir un color aplica y cierra.
+ */
+export function BotonColor({
+  etiquetaColor,
+  valor,
+  deshabilitado,
+  onElegir,
+  onVista,
+  onFin,
+  onCancelar,
+  sufijo,
+}: {
+  /** Nombre completo del color para lectores de pantalla («Color de relleno»). */
+  etiquetaColor: string;
+  /** Distingue el botón de su gemelo del panel para lectores de pantalla («(barra)»). */
+  sufijo?: string;
+  valor: Valor<string> | null;
+  deshabilitado?: boolean;
+  onElegir: (color: string) => void;
+  onVista: (color: string) => void;
+  onFin: () => void;
+  /** Descarta la vista previa que haya quedado a medias (Escape). */
+  onCancelar: () => void;
+}): ReactElement {
+  const actual = valor && !valor.mixto ? valor.valor : "";
+  const [abierto, setAbierto] = useState(false);
+  const escape = useRef(false);
+  const disparador = useRef<HTMLButtonElement | null>(null);
+  const contenido = useRef<HTMLDivElement | null>(null);
+
+  const alCambiarApertura = (nuevo: boolean): void => {
+    setAbierto(nuevo);
+    if (nuevo) {
+      escape.current = false;
+      return;
+    }
+    if (escape.current) onCancelar();
+    else onFin();
+  };
+
+  // El editor detiene `pointerdown` antes de que llegue al documento, donde Radix espera los clics de fuera: se escucha en la captura
+  // (como en `FilaColor`). Un clic fuera confirma la vista previa que haya quedado a medias y cierra.
+  useEffect(() => {
+    if (!abierto) return undefined;
+    const fuera = (e: PointerEvent): void => {
+      const objetivo = e.target as Node;
+      if (contenido.current?.contains(objetivo) || disparador.current?.contains(objetivo)) return;
+      alCambiarApertura(false);
+    };
+    document.addEventListener("pointerdown", fuera, true);
+    return () => document.removeEventListener("pointerdown", fuera, true);
+  });
+
+  return (
+    <Popover open={abierto} onOpenChange={alCambiarApertura}>
+      <PopoverTrigger asChild>
+        <button
+          ref={disparador}
+          type="button"
+          title={etiquetaColor}
+          aria-label={`${sufijo ? `${etiquetaColor} ${sufijo}` : etiquetaColor}: ${valor?.mixto ? "mixto" : actual || "sin color"}`}
+          disabled={deshabilitado || valor === null}
+          className="flex h-7 items-center gap-1 rounded-md border bg-background px-1.5 text-xs outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        >
+          <Muestra color={actual} mixto={valor?.mixto === true} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        ref={contenido}
+        role="group"
+        aria-label={`Elegir ${etiquetaColor.toLowerCase()}`}
+        className="w-64 space-y-3 p-3"
+        onEscapeKeyDown={() => {
+          escape.current = true;
+        }}
+      >
+        <AlCerrar onCerrar={onFin} />
+        <ContenidoColor
+          etiquetaColor={etiquetaColor}
+          actual={actual}
+          onElegir={(c) => {
+            onElegir(c);
+            setAbierto(false);
+          }}
+          onVista={onVista}
+          onFin={onFin}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
 

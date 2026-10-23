@@ -51,6 +51,9 @@ import {
   Link2,
   ListOrdered,
   BoxSelect,
+  Bold,
+  Italic,
+  Underline,
   Lock,
   EyeOff,
   Ruler,
@@ -67,6 +70,7 @@ import {
 import { seleccionPorCriterio, type CriterioSeleccion, type Orden, type TeclaEvento } from "./comandos.js";
 import { formasAOrganizar, type DireccionOrganizar, type ModoOrganizar } from "./organizar-auto.js";
 import { hayConectorConExtremoLibre, lineasElegidas } from "./conectores.js";
+import { hayFormato, hojasDeFormato, valorComun, type FormatoDeTexto } from "./propiedades.js";
 import { esMismaHerramienta, SELECCIONAR, type Herramienta } from "./herramientas.js";
 import { ZOOM_MAX, ZOOM_MIN } from "./vista.js";
 
@@ -111,7 +115,7 @@ export interface EntradaMenu {
   si?: (c: ContextoComando) => boolean;
 }
 
-export type GrupoComando = "herramientas" | "formas" | "edicion" | "orden" | "alinear" | "distribuir" | "vista" | "historial" | "cierre";
+export type GrupoComando = "herramientas" | "formas" | "edicion" | "orden" | "formato" | "alinear" | "distribuir" | "vista" | "historial" | "cierre";
 
 export interface DefinicionComando {
   id: string;
@@ -176,6 +180,24 @@ const hayFormaElegida = (c: ContextoComando): true | string => {
 };
 /** «Seleccionar…» (Y15): habilitado si el criterio elegiría algo (invertir, siempre que haya algo elegible). */
 const eligeAlgo = (criterio: CriterioSeleccion, vacio: string) => (c: ContextoComando): true | string => (seleccionPorCriterio(c.escena, c.seleccion, criterio).length > 0 ? true : vacio);
+
+/** Formato de texto (Y18): hay una forma o un texto editables elegidos (un conector tiene su propia pestaña). */
+const hayAlgoQueFormatear = (c: ContextoComando): true | string => (hayFormato(c.escena, c.seleccion) ? true : "Elige una forma o un texto");
+
+/** Negrita, cursiva y subrayado: interruptores que valen para todo lo elegido; con valores mezclados no cuentan como activos. */
+const formatoDeTexto = (id: FormatoDeTexto, etiqueta: string, icono: ComponentType<{ className?: string }>): DefinicionComando => ({
+  id,
+  etiqueta,
+  icono,
+  grupo: "formato",
+  orden: { tipo: "formato-texto", propiedad: id },
+  habilitado: hayAlgoQueFormatear,
+  activo: (c) => {
+    const v = valorComun(hojasDeFormato(c.escena, c.seleccion), (h) => h.estiloTexto[id]);
+    return v !== null && !v.mixto && v.valor;
+  },
+  sinMenu: true,
+});
 
 const varias = (c: ContextoComando): boolean => c.seleccion.length > 1;
 const conExtremoLibre = (c: ContextoComando): boolean => hayConectorConExtremoLibre(c.escena, c.seleccion);
@@ -344,6 +366,11 @@ export const COMANDOS: readonly DefinicionComando[] = [
   { id: "ocultar", etiqueta: "Ocultar", icono: EyeOff, grupo: "edicion", orden: { tipo: "ocultar" }, habilitado: hay, soloMenu: true, menu: { forma: { grupo: "estado" } } },
   { id: "agrupar", menu: { forma: { grupo: "agrupar" } }, etiqueta: "Agrupar", icono: Group, grupo: "edicion", atajos: [ctrl("g", { shift: false })], orden: { tipo: "agrupar" }, habilitado: varios },
   { id: "desagrupar", menu: { forma: { grupo: "agrupar" } }, etiqueta: "Desagrupar", icono: Ungroup, grupo: "edicion", atajos: [ctrl("g", { shift: true })], orden: { tipo: "desagrupar" }, habilitado: hayGrupo },
+
+  // Formato de texto (Y18): sin atajo; Ctrl+B/I/U se evalúan al tocar el texto en el sitio.
+  formatoDeTexto("negrita", "Negrita", Bold),
+  formatoDeTexto("cursiva", "Cursiva", Italic),
+  formatoDeTexto("subrayado", "Subrayado", Underline),
 
   // Orden de capas
   { id: "orden-frente", menu: { forma: { grupo: "orden", submenu: "Orden" }, conector: { grupo: "orden", submenu: "Orden" } }, etiqueta: "Traer al frente", icono: BringToFront, grupo: "orden", atajos: [ctrl("]", { shift: true })], orden: { tipo: "orden", modo: "frente" }, habilitado: hay },

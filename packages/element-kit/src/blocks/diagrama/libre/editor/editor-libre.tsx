@@ -53,7 +53,10 @@ import {
 import { NodosSvg } from "../dibujo-render.js";
 import { asaEn, bloqueadosEfectivos as bloqueadosEfectivosDe, centroDelMarco, cursorDeAsa, marcoDeSeleccion, posicionesDeAsas, type Marco, type TipoAsa } from "./asas.js";
 import { BuscadorComandos } from "./buscador-comandos.js";
-import { CintaEditor, PESTANA_CONECTOR, PESTANA_INICIO, type OpcionesOrden } from "./cinta-editor.js";
+import { CintaEditor, PESTANA_CONECTOR, PESTANA_FORMATO, PESTANA_INICIO, type OpcionesOrden } from "./cinta-editor.js";
+import { circulosDeAsasHijo, miniBarraVisible } from "./mini-barra.js";
+import { datosDeFormato, enfocarMiniBarra, MiniBarra } from "./mini-barra-capa.js";
+import { alternarTexto, hayFormato as hayQueFormatear } from "./propiedades.js";
 import { CapaFantasmaForma } from "./fantasma-forma.js";
 import { NOMBRE_MODO, organizarAuto, type ModoOrganizar } from "./organizar-auto.js";
 import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, type EscribirDatos, type Lectura } from "./portapapeles.js";
@@ -419,6 +422,24 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   // La barra de estado informa también de una línea sola (el marco de las asas no la cuenta).
   const marcoEstado = useMemo(() => marcoDeSeleccion(escenaRutas, seleccion), [escenaRutas, seleccion]);
 
+  // ─── Mini barra flotante (Y18) ──────────────────────────────────────────────
+  // Se ve junto a la selección y se esconde mientras haya un gesto (`gestoEnCurso` cubre mover, redimensionar, girar, recuadro, lazo, conector y asas «+»; las guías y la galería tienen su propio estado), una edición de texto, el pincel, otra herramienta, el menú o un diálogo.
+  const miniBarraRef = useRef<HTMLDivElement | null>(null);
+  const datosBarra = useMemo(() => datosDeFormato(escena, seleccion), [escena, seleccion]);
+  const miniBarraDatos =
+    datosBarra && marcoEstado
+      ? miniBarraVisible(true, {
+          gestoEnCurso: gestoEnCurso || guiaPrevia !== null || fantasmaGaleria !== null,
+          edicionDeTexto: edicion !== null,
+          pincel: pincel !== null,
+          otraHerramienta: herramienta.tipo !== "seleccionar",
+          menuContextual: menuAbierto,
+          dialogo: buscadorAbierto || atajosAbiertos || esquemaAbierto,
+        })
+        ? datosBarra
+        : null
+      : null;
+
   // ─── Panel de propiedades (W8) ──────────────────────────────────────────────
   // Los deslizadores y el selector de color dan vista previa sin tocar el historial y entran como UNA entrada al soltar.
   const vistaPanel = useRef<{ base: Escena; ultima: Escena } | null>(null);
@@ -434,6 +455,16 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       onCambio(v.ultima);
     }
   }, [onCambio]);
+
+  /** Descarta la vista previa a medias (Escape en el selector de color): la escena vuelve a como estaba y no entra nada al historial. */
+  const cancelarVistaPanel = useCallback((): void => {
+    const v = vistaPanel.current;
+    if (!v) return;
+    vistaPanel.current = null;
+    historial.current.terminarGesto(v.base);
+    setEscena(v.base);
+    setVersionHistorial((n) => n + 1);
+  }, []);
 
   const vistaDelPanel = useCallback((cambio: (e: Escena) => Escena): void => {
     if (!vistaPanel.current) {
@@ -695,9 +726,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   };
   useEffect(() => () => arrastreGuia.current?.cancelar(), []);
 
-  // El tamaño de la ventana, para saber hasta dónde llegan las marcas de las reglas.
+  // El tamaño de la ventana: hasta dónde llegan las marcas de las reglas y dónde cabe la mini barra (Y18).
   useEffect(() => {
-    if (!reglas) return;
     const actualizar = (): void => setMedidaVentana(medir());
     actualizar();
     window.addEventListener("resize", actualizar);
@@ -707,7 +737,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       window.removeEventListener("resize", actualizar);
       observador?.disconnect();
     };
-  }, [reglas, medir]);
+  }, [medir]);
 
   /** Termina la línea de varios puntos. (Un doble clic no suma un punto de más: cada clic ya descarta los repetidos.) */
   const terminarLinea = (puntos: readonly Punto[], flecha: boolean): void => {
@@ -1630,6 +1660,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         aplicarFormatoA(vivo.current.seleccion, false);
         svgRef.current?.focus();
         return;
+      case "formato-texto":
+        aplicarDelPanel((e) => alternarTexto(e, vivo.current.seleccion, orden.propiedad));
+        return;
       case "terminar":
         cerrar();
         return;
@@ -1672,6 +1705,11 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if ((e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) && (objetivo as Element) === svgRef.current) {
       e.preventDefault();
       abrirMenuConTeclado();
+      return;
+    }
+    // F6 desde el lienzo lleva el foco a la mini barra si está a la vista (DY16: nunca va sola); la barra lo devuelve con F6 o Escape.
+    if (e.key === "F6" && (objetivo as Element) === svgRef.current && miniBarraDatos) {
+      if (enfocarMiniBarra(miniBarraRef.current)) e.preventDefault();
       return;
     }
     if (e.key === " " && (objetivo as Element) === svgRef.current) {
@@ -1727,11 +1765,16 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   // Al elegir un conector se muestra su pestaña contextual, pero solo si el usuario estaba en Inicio: no le quita la pestaña a quien trabaja en otra.
   const [pestana, setPestana] = useState(PESTANA_INICIO);
   const habiaConectores = useRef(false);
+  const habiaFormato = useRef(false);
   const hayConectores = lineasConector.length > 0;
+  const hayFormas = hayQueFormatear(escena, seleccion);
   useEffect(() => {
-    if (hayConectores && !habiaConectores.current) setPestana((p) => (p === PESTANA_INICIO ? PESTANA_CONECTOR : p));
+    // Las dos pestañas contextuales nunca coinciden: «Formato de conector» es solo para selecciones de puras líneas.
+    const nueva = hayFormas && !habiaFormato.current ? PESTANA_FORMATO : hayConectores && !habiaConectores.current ? PESTANA_CONECTOR : null;
+    if (nueva) setPestana((p) => (p === PESTANA_INICIO ? nueva : p));
     habiaConectores.current = hayConectores;
-  }, [hayConectores]);
+    habiaFormato.current = hayFormas;
+  }, [hayConectores, hayFormas]);
 
   // El cursor base sigue a la herramienta (el movimiento del puntero lo afina sobre las asas).
   useEffect(() => {
@@ -1786,6 +1829,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         onArrastrarForma={iniciarArrastreGaleria}
         onColocarForma={colocarFormaAlCentro}
         onCambiarConector={cambiarConector}
+        formato={{ onAplicar: aplicarDelPanel, onVista: vistaDelPanel, onFinVista: finVistaPanel, onCancelarVista: cancelarVistaPanel }}
         onSalirALienzo={() => svgRef.current?.focus()}
         acciones={<BotonExportar escena={escena} {...(titulo ? { titulo } : {})} />}
       />
@@ -1876,6 +1920,23 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           ) : null}
         </svg>
         </MenuContextual>
+        {miniBarraDatos && marcoEstado ? (
+          <MiniBarra
+            datos={miniBarraDatos}
+            marco={marcoEstado}
+            vista={vista}
+            ventana={medidaVentana}
+            obstaculos={circulosDeAsasHijo(escena, seleccion, vista, tactil)}
+            contexto={contextoCinta}
+            raizRef={miniBarraRef}
+            onOrden={ejecutarOrden}
+            onAplicar={aplicarDelPanel}
+            onVista={vistaDelPanel}
+            onFinVista={finVistaPanel}
+            onCancelarVista={cancelarVistaPanel}
+            onSalir={() => svgRef.current?.focus()}
+          />
+        ) : null}
         {edicion ? (
           <TextoEnSitio
             area={edicion.area}

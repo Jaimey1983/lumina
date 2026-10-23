@@ -52,6 +52,15 @@ export function hojasEditables(escena: Escena, seleccion: readonly string[]): Ho
   return hojasDeSeleccion(escena, seleccion).filter((h) => !bloqueados.has(h.id));
 }
 
+/** Lo que se puede cambiar con la mini barra y la pestaña «Formato de forma» (Y18): las hojas editables, si al menos una no es un conector (tienen su propia pestaña). */
+export function hojasDeFormato(escena: Escena, seleccion: readonly string[]): Hoja[] {
+  const editables = hojasEditables(escena, seleccion);
+  return editables.some((h) => h.tipo !== "linea") ? editables : [];
+}
+
+/** ¿Hay algo a lo que darle formato? Decide si salen la barra y la pestaña «Formato de forma». */
+export const hayFormato = (escena: Escena, seleccion: readonly string[]): boolean => hojasDeFormato(escena, seleccion).length > 0;
+
 /** El valor común de `leer` en todos los elementos, o «mixto» si difiere; `null` si no hay elementos. */
 export function valorComun<T>(elementos: readonly Hoja[], leer: (h: Hoja) => T): Valor<T> | null {
   const primero = elementos[0];
@@ -96,6 +105,16 @@ export function fijarSombra(escena: Escena, destino: readonly Hoja[], sombra: Ca
 export const fijarRadio = (escena: Escena, destino: readonly Hoja[], radio: number): Escena => cambiarEstilo(escena, ids(destino.filter(conRadio)), { estilo: { radio } });
 
 export const fijarTexto = (escena: Escena, destino: readonly Hoja[], parche: Partial<EstiloTexto>): Escena => cambiarEstilo(escena, ids(destino), { estiloTexto: parche });
+
+export type FormatoDeTexto = "negrita" | "cursiva" | "subrayado";
+
+/** Negrita, cursiva o subrayado como interruptor: si todo lo elegido ya lo tiene, lo quita; si no (o si es mixto), lo pone en todo. */
+export function alternarTexto(escena: Escena, seleccion: readonly string[], propiedad: FormatoDeTexto): Escena {
+  const destino = hojasDeFormato(escena, seleccion);
+  const actual = valorComun(destino, (h) => h.estiloTexto[propiedad]);
+  if (actual === null) return escena;
+  return fijarTexto(escena, destino, { [propiedad]: actual.mixto || !actual.valor });
+}
 
 /** Relleno al cambiar de tipo: conserva el color que ya había si lo hay. */
 export function rellenoDeTipo(tipo: Relleno["tipo"], actual: Relleno | null): Relleno {

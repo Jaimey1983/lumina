@@ -22,6 +22,7 @@ const ORDEN_GRUPO_VACIO: readonly DefinicionComando["grupo"][] = [
   "historial",
   "herramientas",
   "edicion",
+  "formato",
   "orden",
   "alinear",
   "distribuir",
