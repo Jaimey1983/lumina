@@ -1,0 +1,446 @@
+{
+ "version": 1,
+ "ancho": 1000,
+ "alto": 600,
+ "fondo": "#F8FAFC",
+ "elementos": [
+  {
+   "id": "a1",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "forma",
+   "forma": "rectangulo",
+   "transformacion": {
+    "x": 40,
+    "y": 40,
+    "ancho": 220,
+    "alto": 120,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Este es un texto bastante largo que tiene que partirse en varias líneas dentro de la forma para que se vea el ajuste",
+   "estiloTexto": {
+    "tamano": 16,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "centro",
+    "alineacionV": "medio",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "a2",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "forma",
+   "forma": "rectangulo",
+   "transformacion": {
+    "x": 300,
+    "y": 40,
+    "ancho": 220,
+    "alto": 120,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Primera línea\nSegunda línea\n\nCuarta tras un hueco",
+   "estiloTexto": {
+    "tamano": 16,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "izquierda",
+    "alineacionV": "arriba",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "a3",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "forma",
+   "forma": "elipse",
+   "transformacion": {
+    "x": 560,
+    "y": 40,
+    "ancho": 200,
+    "alto": 140,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Elipse con texto en negrita y cursiva",
+   "estiloTexto": {
+    "tamano": 14,
+    "negrita": true,
+    "cursiva": true,
+    "subrayado": true,
+    "alineacionH": "centro",
+    "alineacionV": "medio",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "a4",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "forma",
+   "forma": "rectangulo",
+   "transformacion": {
+    "x": 800,
+    "y": 40,
+    "ancho": 120,
+    "alto": 50,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Este es un texto bastante largo que tiene que partirse en varias líneas dentro de la forma para que se vea el ajuste",
+   "estiloTexto": {
+    "tamano": 20,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "centro",
+    "alineacionV": "medio",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "a5",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "forma",
+   "forma": "rectangulo",
+   "transformacion": {
+    "x": 40,
+    "y": 220,
+    "ancho": 110,
+    "alto": 60,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Supercalifragilisticoespialidosoextraordinario",
+   "estiloTexto": {
+    "tamano": 18,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "centro",
+    "alineacionV": "medio",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "a6",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "forma",
+   "forma": "rombo",
+   "transformacion": {
+    "x": 200,
+    "y": 220,
+    "ancho": 160,
+    "alto": 120,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Rombo con texto",
+   "estiloTexto": {
+    "tamano": 16,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "derecha",
+    "alineacionV": "abajo",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "a7",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "forma",
+   "forma": "rectangulo",
+   "transformacion": {
+    "x": 400,
+    "y": 220,
+    "ancho": 260,
+    "alto": 90,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Uno\nDos\nTres\nCuatro\nCinco\nSeis",
+   "estiloTexto": {
+    "tamano": 14,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "derecha",
+    "alineacionV": "abajo",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "a8",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "forma",
+   "forma": "cilindro",
+   "transformacion": {
+    "x": 700,
+    "y": 220,
+    "ancho": 160,
+    "alto": 130,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Texto en cilindro con varias palabras que no caben",
+   "estiloTexto": {
+    "tamano": 16,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "centro",
+    "alineacionV": "medio",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "t1",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "texto",
+   "transformacion": {
+    "x": 40,
+    "y": 400,
+    "ancho": 300,
+    "alto": 100,
+    "rotacion": 0
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "ninguno"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 0,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Texto libre con un párrafo largo que se sale del cuadro porque no se reduce ni crece\nY un segundo párrafo",
+   "estiloTexto": {
+    "tamano": 18,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "izquierda",
+    "alineacionV": "arriba",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "t2",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "texto",
+   "transformacion": {
+    "x": 400,
+    "y": 400,
+    "ancho": 260,
+    "alto": 80,
+    "rotacion": 15
+   },
+   "estilo": {
+    "relleno": {
+     "tipo": "solido",
+     "color": "#FFFFFF"
+    },
+    "contorno": {
+     "color": "#334155",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "Texto girado\ncon dos líneas",
+   "estiloTexto": {
+    "tamano": 16,
+    "negrita": true,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "centro",
+    "alineacionV": "medio",
+    "color": "var(--foreground)",
+    "fuente": ""
+   }
+  },
+  {
+   "id": "l1",
+   "bloqueado": false,
+   "oculto": false,
+   "tipo": "linea",
+   "puntos": [
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 10,
+     "y": 10
+    }
+   ],
+   "trazado": "ortogonal",
+   "inicio": "ninguno",
+   "fin": "flecha",
+   "estilo": {
+    "relleno": {
+     "tipo": "ninguno"
+    },
+    "contorno": {
+     "color": "#2563EB",
+     "grosor": 2,
+     "patron": "solido"
+    },
+    "opacidad": 1,
+    "sombra": null,
+    "radio": 0
+   },
+   "texto": "etiqueta del conector que es larga",
+   "estiloTexto": {
+    "tamano": 12,
+    "negrita": false,
+    "cursiva": false,
+    "subrayado": false,
+    "alineacionH": "centro",
+    "alineacionV": "medio",
+    "color": "var(--foreground)",
+    "fuente": ""
+   },
+   "origen": {
+    "elementoId": "a1",
+    "puerto": 2
+   },
+   "destino": {
+    "elementoId": "a6",
+    "puerto": 0
+   }
+  }
+ ]
+}
