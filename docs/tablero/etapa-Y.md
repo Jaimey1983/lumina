@@ -390,7 +390,7 @@ Redactada el 2026-10-23, al cerrar la fase C (Y12a–Y17 en revisión y mergeada
 
 #### Y23 — Relleno y efectos ampliados
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y22 en `main` (cumplida: `1943ae7`) e Y21 (los estilos y temas siguen funcionando con los rellenos nuevos).
 - **Hechos del código que la condicionan (comprobados, no supuestos):**
   - **El relleno hoy es una unión de tres:** `Relleno = ninguno | solido {color} | degradado {desde, hasta, angulo}` (`@lumina/drawing/src/tipos.ts:67`), y la sombra, `Sombra {color, desenfoque, dx, dy}` (una sola, proyectada). **La escena guarda `version: 1` (`ESCENA_VERSION`) y el normalizador es la única puerta de entrada**: `normalizarRelleno` devuelve el valor por defecto ante un `tipo` desconocido y `normalizarSombra` reconstruye el objeto campo a campo, así que **un campo nuevo que no se lee en el normalizador se pierde al guardar, copiar, pegar o exportar**.
