@@ -255,3 +255,29 @@ describe('el archivo SVG con todo lo nuevo', () => {
     expect(buscar(escenaANodos(escena([forma('a', { relleno: { tipo: 'solido', color: '#FFFFFF' } })])).nodos, 'defs')).toEqual([]);
   });
 });
+
+describe('rendimiento (DW9)', () => {
+  const mediana = (f: () => void): number => {
+    for (let i = 0; i < 3; i++) f(); // calentamiento
+    const t: number[] = [];
+    for (let i = 0; i < 7; i++) {
+      const a = performance.now();
+      f();
+      t.push(performance.now() - a);
+    }
+    return [...t].sort((x, y) => x - y)[3] as number;
+  };
+  const grande = (estilo: (i: number) => unknown): Escena =>
+    escena(Array.from({ length: 500 }, (_v, i) => ({ ...forma(`f${i}`, estilo(i)), transformacion: { x: (i % 25) * 40, y: Math.floor(i / 25) * 40, ancho: 30, alto: 30, rotacion: 0 } })));
+
+  it('500 formas con patrón, radial con paradas y sombra interior tardan a lo sumo el triple que con relleno sólido y sombra proyectada', () => {
+    const viejo = grande(() => ({ relleno: { tipo: 'solido', color: '#FDE68A' }, sombra: { color: '#00000055', desenfoque: 6, dx: 1, dy: 2 } }));
+    const nuevo = grande((i) => ({
+      relleno: i % 2 === 0 ? { tipo: 'patron', patron: 'cuadricula', color: '#123456', fondo: '#FEF3C7', escala: 12 } : { ...DEGRADADO, forma: 'radial', paradas: [{ posicion: 0.5, color: '#FF0000' }] },
+      sombra: { color: '#00000055', desenfoque: 6, dx: 1, dy: 2, interior: true },
+    }));
+    const tViejo = mediana(() => void escenaANodos(viejo));
+    const tNuevo = mediana(() => void escenaANodos(nuevo));
+    expect(tNuevo).toBeLessThanOrEqual(Math.max(tViejo * 3, 5));
+  });
+});
