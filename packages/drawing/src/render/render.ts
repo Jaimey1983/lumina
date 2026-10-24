@@ -8,7 +8,7 @@ import { cajasDeFormas, trazarLinea, type CajaObstaculo } from '../conectores/tr
 import { rectanguloTexto, trazadoForma } from '../formas/index.js';
 import type { Elemento, Escena, Estilo, EstiloTexto, Extremo, Forma, Linea, Punto, Relleno, Sombra, Texto } from '../tipos.js';
 import { resolverColor, type ModoColor, type Pintura } from './colores.js';
-import { ajustarTexto, INTERLINEADO, lineasDeTexto } from './texto.js';
+import { ajustarComposicion, componerTexto, INTERLINEADO } from './texto.js';
 
 export interface NodoSvg {
   tag: string;
@@ -176,20 +176,25 @@ function nodosTexto(
   et: EstiloTexto,
   ctx: Contexto,
   autoajustar = false,
+  conLista = false,
 ): NodoSvg[] {
   const relleno = 4;
   const anchoUtil = Math.max(1, zona.ancho - 2 * relleno);
+  // La lista solo la llevan las formas y los cuadros de texto; el rótulo de un conector la ignora (Y24a).
+  const vinetas = conLista ? et.vinetas : undefined;
   const ajustado = autoajustar
-    ? ajustarTexto(texto, anchoUtil, Math.max(1, zona.alto - 2 * relleno), et.tamano, et.negrita)
-    : { tamano: et.tamano, lineas: lineasDeTexto(texto, anchoUtil, et.tamano, et.negrita, false) };
-  const { lineas } = ajustado;
+    ? ajustarComposicion(texto, anchoUtil, Math.max(1, zona.alto - 2 * relleno), et.tamano, et.negrita, vinetas)
+    : { tamano: et.tamano, ...componerTexto(texto, anchoUtil, et.tamano, et.negrita, vinetas, false) };
+  const { lineas, sangria } = ajustado;
   const tamano = ajustado.tamano;
   const altoLinea = tamano * INTERLINEADO;
   const total = lineas.length * altoLinea;
   const arriba =
     et.alineacionV === 'arriba' ? zona.y + relleno : et.alineacionV === 'abajo' ? zona.y + zona.alto - relleno - total : zona.y + (zona.alto - total) / 2;
-  const [x, ancla] =
-    et.alineacionH === 'izquierda'
+  // Con lista el texto va a la izquierda, a la derecha de la sangría; la alineación elegida se conserva en el modelo pero no se usa.
+  const [x, ancla] = vinetas
+    ? [zona.x + relleno + sangria, 'start']
+    : et.alineacionH === 'izquierda'
       ? [zona.x + relleno, 'start']
       : et.alineacionH === 'derecha'
         ? [zona.x + zona.ancho - relleno, 'end']
@@ -205,10 +210,15 @@ function nodosTexto(
     ...(et.fuente ? { 'font-family': et.fuente } : {}),
   };
 
+  // La marca de una lista va en el borde izquierdo y no se subraya: el subrayado cubre solo el texto.
+  const deMarca: NodoSvg['attrs'] = { ...Object.fromEntries(Object.entries(comunes).filter(([k]) => k !== 'text-decoration')), 'text-anchor': 'start', 'aria-hidden': 'true' };
+
   const salida: NodoSvg[] = [];
   lineas.forEach((linea, i) => {
-    if (linea === '') return;
-    salida.push(nodo('text', { x: r(x), y: r(arriba + i * altoLinea + tamano), ...comunes }, undefined, linea));
+    const y = r(arriba + i * altoLinea + tamano);
+    if (linea.marca) salida.push(nodo('text', { x: r(zona.x + relleno), y, ...deMarca }, undefined, linea.marca));
+    if (linea.texto === '') return;
+    salida.push(nodo('text', { x: r(x), y, ...comunes }, undefined, linea.texto));
   });
   return salida;
 }
@@ -226,7 +236,7 @@ function nodoForma(f: Forma, ctx: Contexto): NodoSvg {
   if (titulo) hijos.push(nodo('title', {}, undefined, titulo));
   hijos.push(nodo('path', { d: trazadoForma(f.forma, t.ancho, t.alto, { parametros: f.parametros, radio: f.estilo.radio }), ...atributosEstilo(f.estilo, ctx, true) }));
   if (f.texto) {
-    hijos.push(...nodosTexto(f.texto, rectanguloTexto(f.forma, t.ancho, t.alto, { parametros: f.parametros }), f.estiloTexto, ctx, true));
+    hijos.push(...nodosTexto(f.texto, rectanguloTexto(f.forma, t.ancho, t.alto, { parametros: f.parametros }), f.estiloTexto, ctx, true, true));
   }
   return nodo('g', { 'data-elemento-id': f.id, transform: transformacion(t.x, t.y, t.ancho, t.alto, t.rotacion), ...(f.estilo.opacidad < 1 ? { opacity: f.estilo.opacidad } : {}) }, hijos);
 }
@@ -240,7 +250,7 @@ function nodoTexto(e: Texto, ctx: Contexto): NodoSvg {
   if (tieneCaja) {
     hijos.push(nodo('rect', { x: 0, y: 0, width: t.ancho, height: t.alto, rx: e.estilo.radio, ...atributosEstilo(e.estilo, ctx, true) }));
   }
-  hijos.push(...nodosTexto(e.texto, { x: 0, y: 0, ancho: t.ancho, alto: t.alto }, e.estiloTexto, ctx));
+  hijos.push(...nodosTexto(e.texto, { x: 0, y: 0, ancho: t.ancho, alto: t.alto }, e.estiloTexto, ctx, false, true));
   return nodo('g', { 'data-elemento-id': e.id, transform: transformacion(t.x, t.y, t.ancho, t.alto, t.rotacion), ...(e.estilo.opacidad < 1 ? { opacity: e.estilo.opacidad } : {}) }, hijos);
 }
 
