@@ -456,7 +456,7 @@ La ficha del índice (`Y24`) mezcla dos cosas de naturaleza distinta: **las viñ
 
 #### Y24b — Ajustar la forma al texto y crecer al escribir
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y24a en `main` (la sangría de las viñetas entra en el alto que necesita un texto).
 - **Alcance — PUEDE tocar:** `@lumina/drawing`: `src/operaciones/ajustar-texto.ts` (nuevo, **puro**; + spec) y su export; `src/render/texto.ts` solo para **añadir** la medida del alto (lo ya existente no cambia). Editor: `editor/comandos-registro.ts`, `editor/comandos.ts`, `editor/editor-libre.tsx` (ejecutar la orden y la confirmación de la edición), `editor/propiedades-panel.tsx` (solo «Tipografía»), `editor/cinta-editor.tsx` (solo el grupo «Texto» de «Formato de forma»), `editor/menu-contextual*` (una entrada), `editor/sinonimos-comandos.ts`, `editor/preferencias-texto.ts` (nuevo: la preferencia, con `localStorage` protegido; + spec), specs. `docs/tablero/etapa-Y.md` y `AGENTS.md` (solo la fila). **No toca el modelo** (`tipos.ts`, `normalizar.ts`, `render/render.ts`, el exportador): **no hay campos nuevos** (DY14).
 - **Entregable:**
