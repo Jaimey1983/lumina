@@ -366,7 +366,7 @@ Redactada el 2026-10-23, al cerrar la fase C (Y12a–Y17 en revisión y mergeada
 
 #### Y22 — Colores recientes y cuentagotas
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y21 en `main` (cumplida: `baf0577`) e Y18 (el cuadro de color con selector emergente, `BotonColor`).
 - **Hechos del código que la condicionan (comprobados, no supuestos):**
   - **Hay un solo contenido de selector de color y lo usan todos:** `ContenidoColor` (`propiedades-campos.tsx`) —acentos de paleta, neutros, colores del tema, selector libre `<input type="color">` y campo de texto— lo muestran `FilaColor` (en línea, en el panel: relleno, degradado desde/hasta, contorno, sombra, texto) y `BotonColor` (emergente, en la mini barra). **Tocar `ContenidoColor` cubre los seis lugares**; no hay un segundo selector en la cinta.
