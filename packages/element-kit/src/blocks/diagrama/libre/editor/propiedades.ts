@@ -237,7 +237,8 @@ export function agregarParada(r: RellenoDegradado): RellenoDegradado {
   }
   const izq = puntos[mejor] as ParadaDegradado;
   const der = puntos[mejor + 1] as ParadaDegradado;
-  const posicion = Math.min(POSICION_MAX, Math.max(POSICION_MIN, r2d((izq.posicion + der.posicion) / 2)));
+  // El tramo más ancho mide al menos 1/4 y sus extremos están en [0; 0,95] ∪ [0,05; 1]: el medio siempre cae en [0,05; 0,95].
+  const posicion = r2d((izq.posicion + der.posicion) / 2);
   return conParadas(r, [...paradas, { posicion, color: mezclarColores(izq.color, der.color) }]);
 }
 

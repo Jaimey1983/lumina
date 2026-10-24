@@ -241,6 +241,11 @@ describe("paradas intermedias", () => {
     const m2 = montar(["D2"]);
     confirmar("Posición de la parada 1", "1");
     expect(f(m2.resultado(), "D2").estilo.relleno).toMatchObject({ paradas: [{ posicion: 0.05 }] });
+    expect(campo("Posición de la parada 1").value).toBe("5"); // el propio campo acota a 5–95 %
+    cleanup();
+    montar(["D2"]);
+    confirmar("Posición de la parada 1", "500");
+    expect(campo("Posición de la parada 1").value).toBe("95");
     cleanup();
     const m3 = montar(["D2"]);
     fireEvent.click(boton(/^Color de la parada 1: /));

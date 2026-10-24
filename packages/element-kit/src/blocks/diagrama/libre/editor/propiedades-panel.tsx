@@ -433,7 +433,7 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
                     </Fila>
                   </>
                 ) : null}
-                {!todosSolidos && !todosDegradados && !todosPatron && tipoRelleno?.mixto ? (
+                {!todosSolidos && !todosDegradados && tipoRelleno?.mixto ? (
                   <p className="text-[11px] text-muted-foreground">Los elegidos tienen rellenos distintos: elige un tipo para igualarlos.</p>
                 ) : null}
               </div>
