@@ -149,6 +149,17 @@ describe("colores recientes (panel)", () => {
     expect(guardados()).toEqual(["#445566"]);
   });
 
+  it("una vista previa ya confirmada no se vuelve a registrar al cerrar el selector: el último color elegido sigue primero", () => {
+    montarPanel();
+    abrirRelleno();
+    elegirLibre("#111111");
+    const txt = [...document.querySelectorAll<HTMLInputElement>('input[type="text"]')].find((i) => i.getAttribute("aria-label") === "Color de relleno: escribir color") as HTMLInputElement;
+    fireEvent.change(txt, { target: { value: "#222222" } });
+    fireEvent.keyDown(txt, { key: "Enter" });
+    cleanup();
+    expect(guardados()).toEqual(["#222222", "#111111"]);
+  });
+
   it("lo guardado se valida: lo roto o ajeno se descarta y el selector abre", () => {
     localStorage.setItem(CLAVE_RECIENTES, JSON.stringify(["#111111", "javascript:1", 7, "var(--primary)"]));
     montarPanel();
