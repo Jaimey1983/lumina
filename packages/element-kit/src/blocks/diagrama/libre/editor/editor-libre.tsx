@@ -1714,8 +1714,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         return;
       case "lista": {
         const { escena: actual, seleccion: sel } = vivo.current;
+        // El comando está deshabilitado sin nada que formatear: aquí siempre hay algo que cambiar.
         const nueva = alternarVinetas(actual, sel, orden.modo);
-        if (nueva === actual) return;
         aplicarDelPanel((e) => alternarVinetas(e, vivo.current.seleccion, orden.modo));
         const quedan = listaDeSeleccion(nueva, sel);
         const cuantos = hojasDeFormato(nueva, sel).filter(conLista).length;

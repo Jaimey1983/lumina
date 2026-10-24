@@ -88,6 +88,12 @@ describe('autoajuste con lista', () => {
     expect(con.sangria).toBe(20.25); // (2 + 1) × 13,5 × 0,5
   });
 
+  it('una palabra que sola no cabe en el ancho que deja la sangría obliga a bajar más la letra', () => {
+    // 10 caracteres: sin lista caben con letra 12 (10 × 12 × 0,5 = 60); con puntos hay que dejar la sangría (12) y baja a 10.
+    expect(ajustarComposicion('abcdefghij', 60, 100, 12, false).tamano).toBe(12);
+    expect(ajustarComposicion('abcdefghij', 60, 100, 12, false, 'puntos').tamano).toBe(10);
+  });
+
   it('sin lista, ajustarComposicion da el mismo tamaño que ajustarTexto', () => {
     const texto = 'uno dos tres cuatro cinco seis siete ocho nueve diez';
     expect(ajustarComposicion(texto, 120, 40, 20, false).tamano).toBe(ajustarTexto(texto, 120, 40, 20, false).tamano);
