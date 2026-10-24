@@ -23,6 +23,8 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   "alinear-medio": ["alinear"],
   "alinear-abajo": ["alinear"],
   eliminar: ["borrar", "quitar", "suprimir"],
+  "vinetas-puntos": ["lista", "vinetas", "viñetas", "puntos", "bullets", "balas"],
+  "vinetas-numeros": ["lista", "numerada", "numeros", "numeración", "enumerar", "enumeracion"],
   "eliminar-rama": ["rama", "subarbol", "mapa mental"],
   "crear-hijo": ["hijo", "mapa mental", "rama"],
   "crear-hermano": ["hermano", "mapa mental"],

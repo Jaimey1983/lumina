@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties, type KeyboardEvent as TeclaReact, type ReactElement } from "react";
+import { componerTexto } from "@lumina/drawing";
 import type { AreaDeTexto } from "./herramientas.js";
 import { escenaAPantalla, type Vista } from "./vista.js";
 
@@ -38,6 +39,9 @@ export function TextoEnSitio({ area, valor, vista, onCambio, onConfirmar, onCanc
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [valor, vista.zoom]);
+
+  // Con lista (Y24a) el texto va a la izquierda y deja a la izquierda el sitio de las marcas (que se ven al confirmar, no al escribir).
+  const sangria = area.vinetas ? componerTexto(valor, area.caja.ancho, area.tamano, area.negrita, area.vinetas).sangria : 0;
 
   const estilo: CSSProperties = {
     position: "absolute",
@@ -79,7 +83,8 @@ export function TextoEnSitio({ area, valor, vista, onCambio, onConfirmar, onCanc
           fontSize: area.tamano * vista.zoom,
           fontWeight: area.negrita ? 700 : 400,
           fontStyle: area.cursiva ? "italic" : "normal",
-          textAlign: area.alineacionH === "izquierda" ? "left" : area.alineacionH === "derecha" ? "right" : "center",
+          textAlign: area.vinetas || area.alineacionH === "izquierda" ? "left" : area.alineacionH === "derecha" ? "right" : "center",
+          paddingLeft: sangria > 0 ? sangria * vista.zoom : undefined,
           color: area.color,
           lineHeight: 1.25,
         }}

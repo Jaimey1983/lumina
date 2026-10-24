@@ -12,6 +12,7 @@ import {
   PATRONES_RELLENO,
   TIPOS_FORMA,
   TRAZADOS,
+  VINETAS,
   type Color,
   type Conexion,
   type Contorno,
@@ -30,6 +31,7 @@ import {
   type Texto,
   type TipoForma,
   type Trazado,
+  type Vinetas,
   type Transformacion,
 } from './tipos.js';
 
@@ -206,6 +208,7 @@ function normalizarEstilo(valor: unknown, tipo: 'forma' | 'linea' | 'texto'): Es
 
 function normalizarEstiloTexto(valor: unknown, tipo: 'forma' | 'linea' | 'texto'): EstiloTexto {
   const r = registro(valor) ?? {};
+  const vinetas = typeof r.vinetas === 'string' && (VINETAS as readonly string[]).includes(r.vinetas) ? (r.vinetas as Vinetas) : undefined;
   return {
     tamano: numero(r.tamano, LIMITES.tamanoTexto.porDefecto, LIMITES.tamanoTexto.min, LIMITES.tamanoTexto.max),
     negrita: booleano(r.negrita, false),
@@ -215,6 +218,8 @@ function normalizarEstiloTexto(valor: unknown, tipo: 'forma' | 'linea' | 'texto'
     alineacionV: enumerado(r.alineacionV, ALINEACIONES_V, tipo === 'texto' ? 'arriba' : 'medio'),
     color: color(r.color, COLOR_TEXTO),
     fuente: texto(r.fuente, LIMITES.fuente)?.trim() ?? '',
+    // Solo se escribe cuando hay lista: un texto sin ella sale como antes de Y24a.
+    ...(vinetas ? { vinetas } : {}),
   };
 }
 

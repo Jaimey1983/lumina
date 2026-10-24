@@ -47,6 +47,10 @@ export type AlineacionH = (typeof ALINEACIONES_H)[number];
 export const ALINEACIONES_V = ['arriba', 'medio', 'abajo'] as const;
 export type AlineacionV = (typeof ALINEACIONES_V)[number];
 
+/** Lista del texto (Y24a): una marca por párrafo, `•` (puntos) o `1.`, `2.`… (números). */
+export const VINETAS = ['puntos', 'numeros'] as const;
+export type Vinetas = (typeof VINETAS)[number];
+
 /** Color: hex (`#rgb`, `#rrggbb`, `#rrggbbaa`) o token del tema `var(--nombre)` (sin fallback ni espacios). */
 export type Color = string;
 
@@ -134,6 +138,8 @@ export interface EstiloTexto {
   color: Color;
   /** Familia tipográfica; vacío = la del tema. */
   fuente: string;
+  /** Ausente = sin lista. Con lista, el texto se alinea a la izquierda (la `alineacionH` se conserva pero no se usa). */
+  vinetas?: Vinetas;
 }
 
 /** Punto de unión de un conector con una forma: `puerto` es el índice del puerto que declara W2. */

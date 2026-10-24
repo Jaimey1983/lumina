@@ -136,6 +136,7 @@ export type Orden =
   | { tipo: "quitar-guias" }
   /** Negrita, cursiva o subrayado de lo elegido (Y18): un interruptor sobre todo lo editable. */
   | { tipo: "formato-texto"; propiedad: "negrita" | "cursiva" | "subrayado" }
+  | { tipo: "lista"; modo: "puntos" | "numeros" }
   /** Cambiar la forma de lo elegido (Y19): conserva todo lo demás y deja los conectores por el mismo lado. */
   | { tipo: "cambiar-forma"; forma: TipoForma }
   /** Un estilo predefinido de forma (Y21) y un tema de paleta para el diagrama (Y21): los dos cambian solo el aspecto. */
