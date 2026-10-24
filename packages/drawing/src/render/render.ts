@@ -6,8 +6,8 @@
 import { formasVisibles, puntoDePuerto } from '../conectores/puertos.js';
 import { cajasDeFormas, trazarLinea, type CajaObstaculo } from '../conectores/trazado.js';
 import { rectanguloTexto, trazadoForma } from '../formas/index.js';
-import type { Elemento, Escena, Estilo, EstiloTexto, Extremo, Forma, Linea, Punto, Texto } from '../tipos.js';
-import { resolverColor, type ModoColor } from './colores.js';
+import type { Elemento, Escena, Estilo, EstiloTexto, Extremo, Forma, Linea, Punto, Relleno, Sombra, Texto } from '../tipos.js';
+import { resolverColor, type ModoColor, type Pintura } from './colores.js';
 import { ajustarTexto, INTERLINEADO, lineasDeTexto } from './texto.js';
 
 export interface NodoSvg {
@@ -73,6 +73,44 @@ export { puntoDePuerto };
 
 // ─── Relleno, contorno, sombra ────────────────────────────────────────────────
 
+/**
+ * Sombra interior (Y23): el alfa de la forma (contorno incluido) se invierte, se difumina y se desplaza; con él se recorta
+ * el color de la sombra, que se compone **encima** del dibujo y solo dentro de la forma.
+ */
+function filtroInterior(s: Sombra, p: Pintura): NodoSvg[] {
+  return [
+    nodo('feComponentTransfer', { in: 'SourceAlpha', result: 'invertida' }, [nodo('feFuncA', { type: 'table', tableValues: '1 0' })]),
+    nodo('feGaussianBlur', { in: 'invertida', stdDeviation: r(s.desenfoque / 2), result: 'difusa' }),
+    nodo('feOffset', { in: 'difusa', dx: s.dx, dy: s.dy, result: 'desplazada' }),
+    nodo('feFlood', { 'flood-color': p.color, 'flood-opacity': p.opacidad, result: 'color' }),
+    nodo('feComposite', { in: 'color', in2: 'desplazada', operator: 'in', result: 'sombra' }),
+    nodo('feComposite', { in: 'sombra', in2: 'SourceAlpha', operator: 'in', result: 'interior' }),
+    nodo('feMerge', {}, [nodo('feMergeNode', { in: 'SourceGraphic' }), nodo('feMergeNode', { in: 'interior' })]),
+  ];
+}
+
+/**
+ * Un `<pattern>` con el azulejo del relleno (Y23). Va en unidades de escena (`userSpaceOnUse`) y dentro del mismo `transform`
+ * que la forma: gira y se mueve con ella y no cambia de tamaño con el zoom.
+ */
+function nodoPatron(rel: Extract<Relleno, { tipo: 'patron' }>, id: string, ctx: Contexto): NodoSvg {
+  const e = rel.escala;
+  const tinta = (grosor: number): NodoSvg['attrs'] => ({ ...pintar(rel.color, ctx, 'stroke'), 'stroke-width': r(grosor), fill: 'none' });
+  const hijos: NodoSvg[] = [];
+  if (rel.fondo !== null) hijos.push(nodo('rect', { width: e, height: e, ...pintar(rel.fondo, ctx, 'fill') }));
+  if (rel.patron === 'rayas') {
+    hijos.push(nodo('rect', { x: 0, y: r(e * 0.375), width: e, height: r(e / 4), ...pintar(rel.color, ctx, 'fill') }));
+  } else if (rel.patron === 'diagonal') {
+    // Tres segmentos para que las diagonales se junten sin cortes entre azulejos vecinos.
+    hijos.push(nodo('path', { d: `M${r(-e / 2)} ${r(e / 2)}L${r(e / 2)} ${r(-e / 2)}M0 ${e}L${e} 0M${r(e / 2)} ${r(e * 1.5)}L${r(e * 1.5)} ${r(e / 2)}`, ...tinta(e / 4) }));
+  } else if (rel.patron === 'cuadricula') {
+    hijos.push(nodo('path', { d: `M0 ${r(e / 2)}L${e} ${r(e / 2)}M${r(e / 2)} 0L${r(e / 2)} ${e}`, ...tinta(e / 8) }));
+  } else {
+    hijos.push(nodo('circle', { cx: r(e / 2), cy: r(e / 2), r: r(e / 6), ...pintar(rel.color, ctx, 'fill') }));
+  }
+  return nodo('pattern', { id, patternUnits: 'userSpaceOnUse', width: e, height: e }, hijos);
+}
+
 function atributosEstilo(estilo: Estilo, ctx: Contexto, tieneRelleno: boolean): NodoSvg['attrs'] {
   const attrs: NodoSvg['attrs'] = {};
 
@@ -81,17 +119,23 @@ function atributosEstilo(estilo: Estilo, ctx: Contexto, tieneRelleno: boolean): 
     attrs.fill = 'none';
   } else if (rel.tipo === 'solido') {
     Object.assign(attrs, pintar(rel.color, ctx, 'fill'));
-  } else {
+  } else if (rel.tipo === 'degradado') {
     const id = idNuevo(ctx, 'degradado');
-    const a = (rel.angulo * Math.PI) / 180;
-    const dx = Math.cos(a) / 2;
-    const dy = Math.sin(a) / 2;
-    ctx.defs.push(
-      nodo('linearGradient', { id, x1: r(0.5 - dx), y1: r(0.5 - dy), x2: r(0.5 + dx), y2: r(0.5 + dy) }, [
-        nodo('stop', { offset: 0, 'stop-color': resolverColor(rel.desde, ctx.modo).color }),
-        nodo('stop', { offset: 1, 'stop-color': resolverColor(rel.hasta, ctx.modo).color }),
-      ]),
-    );
+    // Ningún degradado aplica el alfa de sus colores (DY32): las escenas guardadas antes dependen de ello.
+    const parada = (offset: number, color: string): NodoSvg => nodo('stop', { offset, 'stop-color': resolverColor(color, ctx.modo).color });
+    const paradas = [parada(0, rel.desde), ...(rel.paradas ?? []).map((p) => parada(p.posicion, p.color)), parada(1, rel.hasta)];
+    if (rel.forma === 'radial') {
+      ctx.defs.push(nodo('radialGradient', { id, cx: 0.5, cy: 0.5, r: 0.5 }, paradas));
+    } else {
+      const a = (rel.angulo * Math.PI) / 180;
+      const dx = Math.cos(a) / 2;
+      const dy = Math.sin(a) / 2;
+      ctx.defs.push(nodo('linearGradient', { id, x1: r(0.5 - dx), y1: r(0.5 - dy), x2: r(0.5 + dx), y2: r(0.5 + dy) }, paradas));
+    }
+    attrs.fill = `url(#${id})`;
+  } else {
+    const id = idNuevo(ctx, 'patron');
+    ctx.defs.push(nodoPatron(rel, id, ctx));
     attrs.fill = `url(#${id})`;
   }
 
@@ -114,7 +158,7 @@ function atributosEstilo(estilo: Estilo, ctx: Contexto, tieneRelleno: boolean): 
     const id = idNuevo(ctx, 'sombra');
     const p = resolverColor(s.color, ctx.modo);
     ctx.defs.push(
-      nodo('filter', { id, x: '-30%', y: '-30%', width: '160%', height: '160%' }, [
+      nodo('filter', { id, x: '-30%', y: '-30%', width: '160%', height: '160%' }, s.interior ? filtroInterior(s, p) : [
         nodo('feDropShadow', { dx: s.dx, dy: s.dy, stdDeviation: r(s.desenfoque / 2), 'flood-color': p.color, 'flood-opacity': p.opacidad }),
       ]),
     );
