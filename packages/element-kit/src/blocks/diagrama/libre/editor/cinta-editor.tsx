@@ -16,6 +16,7 @@ import type { Orden } from "./comandos.js";
 import type { DiagramaPaletaId } from "@lumina/types/slide";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import { ESTILOS_FORMA } from "./estilos-forma.js";
+import { Conmutador } from "./propiedades-campos.js";
 import { AlineacionHorizontal, BotonFormatoTexto, ColorContorno, ColorRelleno, datosDeFormato, GrosorContorno, TamanoLetra, type AccionesDeFormato } from "./mini-barra-capa.js";
 import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, hayExtremoLibre, valorComun } from "./conectores.js";
 
@@ -172,6 +173,23 @@ function navegarGaleria(e: KeyboardEvent<HTMLElement>, columnas: number): void {
   e.preventDefault();
   e.stopPropagation(); // las flechas de la galería no mueven lo elegido en el lienzo
   botones[Math.min(botones.length - 1, Math.max(0, i + paso))]?.focus();
+}
+
+/** Lista con viñetas o numerada (Y24a): el botón es el del comando del registro (etiqueta, icono y orden salen de allí). */
+function BotonLista({ id, sufijo, contexto, onOrden }: { id: "vinetas-puntos" | "vinetas-numeros"; sufijo: string; contexto: ContextoComando; onOrden: (o: Orden) => void }): ReactElement {
+  const def = comando(id);
+  const Icono = def.icono;
+  const estado = estadoComando(def, contexto);
+  return (
+    <Conmutador
+      sufijo={sufijo}
+      etiqueta={def.etiqueta}
+      valor={estado.habilitado ? { mixto: false, valor: estado.activo === true } : null}
+      icono={Icono ? <Icono className="size-3.5" /> : def.etiqueta}
+      deshabilitado={!estado.habilitado}
+      onCambiar={() => onOrden(def.orden)}
+    />
+  );
 }
 
 /** Miniatura de un estilo: un rectángulo con su relleno, contorno y la «A» del color de su texto (los tokens siguen al modo del editor). */
@@ -560,6 +578,8 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
                   <BotonFormatoTexto id="negrita" datos={datosFormato} sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
                   <BotonFormatoTexto id="cursiva" datos={datosFormato} sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
                   <BotonFormatoTexto id="subrayado" datos={datosFormato} sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
+                  <BotonLista id="vinetas-puntos" sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
+                  <BotonLista id="vinetas-numeros" sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
                   <AlineacionHorizontal datos={datosFormato} sufijo="(cinta)" {...formato} />
                 </RibbonGroup>
               </div>

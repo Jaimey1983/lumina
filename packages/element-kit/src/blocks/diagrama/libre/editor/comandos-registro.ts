@@ -61,6 +61,7 @@ import {
   FlipHorizontal2,
   Shapes,
   Equal,
+  List,
   ListTree,
   Undo2,
   Ungroup,
@@ -74,7 +75,7 @@ import { ESTILOS_FORMA, estiloActivo } from "./estilos-forma.js";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import { ambitoDeTema } from "./temas-escena.js";
 import type { DiagramaPaletaId } from "@lumina/types/slide";
-import { hayFormato, hojasDeFormato, hojasEditables, valorComun, type FormatoDeTexto } from "./propiedades.js";
+import { conLista, hayFormato, hojasDeFormato, hojasEditables, listaDeSeleccion, valorComun, type FormatoDeTexto } from "./propiedades.js";
 import { esMismaHerramienta, SELECCIONAR, type Herramienta } from "./herramientas.js";
 import { ZOOM_MAX, ZOOM_MIN } from "./vista.js";
 
@@ -199,6 +200,21 @@ const formatoDeTexto = (id: FormatoDeTexto, etiqueta: string, icono: ComponentTy
   activo: (c) => {
     const v = valorComun(hojasDeFormato(c.escena, c.seleccion), (h) => h.estiloTexto[id]);
     return v !== null && !v.mixto && v.valor;
+  },
+  sinMenu: true,
+});
+
+/** Lista con viñetas o numerada (Y24a): interruptor para las formas y textos editables elegidos (un conector no lleva lista). */
+const listaDeTexto = (id: "vinetas-puntos" | "vinetas-numeros", etiqueta: string, modo: "puntos" | "numeros", icono: ComponentType<{ className?: string }>): DefinicionComando => ({
+  id,
+  etiqueta,
+  icono,
+  grupo: "formato",
+  orden: { tipo: "lista", modo },
+  habilitado: (c) => (hojasDeFormato(c.escena, c.seleccion).some(conLista) ? true : "Elige una forma o un texto"),
+  activo: (c) => {
+    const v = listaDeSeleccion(c.escena, c.seleccion);
+    return v !== null && !v.mixto && v.valor === modo;
   },
   sinMenu: true,
 });
@@ -432,6 +448,8 @@ export const COMANDOS: readonly DefinicionComando[] = [
   formatoDeTexto("negrita", "Negrita", Bold),
   formatoDeTexto("cursiva", "Cursiva", Italic),
   formatoDeTexto("subrayado", "Subrayado", Underline),
+  listaDeTexto("vinetas-puntos", "Lista con viñetas", "puntos", List),
+  listaDeTexto("vinetas-numeros", "Lista numerada", "numeros", ListOrdered),
 
   // Orden de capas
   { id: "orden-frente", menu: { forma: { grupo: "orden", submenu: "Orden" }, conector: { grupo: "orden", submenu: "Orden" } }, etiqueta: "Traer al frente", icono: BringToFront, grupo: "orden", atajos: [ctrl("]", { shift: true })], orden: { tipo: "orden", modo: "frente" }, habilitado: hay },

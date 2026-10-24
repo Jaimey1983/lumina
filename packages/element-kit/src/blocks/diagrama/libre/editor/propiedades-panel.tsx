@@ -16,10 +16,12 @@ import {
   cambiarParada,
   conFormaDeDegradado,
   fijarSombraInterior,
+  fijarVinetas,
   paradasDe,
   quitarParada,
   camposDeForma,
   fijarParametroDeForma,
+  conLista,
   conRadio,
   conRelleno,
   conSombra,
@@ -75,6 +77,12 @@ const TIPOS_RELLENO = [
   { valor: "solido", etiqueta: "Sólido" },
   { valor: "degradado", etiqueta: "Degradado" },
   { valor: "patron", etiqueta: "Patrón" },
+] as const;
+
+const LISTAS = [
+  { valor: "ninguna", etiqueta: "Sin lista" },
+  { valor: "puntos", etiqueta: "Viñetas" },
+  { valor: "numeros", etiqueta: "Numerada" },
 ] as const;
 
 const FORMAS_DEGRADADO = [
@@ -178,6 +186,8 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
   const sombraInterior = valorComun(conSombraActiva, (h) => (h.estilo.sombra as Sombra).interior === true);
 
   const radio = valorComun(conRad, (h) => h.estilo.radio);
+  // La lista del texto (Y24a): la llevan las formas y los cuadros de texto, no el rótulo de un conector.
+  const lista = valorComun(editables.filter(conLista), (h) => h.estiloTexto.vinetas ?? "ninguna") as Valor<(typeof LISTAS)[number]["valor"]> | null;
 
   const et = <K extends keyof (typeof editables)[number]["estiloTexto"]>(k: K) => valorComun(editables, (h) => h.estiloTexto[k]);
   const fuente = et("fuente");
@@ -662,6 +672,23 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
                   onElegir={(v) => onAplicar((e) => fijarTexto(e, editables, { alineacionV: v }))}
                 />
               </Fila>
+              {lista ? (
+                <Fila
+                  etiqueta="Lista"
+                  ayuda={
+                    <FieldHelp label="Lista">
+                      <p>Con viñetas o numerada, cada párrafo del texto (lo que separa un salto de línea) lleva su marca. Con lista, el texto se alinea a la izquierda.</p>
+                    </FieldHelp>
+                  }
+                >
+                  <Opciones
+                    etiqueta="Lista del texto"
+                    opciones={LISTAS}
+                    valor={lista}
+                    onElegir={(v) => onAplicar((e) => fijarVinetas(e, editables.map((h) => h.id), v === "ninguna" ? null : v))}
+                  />
+                </Fila>
+              ) : null}
               <FilaColor
                 etiqueta="Color"
                 etiquetaColor="Color del texto"

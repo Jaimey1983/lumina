@@ -29,6 +29,7 @@ import {
   type Relleno,
   type Sombra,
   type Texto,
+  type Vinetas,
 } from "@lumina/drawing";
 import { bloqueadosEfectivos } from "./asas.js";
 
@@ -119,6 +120,28 @@ export function alternarTexto(escena: Escena, seleccion: readonly string[], prop
   const actual = valorComun(destino, (h) => h.estiloTexto[propiedad]);
   if (actual === null) return escena;
   return fijarTexto(escena, destino, { [propiedad]: actual.mixto || !actual.valor });
+}
+
+/** La lista del texto (viñetas o números) la llevan las formas y los cuadros de texto; el rótulo de un conector no (Y24a). */
+export const conLista = (h: Hoja): h is Forma | Texto => h.tipo !== "linea";
+
+/** La lista de lo elegido: `null` si ninguno la tiene, «mixto» si difiere; `null` también si no hay nada con lista. */
+export function listaDeSeleccion(escena: Escena, seleccion: readonly string[]): Valor<Vinetas | null> | null {
+  return valorComun(hojasDeFormato(escena, seleccion).filter(conLista), (h) => h.estiloTexto.vinetas ?? null);
+}
+
+/** Pone la lista `modo` (o la quita con `null`) en las formas y textos editables elegidos. Quitarla no deja el campo en la escena. */
+export function fijarVinetas(escena: Escena, seleccion: readonly string[], modo: Vinetas | null): Escena {
+  const destino = hojasDeFormato(escena, seleccion).filter(conLista);
+  if (destino.every((h) => (h.estiloTexto.vinetas ?? null) === modo)) return escena;
+  return fijarTexto(escena, destino, { vinetas: modo ?? undefined });
+}
+
+/** Interruptor: si todo lo elegido ya tiene la lista `modo`, la quita; si no (o si es mixto), la pone en todo. */
+export function alternarVinetas(escena: Escena, seleccion: readonly string[], modo: Vinetas): Escena {
+  const actual = listaDeSeleccion(escena, seleccion);
+  if (actual === null) return escena;
+  return fijarVinetas(escena, seleccion, !actual.mixto && actual.valor === modo ? null : modo);
 }
 
 /** Un campo de la sección «Forma» del panel: un parámetro de la forma elegida (Y20). */

@@ -125,6 +125,8 @@ export interface AreaDeTexto {
   alineacionH: "izquierda" | "centro" | "derecha";
   alineacionV: "arriba" | "medio" | "abajo";
   color: string;
+  /** Lista del texto (Y24a): el cuadro de edición se alinea a la izquierda y deja sitio a las marcas. Un rótulo de conector no la lleva. */
+  vinetas?: "puntos" | "numeros";
 }
 
 const ANCHO_ROTULO = 160;
@@ -135,15 +137,17 @@ export function areaDeTexto(escena: Escena, e: Elemento): AreaDeTexto | null {
   if (e.tipo === "grupo") return null;
   const st = e.estiloTexto;
   const comun = { tamano: st.tamano, negrita: st.negrita, cursiva: st.cursiva, alineacionH: st.alineacionH, alineacionV: st.alineacionV, color: st.color };
+  const conLista = st.vinetas ? { vinetas: st.vinetas } : {};
   if (e.tipo === "texto") {
     const t = e.transformacion;
-    return { ...comun, caja: { x: t.x, y: t.y, ancho: t.ancho, alto: t.alto }, rotacion: t.rotacion, centro: { x: t.x + t.ancho / 2, y: t.y + t.alto / 2 }, texto: e.texto };
+    return { ...comun, ...conLista, caja: { x: t.x, y: t.y, ancho: t.ancho, alto: t.alto }, rotacion: t.rotacion, centro: { x: t.x + t.ancho / 2, y: t.y + t.alto / 2 }, texto: e.texto };
   }
   if (e.tipo === "forma") {
     const t = e.transformacion;
     const r = rectanguloTexto(e.forma, t.ancho, t.alto, { parametros: e.parametros, radio: e.estilo.radio });
     return {
       ...comun,
+      ...conLista,
       caja: { x: t.x + r.x, y: t.y + r.y, ancho: r.ancho, alto: r.alto },
       rotacion: t.rotacion,
       centro: { x: t.x + t.ancho / 2, y: t.y + t.alto / 2 },

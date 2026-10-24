@@ -59,7 +59,7 @@ import { asaAjusteEn, formaConAsasAjuste } from "./asas-ajuste.js";
 import { CapaAsasAjuste } from "./asas-ajuste-capa.js";
 import { circulosDeAsasHijo, miniBarraVisible } from "./mini-barra.js";
 import { datosDeFormato, enfocarMiniBarra, MiniBarra } from "./mini-barra-capa.js";
-import { alternarTexto, hayFormato as hayQueFormatear, hojasEditables } from "./propiedades.js";
+import { alternarTexto, alternarVinetas, conLista, hayFormato as hayQueFormatear, hojasDeFormato, hojasEditables, listaDeSeleccion } from "./propiedades.js";
 import { aplicarEstiloForma, estiloPorId } from "./estilos-forma.js";
 import { ambitoDeTema, aplicarTema } from "./temas-escena.js";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
@@ -1712,6 +1712,16 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       case "formato-texto":
         aplicarDelPanel((e) => alternarTexto(e, vivo.current.seleccion, orden.propiedad));
         return;
+      case "lista": {
+        const { escena: actual, seleccion: sel } = vivo.current;
+        const nueva = alternarVinetas(actual, sel, orden.modo);
+        if (nueva === actual) return;
+        aplicarDelPanel((e) => alternarVinetas(e, vivo.current.seleccion, orden.modo));
+        const quedan = listaDeSeleccion(nueva, sel);
+        const cuantos = hojasDeFormato(nueva, sel).filter(conLista).length;
+        setAnuncio(quedan !== null && !quedan.mixto && quedan.valor === null ? "Lista quitada." : `${orden.modo === "puntos" ? "Lista con viñetas" : "Lista numerada"} aplicada a ${cuantos} ${cuantos === 1 ? "elemento" : "elementos"}.`);
+        return;
+      }
       case "terminar":
         cerrar();
         return;
