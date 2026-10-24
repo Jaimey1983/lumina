@@ -119,3 +119,12 @@ export function ajustarTexto(texto: string, ancho: number, alto: number, tamano:
   const { tamano: t, lineas } = ajustarComposicion(texto, ancho, alto, tamano, negrita, undefined, minimo);
   return { tamano: t, lineas: lineas.map((l) => l.texto) };
 }
+
+/**
+ * El alto que ocupan las líneas del texto **sin reducir la letra** (Y24b): lo que necesita una caja para que el texto quepa tal como
+ * está. Usa la misma composición que el render (palabras enteras, con la sangría de las viñetas); no incluye el relleno de la zona.
+ */
+export function altoDeTexto(texto: string, anchoUtil: number, estilo: { tamano: number; negrita: boolean; vinetas?: Vinetas }): number {
+  const { lineas } = componerTexto(texto, anchoUtil, estilo.tamano, estilo.negrita, estilo.vinetas, false);
+  return lineas.length * estilo.tamano * INTERLINEADO;
+}
