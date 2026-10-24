@@ -28,6 +28,7 @@ import {
   conectarFormas,
   crearHijo,
   crearHijoEn,
+  ajustarAlTexto,
   aplicarFormato,
   cajaDeFragmento,
   DESPLAZAMIENTO_PEGADO,
@@ -59,6 +60,8 @@ import { asaAjusteEn, formaConAsasAjuste } from "./asas-ajuste.js";
 import { CapaAsasAjuste } from "./asas-ajuste-capa.js";
 import { circulosDeAsasHijo, miniBarraVisible } from "./mini-barra.js";
 import { datosDeFormato, enfocarMiniBarra, MiniBarra } from "./mini-barra-capa.js";
+import { ajusteDeSeleccion, mensajeDeAjuste } from "./ajuste-texto.js";
+import { guardarCrecerAlEscribir, leerCrecerAlEscribir } from "./preferencias-texto.js";
 import { alternarTexto, alternarVinetas, conLista, hayFormato as hayQueFormatear, hojasDeFormato, hojasEditables, listaDeSeleccion } from "./propiedades.js";
 import { aplicarEstiloForma, estiloPorId } from "./estilos-forma.js";
 import { ambitoDeTema, aplicarTema } from "./temas-escena.js";
@@ -328,6 +331,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const [esquemaAbierto, setEsquemaAbierto] = useState(false);
   /** Reglas y guías (Y16a, DY9): viven en el editor; no van a la escena, al historial ni a la exportación. */
   const [reglas, setReglas] = useState(false);
+  // «Crecer al escribir» (Y24b): preferencia del navegador; el ref deja a los manejadores ver siempre el valor de ahora.
+  const [crecer, setCrecer] = useState<boolean>(leerCrecerAlEscribir);
+  const crecerRef = useRef(crecer);
+  crecerRef.current = crecer;
   const [guiasUsuario, setGuiasUsuario] = useState<GuiaUsuario[]>([]);
   /** La guía que se está llevando de vuelta a la regla (se quita al soltar) y la nueva que se arrastra desde una regla. */
   const [guiaQuitando, setGuiaQuitando] = useState<number | null>(null);
@@ -957,8 +964,12 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         setAnuncio("Cuadro de texto vacío eliminado.");
       }
     } else if (ed.valor !== ed.area.texto) {
-      const nueva = actualizar(actual, [ed.id], { texto: ed.valor });
+      const conTexto = actualizar(actual, [ed.id], { texto: ed.valor });
+      // Con «crecer al escribir», la forma crece lo justo en la misma entrada de historial que el texto (Deshacer devuelve las dos cosas).
+      const ajuste = crecerRef.current ? ajustarAlTexto(conTexto, [ed.id], { soloCrecer: true }) : null;
+      const nueva = ajuste ? ajuste.escena : conTexto;
       if (nueva !== actual) confirmar(actual, { escena: nueva, seleccion: [ed.id] });
+      if (ajuste && ajuste.cambios.length > 0) setAnuncio(mensajeDeAjuste(ajuste.cambios));
     }
   };
 
@@ -1722,6 +1733,22 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         setAnuncio(quedan !== null && !quedan.mixto && quedan.valor === null ? "Lista quitada." : `${orden.modo === "puntos" ? "Lista con viñetas" : "Lista numerada"} aplicada a ${cuantos} ${cuantos === 1 ? "elemento" : "elementos"}.`);
         return;
       }
+      case "ajustar-al-texto": {
+        const { escena: actual, seleccion: sel } = vivo.current;
+        const r = ajusteDeSeleccion(actual, sel);
+        // El comando está deshabilitado cuando no hay nada que ajustar: aquí siempre hay un cambio.
+        aplicarDelPanel((e) => ajustarAlTexto(e, vivo.current.seleccion).escena);
+        setAnuncio(mensajeDeAjuste(r.cambios));
+        return;
+      }
+      case "crecer-al-escribir": {
+        const activa = !crecerRef.current;
+        crecerRef.current = activa;
+        setCrecer(activa);
+        guardarCrecerAlEscribir(activa);
+        setAnuncio(activa ? "Crecer al escribir activado: la forma crece al confirmar el texto." : "Crecer al escribir desactivado.");
+        return;
+      }
       case "terminar":
         cerrar();
         return;
@@ -1819,7 +1846,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const cantidad = escena.elementos.filter((x) => x.tipo !== "grupo").length;
   const puedeDeshacer = historial.current.puedeDeshacer;
   const puedeRehacer = historial.current.puedeRehacer;
-  const contextoCinta: ContextoComando = { escena, seleccion, herramienta, puedeDeshacer, puedeRehacer, zoom: vista.zoom, cuadricula, imantar, formatoGuardado: hayFormato, pincel: pincel === null ? null : pincel.fijo ? "fijo" : "una-vez", reglas, guias: guiasUsuario.length };
+  const contextoCinta: ContextoComando = { escena, seleccion, herramienta, puedeDeshacer, puedeRehacer, zoom: vista.zoom, cuadricula, imantar, formatoGuardado: hayFormato, pincel: pincel === null ? null : pincel.fijo ? "fijo" : "una-vez", reglas, guias: guiasUsuario.length, crecerAlEscribir: crecer };
 
   // Al elegir un conector se muestra su pestaña contextual, pero solo si el usuario estaba en Inicio: no le quita la pestaña a quien trabaja en otra.
   const [pestana, setPestana] = useState(PESTANA_INICIO);
@@ -2011,7 +2038,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       </div>
       </div>
       <ZonaRedimensionable etiqueta="Propiedades" clave="dibujo-panel">
-        {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} />}
+        {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} crecerAlEscribir={crecer} onCrecerAlEscribir={() => ejecutarOrden({ tipo: "crecer-al-escribir" })} onAjustarAlTexto={() => ejecutarOrden({ tipo: "ajustar-al-texto" })} />}
       </ZonaRedimensionable>
       </div>
 

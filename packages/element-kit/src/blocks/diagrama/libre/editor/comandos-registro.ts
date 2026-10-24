@@ -63,6 +63,8 @@ import {
   Equal,
   List,
   ListTree,
+  FoldVertical,
+  MoveDown,
   Undo2,
   Ungroup,
   ZoomIn,
@@ -75,6 +77,7 @@ import { ESTILOS_FORMA, estiloActivo } from "./estilos-forma.js";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import { ambitoDeTema } from "./temas-escena.js";
 import type { DiagramaPaletaId } from "@lumina/types/slide";
+import { motivoDeAjuste } from "./ajuste-texto.js";
 import { conLista, hayFormato, hojasDeFormato, hojasEditables, listaDeSeleccion, valorComun, type FormatoDeTexto } from "./propiedades.js";
 import { esMismaHerramienta, SELECCIONAR, type Herramienta } from "./herramientas.js";
 import { ZOOM_MAX, ZOOM_MIN } from "./vista.js";
@@ -97,6 +100,8 @@ export interface ContextoComando {
   reglas?: boolean;
   /** Cuántas guías hay puestas (Y16a). */
   guias?: number;
+  /** «Crecer al escribir» está encendida (Y24b): preferencia del navegador. */
+  crecerAlEscribir?: boolean;
 }
 
 /** Una combinación de teclas. `ctrl` vale por Ctrl o ⌘ y es exacto (por defecto, sin Ctrl); `shift` y `alt` solo se exigen si se indican. */
@@ -218,6 +223,28 @@ const listaDeTexto = (id: "vinetas-puntos" | "vinetas-numeros", etiqueta: string
   },
   sinMenu: true,
 });
+
+/** «Ajustar al texto» (Y24b): el alto justo para el texto; sale en la cinta, el menú contextual y `Ctrl+K`. */
+const AJUSTAR_AL_TEXTO: DefinicionComando = {
+  id: "ajustar-al-texto",
+  etiqueta: "Ajustar al texto",
+  icono: FoldVertical,
+  grupo: "formato",
+  orden: { tipo: "ajustar-al-texto" },
+  habilitado: (c) => motivoDeAjuste(c.escena, c.seleccion),
+  menu: { forma: { grupo: "edicion" } },
+};
+
+/** «Crecer al escribir» (Y24b): interruptor de una preferencia del navegador; sin botón suelto ni menú (vive en el panel y en `Ctrl+K`). */
+const CRECER_AL_ESCRIBIR: DefinicionComando = {
+  id: "crecer-al-escribir",
+  etiqueta: "Crecer al escribir",
+  icono: MoveDown,
+  grupo: "formato",
+  orden: { tipo: "crecer-al-escribir" },
+  activo: (c) => c.crecerAlEscribir === true,
+  sinMenu: true,
+};
 
 /** Las formas (no textos ni conectores) editables de la selección, grupos incluidos (Y19). */
 const formasEditables = (c: ContextoComando) => hojasEditables(c.escena, c.seleccion).filter((h) => h.tipo === "forma");
@@ -450,6 +477,10 @@ export const COMANDOS: readonly DefinicionComando[] = [
   formatoDeTexto("subrayado", "Subrayado", Underline),
   listaDeTexto("vinetas-puntos", "Lista con viñetas", "puntos", List),
   listaDeTexto("vinetas-numeros", "Lista numerada", "numeros", ListOrdered),
+
+  // Ajustar la forma al texto y crecer al escribir (Y24b)
+  AJUSTAR_AL_TEXTO,
+  CRECER_AL_ESCRIBIR,
 
   // Orden de capas
   { id: "orden-frente", menu: { forma: { grupo: "orden", submenu: "Orden" }, conector: { grupo: "orden", submenu: "Orden" } }, etiqueta: "Traer al frente", icono: BringToFront, grupo: "orden", atajos: [ctrl("]", { shift: true })], orden: { tipo: "orden", modo: "frente" }, habilitado: hay },

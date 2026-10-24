@@ -5,7 +5,7 @@ import { altoDeTexto } from '../render/texto.js';
 import { TIPOS_FORMA, type Escena, type Forma, type Linea, type Texto } from '../tipos.js';
 import { ajustarAlTexto, ALTO_MINIMO_AJUSTE, CRECIMIENTO_MAXIMO, estadoDelTexto, MARGEN_VECINAS } from './ajustar-texto.js';
 import { esquinas } from './geometria.js';
-import { escena, forma, getForma, getLinea, getTexto, grupo, linea, texto } from './util-pruebas.js';
+import { escena, forma, getForma, getLinea, grupo, linea, texto } from './util-pruebas.js';
 
 // Valores escritos como literales (no con las constantes del código): una mutación de una constante tiene que romper una prueba.
 
