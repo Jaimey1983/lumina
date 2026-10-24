@@ -51,7 +51,7 @@ describe("Y17 — clic derecho", () => {
     expect(raiz.getAttribute("aria-label")).toBe("Menú contextual");
     expect(document.querySelector("[data-menu-contextual]")?.getAttribute("data-menu-contextual")).toBe("forma");
     expect(m.barra()).toBe("1");
-    expect(ids).toEqual(["cortar", "copiar", "pegar", "duplicar", "eliminar", "crear-hijo", "crear-hermano", "agrupar", "desagrupar", "bloquear", "ocultar"]);
+    expect(ids).toEqual(["cortar", "copiar", "pegar", "duplicar", "eliminar", "ajustar-al-texto", "crear-hijo", "crear-hermano", "agrupar", "desagrupar", "bloquear", "ocultar"]);
     expect(submenus).toEqual(["Cambiar forma", "Orden"]); // sin «Alinear»: hay una sola forma
     const agrupar = raiz.querySelector("[data-comando=agrupar]") as HTMLElement;
     expect(agrupar.getAttribute("aria-disabled")).toBe("true");
