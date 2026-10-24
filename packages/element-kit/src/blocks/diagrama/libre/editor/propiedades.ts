@@ -181,9 +181,16 @@ export const PATRONES_DE_RELLENO: ReadonlyArray<{ valor: PatronRelleno; etiqueta
 
 export type FormaDeDegradado = "lineal" | "radial";
 
+/** Una copia del objeto sin la clave `clave` (los campos opcionales de Y23 se quitan, no se ponen en `undefined`). */
+function sinClave<T extends object, K extends keyof T>(o: T, clave: K): Omit<T, K> {
+  const copia = { ...o };
+  delete copia[clave];
+  return copia;
+}
+
 /** Lineal o radial. El ángulo y las paradas se conservan al cambiar de uno a otro. Lineal no escribe el campo (lo de antes). */
 export function conFormaDeDegradado(r: RellenoDegradado, forma: FormaDeDegradado): RellenoDegradado {
-  const { forma: _antes, ...resto } = r;
+  const resto = sinClave(r, "forma");
   return forma === "radial" ? { ...resto, forma: "radial" } : resto;
 }
 
@@ -212,7 +219,7 @@ export function mezclarColores(a: string, b: string): string {
 
 /** La lista de paradas, ordenada de menor a mayor; vacía = sin el campo. */
 function conParadas(r: RellenoDegradado, paradas: readonly ParadaDegradado[]): RellenoDegradado {
-  const { paradas: _antes, ...resto } = r;
+  const resto = sinClave(r, "paradas");
   return paradas.length === 0 ? resto : { ...resto, paradas: [...paradas].sort((x, y) => x.posicion - y.posicion) };
 }
 
@@ -248,7 +255,7 @@ export function cambiarParada(r: RellenoDegradado, i: number, parche: Partial<Pa
 export const fijarSombraInterior = (escena: Escena, destino: readonly Hoja[], interior: boolean): Escena =>
   fijarSombra(escena, destino, (s) => {
     if (!s) return s;
-    const { interior: _antes, ...resto } = s;
+    const resto = sinClave(s, "interior");
     return interior ? { ...resto, interior: true } : resto;
   });
 
