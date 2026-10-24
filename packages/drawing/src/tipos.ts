@@ -64,10 +64,39 @@ export interface Transformacion {
   rotacion: number;
 }
 
+export const PATRONES_RELLENO = ['rayas', 'diagonal', 'cuadricula', 'puntos'] as const;
+export type PatronRelleno = (typeof PATRONES_RELLENO)[number];
+
+/** Parada intermedia de un degradado (Y23): entre `desde` (posición 0) y `hasta` (posición 1). */
+export interface ParadaDegradado {
+  /** En [0,05; 0,95]. */
+  posicion: number;
+  color: Color;
+}
+
 export type Relleno =
   | { tipo: 'ninguno' }
   | { tipo: 'solido'; color: Color }
-  | { tipo: 'degradado'; desde: Color; hasta: Color; /** Grados, en [0, 360). */ angulo: number };
+  | {
+      tipo: 'degradado';
+      desde: Color;
+      hasta: Color;
+      /** Grados, en [0, 360). En un degradado radial se conserva pero no se usa. */
+      angulo: number;
+      /** Ausente = lineal. En radial, `desde` va en el centro y `hasta` en el borde. */
+      forma?: 'radial';
+      /** Hasta `LIMITES.paradasDegradado`, ordenadas por posición. Ausente = sin paradas intermedias. */
+      paradas?: ParadaDegradado[];
+    }
+  | {
+      /** Relleno con un dibujo que se repite (Y23): las líneas o puntos de `color` sobre `fondo` (`null` = transparente). */
+      tipo: 'patron';
+      patron: PatronRelleno;
+      color: Color;
+      fondo: Color | null;
+      /** Lado del azulejo en unidades de escena. */
+      escala: number;
+    };
 
 export interface Contorno {
   color: Color;
@@ -81,6 +110,8 @@ export interface Sombra {
   desenfoque: number;
   dx: number;
   dy: number;
+  /** Ausente = proyectada (fuera de la forma). Con `true`, la sombra se dibuja dentro de la forma (Y23). */
+  interior?: true;
 }
 
 export interface Estilo {

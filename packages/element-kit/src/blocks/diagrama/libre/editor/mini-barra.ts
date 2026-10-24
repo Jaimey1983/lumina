@@ -12,7 +12,7 @@ import { escenaAPantalla, type Vista } from "./vista.js";
 // ─── Qué lleva ────────────────────────────────────────────────────────────────
 
 export interface ControlesMiniBarra {
-  /** Color del relleno de las formas y textos elegidos (las líneas no tienen): el sólido, el de inicio del degradado o `""` sin relleno. */
+  /** Color del relleno de las formas y textos elegidos (las líneas no tienen): el sólido, el de inicio del degradado, el de las líneas de un patrón o `""` sin relleno. */
   relleno: Valor<string> | null;
   contorno: Valor<string> | null;
   grosor: Valor<number> | null;
@@ -30,7 +30,7 @@ export function controlesDeMiniBarra(escena: Escena, seleccion: readonly string[
   const conRell = editables.filter(conRelleno);
   const texto = <K extends keyof EstiloTexto>(k: K): Valor<EstiloTexto[K]> | null => valorComun(editables, (h) => h.estiloTexto[k]);
   return {
-    relleno: valorComun(conRell, (h) => (h.estilo.relleno.tipo === "solido" ? h.estilo.relleno.color : h.estilo.relleno.tipo === "degradado" ? h.estilo.relleno.desde : "")),
+    relleno: valorComun(conRell, (h) => (h.estilo.relleno.tipo === "solido" ? h.estilo.relleno.color : h.estilo.relleno.tipo === "degradado" ? h.estilo.relleno.desde : h.estilo.relleno.tipo === "patron" ? h.estilo.relleno.color : "")),
     contorno: valorComun(editables, (h) => h.estilo.contorno.color),
     grosor: valorComun(editables, (h) => h.estilo.contorno.grosor),
     tamano: texto("tamano"),

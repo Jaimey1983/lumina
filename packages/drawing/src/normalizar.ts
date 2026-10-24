@@ -9,6 +9,7 @@ import {
   ESCENA_VERSION,
   EXTREMOS,
   PATRONES_LINEA,
+  PATRONES_RELLENO,
   TIPOS_FORMA,
   TRAZADOS,
   type Color,
@@ -22,6 +23,7 @@ import {
   type Forma,
   type Grupo,
   type Linea,
+  type ParadaDegradado,
   type Punto,
   type Relleno,
   type Sombra,
@@ -52,6 +54,9 @@ export const LIMITES = {
   desplazamiento: 200,
   radio: 5000,
   valorParametro: 10000,
+  paradasDegradado: 3,
+  paradaPosicion: { min: 0.05, max: 0.95 },
+  escalaPatron: { min: 4, max: 64, porDefecto: 12 },
 } as const;
 
 const COLOR_TEXTO = '#0F172A';
@@ -118,14 +123,40 @@ function normalizarRelleno(valor: unknown, porDefecto: Relleno): Relleno {
     return { tipo: 'solido', color: color(r.color, porDefecto.tipo === 'solido' ? porDefecto.color : COLOR_RELLENO) };
   }
   if (r.tipo === 'degradado') {
+    const paradas = normalizarParadas(r.paradas);
     return {
       tipo: 'degradado',
       desde: color(r.desde, COLOR_RELLENO),
       hasta: color(r.hasta, COLOR_CONTORNO),
       angulo: grados(r.angulo, 90),
+      // Los campos de Y23 solo se escriben cuando valen algo distinto de lo de antes: una escena vieja sale igual.
+      ...(r.forma === 'radial' ? { forma: 'radial' as const } : {}),
+      ...(paradas.length > 0 ? { paradas } : {}),
+    };
+  }
+  if (r.tipo === 'patron') {
+    return {
+      tipo: 'patron',
+      patron: enumerado(r.patron, PATRONES_RELLENO, 'diagonal'),
+      color: color(r.color, COLOR_CONTORNO),
+      fondo: esColorValido(r.fondo) ? r.fondo : null,
+      escala: numero(r.escala, LIMITES.escalaPatron.porDefecto, LIMITES.escalaPatron.min, LIMITES.escalaPatron.max),
     };
   }
   return porDefecto;
+}
+
+/** Las primeras `LIMITES.paradasDegradado` paradas válidas, con la posición acotada y ordenadas de menor a mayor. */
+function normalizarParadas(valor: unknown): ParadaDegradado[] {
+  if (!Array.isArray(valor)) return [];
+  const paradas: ParadaDegradado[] = [];
+  for (const v of valor) {
+    if (paradas.length >= LIMITES.paradasDegradado) break;
+    const p = registro(v);
+    if (!p || !esColorValido(p.color)) continue;
+    paradas.push({ posicion: numero(p.posicion, 0.5, LIMITES.paradaPosicion.min, LIMITES.paradaPosicion.max), color: p.color });
+  }
+  return paradas.sort((a, b) => a.posicion - b.posicion);
 }
 
 function normalizarContorno(valor: unknown, porDefecto: Contorno): Contorno {
@@ -146,6 +177,7 @@ function normalizarSombra(valor: unknown): Sombra | null {
     desenfoque: numero(r.desenfoque, 4, 0, LIMITES.desenfoque),
     dx: numero(r.dx, 0, -LIMITES.desplazamiento, LIMITES.desplazamiento),
     dy: numero(r.dy, 2, -LIMITES.desplazamiento, LIMITES.desplazamiento),
+    ...(r.interior === true ? { interior: true as const } : {}),
   };
 }
 

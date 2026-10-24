@@ -348,7 +348,7 @@ describe('normalizarEscena — colores', () => {
   });
 
   it('un relleno de tipo desconocido conserva el del elemento por defecto', () => {
-    const f = normalizarEscena({ elementos: [{ tipo: 'forma', estilo: { relleno: { tipo: 'patron' } } }] }).elementos[0] as Forma;
+    const f = normalizarEscena({ elementos: [{ tipo: 'forma', estilo: { relleno: { tipo: 'textura' } } }] }).elementos[0] as Forma;
     expect(f.estilo.relleno).toEqual({ tipo: 'solido', color: '#FFFFFF' });
   });
 });

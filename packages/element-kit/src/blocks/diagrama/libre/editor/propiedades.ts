@@ -5,6 +5,7 @@
 
 import {
   FORMAS,
+  LIMITES,
   actualizar,
   fijarParametro,
   resolverParametros,
@@ -23,6 +24,8 @@ import {
   type Forma,
   type Linea,
   type ModoOrden,
+  type ParadaDegradado,
+  type PatronRelleno,
   type Relleno,
   type Sombra,
   type Texto,
@@ -150,13 +153,112 @@ export function camposDeForma(escena: Escena, seleccion: readonly string[]): Cam
 /** Pone el parámetro `clave` en todas las formas editables elegidas. */
 export const fijarParametroDeForma = (escena: Escena, destino: readonly Hoja[], clave: string, valor: number): Escena => fijarParametro(escena, ids(destino), clave, valor);
 
+export type RellenoDegradado = Extract<Relleno, { tipo: "degradado" }>;
+export type RellenoPatron = Extract<Relleno, { tipo: "patron" }>;
+
+/** Color de las líneas de un patrón nuevo cuando el relleno de partida no da uno que se vea sobre un fondo claro. */
+const COLOR_LINEAS_POR_DEFECTO = "#334155";
+
 /** Relleno al cambiar de tipo: conserva el color que ya había si lo hay. */
 export function rellenoDeTipo(tipo: Relleno["tipo"], actual: Relleno | null): Relleno {
   if (tipo === "ninguno") return { tipo: "ninguno" };
-  const base = actual?.tipo === "solido" ? actual.color : actual?.tipo === "degradado" ? actual.desde : "#FFFFFF";
+  const base = actual?.tipo === "solido" ? actual.color : actual?.tipo === "degradado" ? actual.desde : actual?.tipo === "patron" ? actual.color : "#FFFFFF";
   if (tipo === "solido") return { tipo: "solido", color: base };
+  if (tipo === "patron") {
+    // Blanco (o nada) no se vería: las líneas toman el gris de siempre.
+    const lineas = base.toUpperCase() === "#FFFFFF" || base.toUpperCase() === "#FFF" ? COLOR_LINEAS_POR_DEFECTO : base;
+    return { tipo: "patron", patron: "diagonal", color: lineas, fondo: null, escala: 12 };
+  }
   return { tipo: "degradado", desde: base, hasta: actual?.tipo === "degradado" ? actual.hasta : "#2563EB", angulo: actual?.tipo === "degradado" ? actual.angulo : 90 };
 }
+
+export const PATRONES_DE_RELLENO: ReadonlyArray<{ valor: PatronRelleno; etiqueta: string }> = [
+  { valor: "rayas", etiqueta: "Rayas" },
+  { valor: "diagonal", etiqueta: "Diagonal" },
+  { valor: "cuadricula", etiqueta: "Cuadrícula" },
+  { valor: "puntos", etiqueta: "Lunares" },
+];
+
+export type FormaDeDegradado = "lineal" | "radial";
+
+/** Una copia del objeto sin la clave `clave` (los campos opcionales de Y23 se quitan, no se ponen en `undefined`). */
+function sinClave<T extends object, K extends keyof T>(o: T, clave: K): Omit<T, K> {
+  const copia = { ...o };
+  delete copia[clave];
+  return copia;
+}
+
+/** Lineal o radial. El ángulo y las paradas se conservan al cambiar de uno a otro. Lineal no escribe el campo (lo de antes). */
+export function conFormaDeDegradado(r: RellenoDegradado, forma: FormaDeDegradado): RellenoDegradado {
+  const resto = sinClave(r, "forma");
+  return forma === "radial" ? { ...resto, forma: "radial" } : resto;
+}
+
+const TOPE_PARADAS = LIMITES.paradasDegradado;
+const POSICION_MIN = LIMITES.paradaPosicion.min;
+const POSICION_MAX = LIMITES.paradaPosicion.max;
+const r2d = (v: number): number => Math.round(v * 100) / 100;
+
+export const MAX_PARADAS = TOPE_PARADAS;
+export const paradasDe = (r: RellenoDegradado): readonly ParadaDegradado[] => r.paradas ?? [];
+
+/** El promedio de dos colores `#rrggbb`/`#rgb`/`#rrggbbaa` (sin el alfa) o, si alguno es un token del tema, el primero. */
+export function mezclarColores(a: string, b: string): string {
+  const canales = (c: string): number[] | null => {
+    const m = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.exec(c);
+    if (!m) return null;
+    const h = m[1] as string;
+    const x = h.length === 3 ? [...h].map((d) => d + d).join("") : h.slice(0, 6);
+    return [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16));
+  };
+  const ca = canales(a);
+  const cb = canales(b);
+  if (!ca || !cb) return a;
+  return `#${ca.map((v, i) => Math.round((v + (cb[i] as number)) / 2).toString(16).padStart(2, "0")).join("").toUpperCase()}`;
+}
+
+/** La lista de paradas, ordenada de menor a mayor; vacía = sin el campo. */
+function conParadas(r: RellenoDegradado, paradas: readonly ParadaDegradado[]): RellenoDegradado {
+  const resto = sinClave(r, "paradas");
+  return paradas.length === 0 ? resto : { ...resto, paradas: [...paradas].sort((x, y) => x.posicion - y.posicion) };
+}
+
+/**
+ * Una parada nueva en el punto medio del tramo más ancho (el primero si empatan), con el promedio de los dos colores vecinos
+ * (o el de la izquierda si alguno es un token). Con el tope de paradas devuelve el mismo relleno.
+ */
+export function agregarParada(r: RellenoDegradado): RellenoDegradado {
+  const paradas = paradasDe(r);
+  if (paradas.length >= TOPE_PARADAS) return r;
+  const puntos = [{ posicion: 0, color: r.desde }, ...paradas, { posicion: 1, color: r.hasta }];
+  let mejor = 0;
+  for (let i = 1; i < puntos.length - 1; i++) {
+    if ((puntos[i + 1] as ParadaDegradado).posicion - (puntos[i] as ParadaDegradado).posicion > (puntos[mejor + 1] as ParadaDegradado).posicion - (puntos[mejor] as ParadaDegradado).posicion) mejor = i;
+  }
+  const izq = puntos[mejor] as ParadaDegradado;
+  const der = puntos[mejor + 1] as ParadaDegradado;
+  // El tramo más ancho mide al menos 1/4 y sus extremos están en [0; 0,95] ∪ [0,05; 1]: el medio siempre cae en [0,05; 0,95].
+  const posicion = r2d((izq.posicion + der.posicion) / 2);
+  return conParadas(r, [...paradas, { posicion, color: mezclarColores(izq.color, der.color) }]);
+}
+
+export const quitarParada = (r: RellenoDegradado, i: number): RellenoDegradado => conParadas(r, paradasDe(r).filter((_p, k) => k !== i));
+
+/** Cambia la posición (acotada) o el color de la parada `i`; las paradas quedan ordenadas. */
+export function cambiarParada(r: RellenoDegradado, i: number, parche: Partial<ParadaDegradado>): RellenoDegradado {
+  const paradas = paradasDe(r);
+  if (!paradas[i]) return r;
+  const nueva = { ...paradas[i], ...parche, posicion: Math.min(POSICION_MAX, Math.max(POSICION_MIN, r2d(parche.posicion ?? (paradas[i] as ParadaDegradado).posicion))) };
+  return conParadas(r, paradas.map((p, k) => (k === i ? nueva : p)));
+}
+
+/** Pone o quita «interior» en la sombra de los elegidos que tienen una (la proyectada no escribe el campo: lo de antes). */
+export const fijarSombraInterior = (escena: Escena, destino: readonly Hoja[], interior: boolean): Escena =>
+  fijarSombra(escena, destino, (s) => {
+    if (!s) return s;
+    const resto = sinClave(s, "interior");
+    return interior ? { ...resto, interior: true } : resto;
+  });
 
 export const SOMBRA_POR_DEFECTO: Sombra = { color: "#00000055", desenfoque: 8, dx: 2, dy: 4 };
 

@@ -6,9 +6,18 @@ import { CollapsibleSection, type CollapsibleSectionProps } from "@lumina/ui/col
 import { FieldHelp } from "@lumina/ui/field-help";
 import { AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Italic, PanelRightClose, Underline } from "lucide-react";
 import { ALINEACION_H, CampoNumero, Conmutador, Deslizador, Fila, Opciones, FilaColor } from "./propiedades-campos.js";
+import { MiniaturaPatron } from "./miniatura-patron.js";
 import { PanelCapas } from "./propiedades-capas.js";
 import {
+  MAX_PARADAS,
+  PATRONES_DE_RELLENO,
   SOMBRA_POR_DEFECTO,
+  agregarParada,
+  cambiarParada,
+  conFormaDeDegradado,
+  fijarSombraInterior,
+  paradasDe,
+  quitarParada,
   camposDeForma,
   fijarParametroDeForma,
   conRadio,
@@ -29,6 +38,8 @@ import {
   rellenoDeTipo,
   valorComun,
   type CampoGeometria,
+  type FormaDeDegradado,
+  type RellenoPatron,
   type Valor,
 } from "./propiedades.js";
 
@@ -63,6 +74,12 @@ const TIPOS_RELLENO = [
   { valor: "ninguno", etiqueta: "Ninguno" },
   { valor: "solido", etiqueta: "Sólido" },
   { valor: "degradado", etiqueta: "Degradado" },
+  { valor: "patron", etiqueta: "Patrón" },
+] as const;
+
+const FORMAS_DEGRADADO = [
+  { valor: "lineal", etiqueta: "Lineal" },
+  { valor: "radial", etiqueta: "Radial" },
 ] as const;
 
 const ALINEACION_V = [
@@ -135,6 +152,20 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
   const angulo = degradado((r) => r.angulo) as Valor<number> | null;
   const todosSolidos = conRell.length > 0 && conRell.every((h) => h.estilo.relleno.tipo === "solido");
   const todosDegradados = conRell.length > 0 && conRell.every((h) => h.estilo.relleno.tipo === "degradado");
+  const todosPatron = conRell.length > 0 && conRell.every((h) => h.estilo.relleno.tipo === "patron");
+  const formaDegradado = degradado((r) => (r.forma === "radial" ? "radial" : "lineal")) as Valor<FormaDeDegradado> | null;
+  const hayLineal = conRell.some((h) => h.estilo.relleno.tipo === "degradado" && h.estilo.relleno.forma !== "radial");
+  // Las paradas se editan cuando todos los degradados elegidos tienen las mismas; si no, se avisa.
+  const paradas = valorComun(
+    conRell.filter((h) => h.estilo.relleno.tipo === "degradado"),
+    (h) => (h.estilo.relleno.tipo === "degradado" ? paradasDe(h.estilo.relleno) : []),
+  );
+  const patronDe = <K extends keyof RellenoPatron>(k: K) =>
+    valorComun(
+      conRell.filter((h) => h.estilo.relleno.tipo === "patron"),
+      (h) => (h.estilo.relleno.tipo === "patron" ? h.estilo.relleno[k] : ""),
+    ) as Valor<RellenoPatron[K]> | null;
+  const fondoPatron = patronDe("fondo");
 
   const colorContorno = valorComun(editables, (h) => h.estilo.contorno.color);
   const grosor = valorComun(editables, (h) => h.estilo.contorno.grosor);
@@ -144,6 +175,7 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
   const sombras = valorComun(conSomb, (h) => (h.estilo.sombra ? "si" : "no"));
   const conSombraActiva = conSomb.filter((h) => h.estilo.sombra !== null);
   const sombraDe = <K extends keyof Sombra>(k: K) => valorComun(conSombraActiva, (h) => (h.estilo.sombra as Sombra)[k]) as Valor<Sombra[K]> | null;
+  const sombraInterior = valorComun(conSombraActiva, (h) => (h.estilo.sombra as Sombra).interior === true);
 
   const radio = valorComun(conRad, (h) => h.estilo.radio);
 
@@ -278,16 +310,125 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
                       onVista={(c) => onVista((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? { ...r, hasta: c } : r)))}
                       onFin={onFinVista}
                     />
-                    <Fila etiqueta="Ángulo">
-                      <Deslizador
-                        etiqueta="Ángulo del degradado"
-                        valor={angulo}
-                        min={0}
-                        max={359}
-                        paso={1}
-                        formato={(n) => `${n}°`}
-                        onVista={(n) => onVista((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? { ...r, angulo: n } : r)))}
+                    <Opciones
+                      etiqueta="Tipo de degradado"
+                      opciones={FORMAS_DEGRADADO}
+                      valor={formaDegradado}
+                      onElegir={(f) => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? conFormaDeDegradado(r, f) : r)))}
+                    />
+                    {hayLineal ? (
+                      <Fila etiqueta="Ángulo">
+                        <Deslizador
+                          etiqueta="Ángulo del degradado"
+                          valor={angulo}
+                          min={0}
+                          max={359}
+                          paso={1}
+                          formato={(n) => `${n}°`}
+                          onVista={(n) => onVista((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? { ...r, angulo: n } : r)))}
+                          onFin={onFinVista}
+                        />
+                      </Fila>
+                    ) : null}
+                    <div role="group" aria-label="Paradas intermedias" className="space-y-2">
+                      <Fila
+                        etiqueta="Paradas"
+                        ayuda={
+                          <FieldHelp label="Paradas intermedias">
+                            <p>Una parada añade un color entre el inicial y el final. Su posición va del 5 % al 95 % del recorrido; puedes añadir hasta {MAX_PARADAS}.</p>
+                          </FieldHelp>
+                        }
+                      >
+                        <button
+                          type="button"
+                          aria-label="Añadir parada"
+                          title={paradas && !paradas.mixto && paradas.valor.length >= MAX_PARADAS ? `Ya hay ${MAX_PARADAS} paradas` : "Añadir parada"}
+                          disabled={!paradas || paradas.mixto || paradas.valor.length >= MAX_PARADAS}
+                          className="flex h-7 items-center justify-center rounded-md border px-2 text-xs outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                          onClick={() => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? agregarParada(r) : r)))}
+                        >
+                          Añadir parada
+                        </button>
+                      </Fila>
+                      {paradas?.mixto ? <p className="text-[11px] text-muted-foreground">Los elegidos tienen paradas distintas: no se pueden editar juntos.</p> : null}
+                      {paradas && !paradas.mixto
+                        ? paradas.valor.map((p, i) => (
+                            <div key={i} className="space-y-1 rounded-md border p-2">
+                              <FilaColor
+                                etiqueta={`Parada ${i + 1}`}
+                                etiquetaColor={`Color de la parada ${i + 1}`}
+                                valor={{ mixto: false, valor: p.color }}
+                                onElegir={(c) => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? cambiarParada(r, i, { color: c }) : r)))}
+                                onVista={(c) => onVista((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? cambiarParada(r, i, { color: c }) : r)))}
+                                onFin={onFinVista}
+                              />
+                              <Fila etiqueta="Posición">
+                                <CampoNumero
+                                  etiqueta={`Posición de la parada ${i + 1}`}
+                                  valor={{ mixto: false, valor: Math.round(p.posicion * 100) }}
+                                  min={5}
+                                  max={95}
+                                  unidad="%"
+                                  ancho="w-16"
+                                  onConfirmar={(n) => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? cambiarParada(r, i, { posicion: n / 100 }) : r)))}
+                                />
+                                <button
+                                  type="button"
+                                  aria-label={`Quitar parada ${i + 1}`}
+                                  className="flex h-7 items-center justify-center rounded-md border px-2 text-xs outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                                  onClick={() => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "degradado" ? quitarParada(r, i) : r)))}
+                                >
+                                  Quitar
+                                </button>
+                              </Fila>
+                            </div>
+                          ))
+                        : null}
+                    </div>
+                  </>
+                ) : null}
+                {todosPatron ? (
+                  <>
+                    <Opciones
+                      etiqueta="Patrón del relleno"
+                      opciones={PATRONES_DE_RELLENO.map((p) => ({ valor: p.valor, etiqueta: p.etiqueta, icono: <MiniaturaPatron patron={p.valor} /> }))}
+                      valor={patronDe("patron")}
+                      onElegir={(patron) => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "patron" ? { ...r, patron } : r)))}
+                    />
+                    <FilaColor
+                      etiqueta="Líneas"
+                      etiquetaColor="Color de las líneas del patrón"
+                      valor={patronDe("color") as Valor<string> | null}
+                      onElegir={(c) => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "patron" ? { ...r, color: c } : r)))}
+                      onVista={(c) => onVista((e) => fijarRelleno(e, editables, (r) => (r.tipo === "patron" ? { ...r, color: c } : r)))}
+                      onFin={onFinVista}
+                    />
+                    <Fila etiqueta="Sin fondo">
+                      <Conmutador
+                        etiqueta="Patrón sin fondo"
+                        valor={fondoPatron ? (fondoPatron.mixto ? { mixto: true } : { mixto: false, valor: fondoPatron.valor === null }) : null}
+                        icono={<span className="text-xs">{fondoPatron?.mixto ? "Mixto" : fondoPatron && fondoPatron.valor === null ? "Sí" : "No"}</span>}
+                        onCambiar={(sin) => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "patron" ? { ...r, fondo: sin ? null : (r.fondo ?? "#FFFFFF") } : r)))}
+                      />
+                    </Fila>
+                    {fondoPatron && !(!fondoPatron.mixto && fondoPatron.valor === null) ? (
+                      <FilaColor
+                        etiqueta="Fondo"
+                        etiquetaColor="Color de fondo del patrón"
+                        valor={fondoPatron.mixto ? { mixto: true } : { mixto: false, valor: fondoPatron.valor ?? "" }}
+                        onElegir={(c) => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "patron" ? { ...r, fondo: c } : r)))}
+                        onVista={(c) => onVista((e) => fijarRelleno(e, editables, (r) => (r.tipo === "patron" ? { ...r, fondo: c } : r)))}
                         onFin={onFinVista}
+                      />
+                    ) : null}
+                    <Fila etiqueta="Tamaño">
+                      <CampoNumero
+                        etiqueta="Tamaño del patrón"
+                        valor={patronDe("escala") as Valor<number> | null}
+                        min={LIMITES.escalaPatron.min}
+                        max={LIMITES.escalaPatron.max}
+                        ancho="w-16"
+                        onConfirmar={(n) => onAplicar((e) => fijarRelleno(e, editables, (r) => (r.tipo === "patron" ? { ...r, escala: n } : r)))}
                       />
                     </Fila>
                   </>
@@ -375,6 +516,21 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
                       onVista={(color) => onVista((e) => fijarSombra(e, editables, (s) => (s ? { ...s, color } : s)))}
                       onFin={onFinVista}
                     />
+                    <Fila
+                      etiqueta="Interior"
+                      ayuda={
+                        <FieldHelp label="Sombra interior">
+                          <p>La sombra interior se dibuja dentro de la forma, siguiendo su borde exterior (el contorno incluido), en lugar de por fuera.</p>
+                        </FieldHelp>
+                      }
+                    >
+                      <Conmutador
+                        etiqueta="Sombra interior"
+                        valor={sombraInterior}
+                        icono={<span className="text-xs">{sombraInterior?.mixto ? "Mixto" : sombraInterior && sombraInterior.valor ? "Sí" : "No"}</span>}
+                        onCambiar={(v) => onAplicar((e) => fijarSombraInterior(e, editables, v))}
+                      />
+                    </Fila>
                     <Fila etiqueta="Desenfoque">
                       <Deslizador
                         etiqueta="Desenfoque de la sombra"
