@@ -435,7 +435,7 @@ La ficha del índice (`Y24`) mezcla dos cosas de naturaleza distinta: **las viñ
 
 #### Y24a — Viñetas y listas numeradas
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y23 en `main` (cumplida: `181563b`).
 - **Alcance — PUEDE tocar:** `@lumina/drawing`: `src/tipos.ts` y `src/normalizar.ts` (+ spec), `src/render/texto.ts` y `src/render/render.ts` (+ specs), sus exports. Editor (`packages/element-kit/src/blocks/diagrama/libre/editor/`): `propiedades.ts` (una función pura nueva), `propiedades-panel.tsx` (solo la sección «Tipografía»), `cinta-editor.tsx` (solo el grupo «Texto» de «Formato de forma»), `comandos-registro.ts`, `comandos.ts`, `editor-libre.tsx` (solo ejecutar la orden), `sinonimos-comandos.ts`, `texto-en-sitio.tsx` (solo el aspecto del cuadro de edición), specs nuevas y las que dependan de listas exactas (comandos, cinta). Fixtures de comparación (`__golden__/`, **solo se añaden**). `docs/tablero/etapa-Y.md` y `AGENTS.md` (solo la fila). **No toca:** `mini-barra*.ts(x)` (la barra ya está llena, Y18), el diagrama de grafo (`diagrama-*`), `exportar.ts`, `dibujo-render.tsx`, `ESCENA_VERSION`, los golden existentes de Y23 (**no se regeneran**).
 - **Entregable:**
