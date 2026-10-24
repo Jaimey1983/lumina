@@ -2,10 +2,12 @@
 
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { esColorValido } from "@lumina/drawing";
-import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Pipette } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@lumina/ui/popover";
 import { Slider, SliderThumb } from "@lumina/ui/slider";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
+import { leerRecientes, registrarEnAlmacen } from "./colores-recientes.js";
+import { cuentagotasAbierto, cuentagotasDisponible, pedirColor } from "./cuentagotas.js";
 import type { Valor } from "./propiedades.js";
 
 const claseCampo = "h-8 w-full rounded-md border bg-background px-2 text-xs outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
@@ -265,6 +267,9 @@ export const COLORES_DEL_TEMA: ReadonlyArray<{ token: string; nombre: string }> 
   { token: "var(--border)", nombre: "Borde" },
 ];
 
+/** Los colores que ya están a un clic: no se registran como recientes (DY27). */
+const COLORES_OFRECIDOS: readonly string[] = [...COLORES_DE_PALETA, ...COLORES_NEUTROS];
+
 const esHex6 = (c: string): boolean => /^#[0-9a-fA-F]{6}$/.test(c);
 
 /**
@@ -375,16 +380,48 @@ function ContenidoColor({
   onElegir,
   onVista,
   onFin,
+  cancelado,
 }: {
   etiquetaColor: string;
   actual: string;
   onElegir: (color: string) => void;
   onVista: (color: string) => void;
   onFin: () => void;
+  /** `true` mientras el selector se cierra con Escape: lo que quedó en vista previa se descarta y no se recuerda (DY29). */
+  cancelado?: { current: boolean };
 }): ReactElement {
   const id = useId();
   const [texto, setTexto] = useState(actual);
   useEffect(() => setTexto(actual), [actual]);
+  // Los recientes se leen al abrir el selector (Y22); `vista` es el último color del selector libre aún sin confirmar.
+  const [recientes, setRecientes] = useState<readonly string[]>(leerRecientes);
+  const [anuncio, setAnuncio] = useState("");
+  const vista = useRef<string | null>(null);
+  const botonCuentagotas = useRef<HTMLButtonElement | null>(null);
+  const montado = useRef(true);
+
+  useEffect(
+    () => () => {
+      montado.current = false;
+      // Cerrado el selector, la vista previa que quedó a medias se confirma (`AlCerrar`): se recuerda salvo que se cancelara.
+      if (vista.current !== null && cancelado?.current !== true) registrarEnAlmacen(vista.current, COLORES_OFRECIDOS);
+    },
+    [cancelado],
+  );
+
+  const recordar = (color: string): void => {
+    const lista = registrarEnAlmacen(color, COLORES_OFRECIDOS);
+    if (montado.current) setRecientes(lista);
+  };
+  const elegir = (color: string): void => {
+    recordar(color);
+    onElegir(color);
+  };
+  const confirmarVista = (): void => {
+    if (vista.current !== null && cancelado?.current !== true) recordar(vista.current);
+    vista.current = null;
+    onFin();
+  };
 
   const confirmarTexto = (): void => {
     const limpio = texto.trim();
@@ -392,24 +429,40 @@ function ContenidoColor({
       setTexto(actual);
       return;
     }
-    onElegir(limpio);
+    elegir(limpio);
+  };
+
+  const tomarColor = async (): Promise<void> => {
+    const color = await pedirColor();
+    if (color !== null && montado.current) {
+      elegir(color);
+      setAnuncio(`Color tomado: ${color}.`);
+    }
+    if (montado.current) botonCuentagotas.current?.focus();
   };
 
   return (
     <>
+          {recientes.length > 0 ? (
+            <Grupo titulo="Recientes">
+              {recientes.map((c) => (
+                <Pastilla key={c} color={c} nombre={`${c} (reciente)`} actual={actual} onElegir={elegir} />
+              ))}
+            </Grupo>
+          ) : null}
           <Grupo titulo="Paletas de diagrama">
             {COLORES_DE_PALETA.map((c) => (
-              <Pastilla key={c} color={c} nombre={c} actual={actual} onElegir={onElegir} />
+              <Pastilla key={c} color={c} nombre={c} actual={actual} onElegir={elegir} />
             ))}
           </Grupo>
           <Grupo titulo="Neutros">
             {COLORES_NEUTROS.map((c) => (
-              <Pastilla key={c} color={c} nombre={c} actual={actual} onElegir={onElegir} />
+              <Pastilla key={c} color={c} nombre={c} actual={actual} onElegir={elegir} />
             ))}
           </Grupo>
           <Grupo titulo="Colores del tema">
             {COLORES_DEL_TEMA.map((c) => (
-              <Pastilla key={c.token} color={c.token} nombre={`${c.nombre} (tema)`} actual={actual} onElegir={onElegir} />
+              <Pastilla key={c.token} color={c.token} nombre={`${c.nombre} (tema)`} actual={actual} onElegir={elegir} />
             ))}
           </Grupo>
           <div className="flex items-center gap-2">
@@ -422,8 +475,11 @@ function ContenidoColor({
               aria-label={`${etiquetaColor}: color libre`}
               className="h-8 w-10 cursor-pointer rounded border bg-background p-0.5"
               value={esHex6(actual) ? actual : "#000000"}
-              onChange={(e) => onVista(e.target.value.toUpperCase())}
-              onBlur={onFin}
+              onChange={(e) => {
+                vista.current = e.target.value.toUpperCase();
+                onVista(vista.current);
+              }}
+              onBlur={confirmarVista}
             />
             <input
               type="text"
@@ -440,7 +496,22 @@ function ContenidoColor({
                 }
               }}
             />
+            {cuentagotasDisponible() ? (
+              <button
+                ref={botonCuentagotas}
+                type="button"
+                title="Cuentagotas"
+                aria-label={`${etiquetaColor}: cuentagotas`}
+                className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => void tomarColor()}
+              >
+                <Pipette className="size-4" aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
+          <span role="status" className="sr-only">
+            {anuncio}
+          </span>
     </>
   );
 }
@@ -496,6 +567,7 @@ export function BotonColor({
     const fuera = (e: PointerEvent): void => {
       const objetivo = e.target as Node;
       if (contenido.current?.contains(objetivo) || disparador.current?.contains(objetivo)) return;
+      if (cuentagotasAbierto()) return;
       alCambiarApertura(false);
     };
     document.addEventListener("pointerdown", fuera, true);
@@ -521,8 +593,16 @@ export function BotonColor({
         role="group"
         aria-label={`Elegir ${etiquetaColor.toLowerCase()}`}
         className="w-64 space-y-3 p-3"
-        onEscapeKeyDown={() => {
+        onEscapeKeyDown={(e) => {
+          // Con el cuentagotas abierto, Escape lo cancela a él y el selector se queda.
+          if (cuentagotasAbierto()) {
+            e.preventDefault();
+            return;
+          }
           escape.current = true;
+        }}
+        onInteractOutside={(e) => {
+          if (cuentagotasAbierto()) e.preventDefault();
         }}
       >
         <AlCerrar onCerrar={onFin} />
@@ -535,6 +615,7 @@ export function BotonColor({
           }}
           onVista={onVista}
           onFin={onFin}
+          cancelado={escape}
         />
       </PopoverContent>
     </Popover>
