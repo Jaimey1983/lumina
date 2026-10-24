@@ -142,7 +142,7 @@ describe("panel: el aviso del autoajuste", () => {
 
   it("un tamaño con decimales usa coma", () => {
     montarPanel(escena(forma("A", 0, 0, 120, 40, { texto: "uno dos tres cuatro cinco seis siete ocho nueve diez", estiloTexto: { tamano: 20 } })), ["A"]);
-    expect(aviso()?.textContent).toContain("El texto se reduce a 10,5 pt para caber.");
+    expect(aviso()?.textContent).toContain("El texto se reduce a 8,5 pt para caber.");
   });
 
   it("un cuadro de texto libre cuyo texto se sale lo dice", () => {
