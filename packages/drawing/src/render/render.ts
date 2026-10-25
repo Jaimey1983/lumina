@@ -4,7 +4,8 @@
 // así que ambos dibujan exactamente lo mismo.
 
 import { formasVisibles, puntoDePuerto } from '../conectores/puertos.js';
-import { cajasDeFormas, trazarLinea, type CajaObstaculo } from '../conectores/trazado.js';
+import { formasConHijos, resumenDeColapso } from '../operaciones/colapso.js';
+import { cajaDeForma, cajasDeFormas, trazarLinea, type CajaObstaculo } from '../conectores/trazado.js';
 import { rectanguloTexto, trazadoForma } from '../formas/index.js';
 import type { Elemento, Escena, Estilo, EstiloTexto, Extremo, Forma, Linea, Punto, Relleno, Sombra, Texto } from '../tipos.js';
 import { resolverColor, type ModoColor, type Pintura } from './colores.js';
@@ -25,6 +26,11 @@ export interface OpcionesRender {
   fondo?: boolean;
   /** Prefijo de los ids internos (degradados, sombras): debe ser único si hay varias escenas en la misma página. */
   prefijoIds?: string;
+  /**
+   * Marcadores de las ramas (Y38a, DY75): `colapsados` (por defecto) dibuja un «+N» en cada forma plegada; `todos`, además, un «−» en las
+   * desplegadas que tienen hijos (para el editor y el visor, donde se pueden tocar); `ninguno` no dibuja marcadores.
+   */
+  indicadoresRama?: 'colapsados' | 'todos' | 'ninguno';
 }
 
 export interface EscenaNodos {
@@ -320,9 +326,38 @@ function nodoLinea(l: Linea, ctx: Contexto): NodoSvg {
   return nodo('g', { 'data-elemento-id': l.id, ...(l.estilo.opacidad < 1 ? { opacity: l.estilo.opacidad } : {}) }, hijos);
 }
 
+// ─── Marcadores de rama (Y38a) ────────────────────────────────────────────────
+
+const RADIO_MARCADOR = 11;
+
+/** Texto del marcador de una rama plegada: «+N» y, desde 100 formas ocultas, «99+». */
+export function textoDeMarcador(ocultas: number): string {
+  return ocultas >= 100 ? '99+' : `+${ocultas}`;
+}
+
+/**
+ * El marcador de una rama: un círculo en la esquina inferior derecha de la caja que envuelve a la forma, con «+N» (plegada) o «−» (desplegada
+ * y con hijos). `data-colapsar-id` lo identifica para quien lo toque (el editor y el visor); en un archivo exportado es solo un dibujo.
+ */
+function nodoMarcador(f: Forma, plegada: boolean, ocultas: number, ctx: Contexto): NodoSvg {
+  const caja = cajaDeForma(f);
+  const cx = r(caja.x + caja.ancho);
+  const cy = r(caja.y + caja.alto);
+  const texto = plegada ? textoDeMarcador(ocultas) : '−';
+  const primera = f.texto?.trim().split('\n')[0];
+  const nombre = primera ? ` «${primera}»` : '';
+  const etiqueta = plegada
+    ? `Rama plegada${nombre}: ${ocultas} ${ocultas === 1 ? 'elemento oculto' : 'elementos ocultos'}. Desplegar`
+    : `Plegar la rama${nombre}`;
+  return nodo('g', { 'data-colapsar-id': f.id, role: 'button', 'aria-label': etiqueta }, [
+    nodo('circle', { cx, cy, r: RADIO_MARCADOR, ...pintar('var(--card)', ctx, 'fill'), ...pintar('var(--border)', ctx, 'stroke'), 'stroke-width': 1.5 }),
+    nodo('text', { x: cx, y: r(cy + 4), 'text-anchor': 'middle', 'font-size': texto.length > 2 ? 9 : 11, 'font-weight': 600, ...pintar('var(--foreground)', ctx, 'fill'), 'pointer-events': 'none' }, undefined, texto),
+  ]);
+}
+
 // ─── Escena ───────────────────────────────────────────────────────────────────
 
-/** Ids de los elementos ocultos, incluidos los hijos de un grupo oculto. */
+/** Ids de los elementos ocultos, incluidos los hijos de un grupo oculto (y, aparte, lo plegado: ver `resumenDeColapso`). */
 function idsOcultos(elementos: readonly Elemento[]): Set<string> {
   const ocultos = new Set<string>();
   const porId = new Map(elementos.map((e) => [e.id, e]));
@@ -347,6 +382,8 @@ export function escenaANodos(escena: Escena, opciones: OpcionesRender = {}): Esc
     fondoEscena: escena.fondo ?? 'var(--background)',
   };
   const ocultos = idsOcultos(escena.elementos);
+  const colapso = resumenDeColapso(escena);
+  for (const id of colapso.ocultos) ocultos.add(id); // lo plegado (Y38a) tampoco se dibuja
 
   const elementos: NodoSvg[] = [];
   for (const e of escena.elementos) {
@@ -355,6 +392,18 @@ export function escenaANodos(escena: Escena, opciones: OpcionesRender = {}): Esc
     else if (e.tipo === 'texto') elementos.push(nodoTexto(e, ctx));
     else if (e.tipo === 'linea') elementos.push(nodoLinea(e, ctx));
     // Un grupo no se dibuja: lo dibujan sus hijos.
+  }
+
+  // Marcadores de las ramas, encima de todo: «+N» en las plegadas y, en las vistas que se pueden tocar, «−» en las que tienen hijos.
+  const modoMarcadores = opciones.indicadoresRama ?? 'colapsados';
+  if (modoMarcadores !== 'ninguno') {
+    const conHijos = modoMarcadores === 'todos' ? formasConHijos(escena) : null;
+    for (const e of escena.elementos) {
+      if (e.tipo !== 'forma' || ocultos.has(e.id)) continue;
+      const ocultas = colapso.cuentas.get(e.id) ?? 0;
+      if (e.colapsado === true && ocultas > 0) elementos.push(nodoMarcador(e, true, ocultas, ctx));
+      else if (conHijos && e.colapsado !== true && conHijos.has(e.id)) elementos.push(nodoMarcador(e, false, 0, ctx));
+    }
   }
 
   const nodos: NodoSvg[] = [];

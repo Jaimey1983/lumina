@@ -2,6 +2,7 @@
 // Todo es puro e inmutable: nada modifica la escena recibida.
 
 import type { Elemento, Escena, Forma, Linea, Texto } from '../tipos.js';
+import { ocultosPorColapso } from './colapso.js';
 
 export type ElementoConCaja = Forma | Texto;
 
@@ -95,6 +96,8 @@ export function ocultosEfectivos(escena: Escena): Set<string> {
     if (e?.tipo === 'grupo') e.hijos.forEach(marcar);
   };
   for (const e of escena.elementos) if (e.oculto) marcar(e.id);
+  // Lo plegado (Y38a) también está oculto: no se elige, no se alinea, no se organiza.
+  for (const id of ocultosPorColapso(escena)) marcar(id);
   return salida;
 }
 

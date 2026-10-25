@@ -305,6 +305,7 @@ function normalizarForma(r: Registro, usados: Set<string>): Forma {
     ...(t ? { texto: t } : {}),
     estiloTexto: normalizarEstiloTexto(r.estiloTexto, 'forma'),
     ...(parametros ? { parametros } : {}),
+    ...(r.colapsado === true ? { colapsado: true as const } : {}),
   };
 }
 

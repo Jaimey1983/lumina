@@ -3,6 +3,7 @@ export { ajustarComposicion, altoDeTexto, anchoMedioCaracter, componerTexto, INT
 export {
   escaparXml,
   escenaANodos,
+  textoDeMarcador,
   escenaASvg,
   puntoDePuerto,
   serializarNodo,
