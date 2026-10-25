@@ -700,7 +700,7 @@ Redactada el 2026-10-25, a pedido del dueño, después de recortar las fases E y
 
 #### Y25 — Ajustes de página: tamaño, orientación y fondo
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y37b en `main` (cumplida: `1d227cc`). Independiente de Y38, que va después.
 - **Hechos del código que la condicionan (comprobados el 2026-10-25, no supuestos):**
   - **El modelo ya lo tiene todo:** `Escena { ancho, alto, fondo }`, con `LIMITES.escenaAncho` y `LIMITES.escenaAlto` de **100 a 10000** (por defecto 1280 × 720) y `fondo: Color | null` (`null` = transparente). El normalizador los acota y los descarta si son inválidos. **No hay ningún control** que los cambie.
