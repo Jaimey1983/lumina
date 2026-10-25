@@ -6,6 +6,7 @@ import { CollapsibleSection, type CollapsibleSectionProps } from "@lumina/ui/col
 import { FieldHelp } from "@lumina/ui/field-help";
 import { AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Italic, PanelRightClose, Underline } from "lucide-react";
 import { ALINEACION_H, CampoNumero, Conmutador, Deslizador, Fila, Opciones, FilaColor } from "./propiedades-campos.js";
+import { estadoDelTextoElegido } from "./ajuste-texto.js";
 import { MiniaturaPatron } from "./miniatura-patron.js";
 import { PanelCapas } from "./propiedades-capas.js";
 import {
@@ -56,6 +57,11 @@ export interface PanelPropiedadesProps {
   onSeleccionar: (ids: string[], sumar: boolean) => void;
   /** Pliega el panel a un riel (lo da la zona redimensionable que lo envuelve). */
   onPlegar?: () => void;
+  /** «Crecer al escribir» (Y24b): preferencia del navegador; sin estos tres, el panel no ofrece ni el aviso ni el interruptor. */
+  crecerAlEscribir?: boolean;
+  onCrecerAlEscribir?: () => void;
+  /** Ajusta la forma elegida a su texto (el comando «Ajustar al texto»). */
+  onAjustarAlTexto?: () => void;
 }
 
 const FUENTES: ReadonlyArray<{ valor: string; nombre: string }> = [
@@ -135,7 +141,7 @@ function CampoGrid(props: Parameters<typeof CampoNumero>[0]): ReactElement {
 
 const porcentaje = (n: number): string => `${Math.round(n * 100)}%`;
 
-export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinVista, onSeleccionar, onPlegar }: PanelPropiedadesProps): ReactElement {
+export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinVista, onSeleccionar, onPlegar, crecerAlEscribir, onCrecerAlEscribir, onAjustarAlTexto }: PanelPropiedadesProps): ReactElement {
   const todas = hojasDeSeleccion(escena, seleccion);
   const editables = hojasEditables(escena, seleccion);
   const bloqueadas = todas.length > 0 && editables.length === 0;
@@ -186,6 +192,8 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
   const sombraInterior = valorComun(conSombraActiva, (h) => (h.estilo.sombra as Sombra).interior === true);
 
   const radio = valorComun(conRad, (h) => h.estilo.radio);
+  // El render reduce la letra de una forma que no cabe, o deja salirse el texto de un cuadro libre (Y24b): el panel lo dice.
+  const estadoTexto = estadoDelTextoElegido(escena, editables.map((h) => h.id));
   // La lista del texto (Y24a): la llevan las formas y los cuadros de texto, no el rótulo de un conector.
   const lista = valorComun(editables.filter(conLista), (h) => h.estiloTexto.vinetas ?? "ninguna") as Valor<(typeof LISTAS)[number]["valor"]> | null;
 
@@ -672,6 +680,40 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
                   onElegir={(v) => onAplicar((e) => fijarTexto(e, editables, { alineacionV: v }))}
                 />
               </Fila>
+              {estadoTexto && estadoTexto.tipo !== "cabe" ? (
+                <div data-aviso-texto={estadoTexto.tipo} className="space-y-1 rounded-md border bg-muted/40 p-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    {estadoTexto.tipo === "reduce" ? `El texto se reduce a ${String(estadoTexto.tamano).replace(".", ",")} pt para caber.` : "El texto no cabe en el cuadro."}
+                  </p>
+                  {onAjustarAlTexto ? (
+                    <button
+                      type="button"
+                      aria-label="Ajustar la forma al texto"
+                      className="h-7 rounded-md border bg-background px-2 text-xs outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={onAjustarAlTexto}
+                    >
+                      Ajustar la forma al texto
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+              {onCrecerAlEscribir ? (
+                <Fila
+                  etiqueta="Crecer al escribir"
+                  ayuda={
+                    <FieldHelp label="Crecer al escribir">
+                      <p>Con esto encendido, al confirmar el texto de una forma, la forma crece lo justo para que el texto quepa (nunca encoge ni pisa a otra forma). Es una preferencia de este navegador, no del dibujo.</p>
+                    </FieldHelp>
+                  }
+                >
+                  <Conmutador
+                    etiqueta="Crecer al escribir"
+                    valor={{ mixto: false, valor: crecerAlEscribir === true }}
+                    icono={<span className="text-xs">{crecerAlEscribir ? "Sí" : "No"}</span>}
+                    onCambiar={() => onCrecerAlEscribir()}
+                  />
+                </Fila>
+              ) : null}
               {lista ? (
                 <Fila
                   etiqueta="Lista"

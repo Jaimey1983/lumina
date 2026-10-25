@@ -59,7 +59,7 @@ describe("Y17 — la lista exacta de cada contexto", () => {
   it("sobre una forma", () => {
     expect(texto(menuDe("forma", ctx(dosFormas(), ["a"])))).toEqual([
       "Cortar", "Copiar", "Pegar",
-      "—", "Duplicar", "Eliminar", CAMBIAR_FORMA_MENU,
+      "—", "Duplicar", "Eliminar", CAMBIAR_FORMA_MENU, "Ajustar al texto",
       "—", "Agregar hijo", "Agregar hermano",
       "—", ORDEN,
       "—", "Agrupar", "Desagrupar",
@@ -70,7 +70,7 @@ describe("Y17 — la lista exacta de cada contexto", () => {
   it("sobre varias formas suma «Alinear ▸» (solo si hay varias)", () => {
     expect(texto(menuDe("forma", ctx(dosFormas(), ["a", "b"])))).toEqual([
       "Cortar", "Copiar", "Pegar",
-      "—", "Duplicar", "Eliminar", CAMBIAR_FORMA_MENU,
+      "—", "Duplicar", "Eliminar", CAMBIAR_FORMA_MENU, "Ajustar al texto",
       "—", "Agregar hijo", "Agregar hermano",
       "—", ORDEN, ALINEAR,
       "—", "Agrupar", "Desagrupar",

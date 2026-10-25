@@ -24,6 +24,8 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   "alinear-abajo": ["alinear"],
   eliminar: ["borrar", "quitar", "suprimir"],
   "vinetas-puntos": ["lista", "vinetas", "viñetas", "puntos", "bullets", "balas"],
+  "ajustar-al-texto": ["autoajuste", "crecer", "caber", "tamaño del texto", "tamano del texto", "ajustar forma", "alto"],
+  "crecer-al-escribir": ["autoajuste", "crecer", "agrandar", "forma crece", "escribir", "preferencia"],
   "vinetas-numeros": ["lista", "numerada", "numeros", "numeración", "enumerar", "enumeracion"],
   "eliminar-rama": ["rama", "subarbol", "mapa mental"],
   "crear-hijo": ["hijo", "mapa mental", "rama"],

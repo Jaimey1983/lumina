@@ -580,6 +580,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
                   <BotonFormatoTexto id="subrayado" datos={datosFormato} sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
                   <BotonLista id="vinetas-puntos" sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
                   <BotonLista id="vinetas-numeros" sufijo="(cinta)" contexto={contexto} onOrden={onOrden} />
+                  {boton("ajustar-al-texto", "small")}
                   <AlineacionHorizontal datos={datosFormato} sufijo="(cinta)" {...formato} />
                 </RibbonGroup>
               </div>

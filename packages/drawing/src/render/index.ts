@@ -1,5 +1,5 @@
 export { resolverColor, type ModoColor, type Pintura } from './colores.js';
-export { ajustarComposicion, anchoMedioCaracter, componerTexto, INTERLINEADO, lineasDeTexto, type ComposicionAjustada, type ComposicionDeTexto, type LineaDeTexto } from './texto.js';
+export { ajustarComposicion, altoDeTexto, anchoMedioCaracter, componerTexto, INTERLINEADO, lineasDeTexto, type ComposicionAjustada, type ComposicionDeTexto, type LineaDeTexto } from './texto.js';
 export {
   escaparXml,
   escenaANodos,

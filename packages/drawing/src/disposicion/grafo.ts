@@ -1,7 +1,7 @@
 // ─── Grafo de un diagrama para organizarlo (Y13) ──────────────────────────────
 // Lógica pura: de una escena saca «nodos» (formas, o grupos enteros) y «aristas» (conectores entre dos de ellos).
 
-import { cajaDeSeleccion } from '../operaciones/geometria.js';
+import { cajaDeElemento, cajaDeSeleccion } from '../operaciones/geometria.js';
 import { bloqueadosEfectivos, expandir, mapaPadres, ocultosEfectivos, raizDe } from '../operaciones/utilidades.js';
 import type { Escena } from '../tipos.js';
 
@@ -68,10 +68,12 @@ export function extraerGrafo(escena: Escena, ids: readonly string[] = []): Grafo
     if (e.tipo === 'grupo' || !formasPorRaiz.has(raizDe(e.id, padres))) continue;
     const raiz = raizDe(e.id, padres);
     if (idsNodo.has(raiz)) continue;
-    // Se mueve entera o no se mueve: todo lo que contiene tiene que poder moverse.
-    const contenido = [...expandir(escena, [raiz])];
+    // Se mueve entera o no se mueve: todo lo que contiene tiene que poder moverse. Una forma suelta (lo más común) es su propia unidad:
+    // no hace falta abrir nada (`expandir` y `cajaDeSeleccion` recorren toda la escena en cada llamada).
+    const suelta = e.id === raiz;
+    const contenido = suelta ? [raiz] : [...expandir(escena, [raiz])];
     if (contenido.some((id) => bloqueados.has(id) || ocultos.has(id))) continue;
-    const caja = cajaDeSeleccion(escena, [raiz]);
+    const caja = suelta ? cajaDeElemento(escena, e) : cajaDeSeleccion(escena, [raiz]);
     if (!caja) continue;
     idsNodo.add(raiz);
     nodos.push({ id: raiz, x: caja.x, y: caja.y, ancho: caja.ancho, alto: caja.alto });

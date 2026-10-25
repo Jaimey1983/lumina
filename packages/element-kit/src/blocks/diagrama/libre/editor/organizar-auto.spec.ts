@@ -268,9 +268,14 @@ describe("organizarAuto: límites", () => {
   it("DW9: con 500 formas conectadas cada modo tarda menos de un segundo", () => {
     const e = diagramaAlAzar(500, 77);
     for (const modo of ["jerarquico", "arbol", "radial"] as const) {
-      const t = performance.now();
-      organizarAuto(e, [], { modo });
-      expect(performance.now() - t, modo).toBeLessThan(1000);
+      // La mejor de tres pasadas: con la máquina ocupada (la carpeta entera de pruebas corre en paralelo) una sola medida se tuerce, y la
+      // primera además paga el calentamiento. El tiempo real es de 100 a 300 ms (era de 250 a 450 antes de agrupar los movimientos).
+      const tiempos = [0, 1, 2].map(() => {
+        const t = performance.now();
+        organizarAuto(e, [], { modo });
+        return performance.now() - t;
+      });
+      expect(Math.min(...tiempos), modo).toBeLessThan(1000);
     }
   });
 
