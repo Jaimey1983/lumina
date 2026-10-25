@@ -19,7 +19,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 - **DY5. Un gesto, una entrada de historial y una confirmación al bloque** (DW7), también cuando un gesto crea forma + conector (hijo rápido, conectar al soltar). Es el caso de prueba obligatorio de cada ficha de la fase B.
 - **DY6. Contenedores y carriles quedan para después de W10** (decisión del dueño, 2026-10-20): cambian el modelo (`padre`/`hijos` en `tipos.ts`) y se evalúan con `diagrama` ya migrado. Ninguna ficha de esta etapa los incluye.
 
-**Orden y concurrencia:** `Y1` (paquete `@lumina/ui`) es independiente y puede correr con cualquier otra. `Y2–Y11` tocan todas `editor-libre.tsx`: **van en serie, no en paralelo** (Regla 10). **`W9` (exportar) también toca el editor:** no corre en paralelo con `Y2`; si `Y2` llega primero, `W9` agrega su botón en la pestaña Exportar. La fase C (Y12a–Y17) se redactó al cerrar la fase B; la **raíz de la fase D** se redactó al cerrar la C (sus fichas Y18–Y24, de a una); las fases E–F quedan abajo como índice y **se redactan al cerrar la fase anterior** (Regla 10).
+**Orden y concurrencia:** `Y1` (paquete `@lumina/ui`) es independiente y puede correr con cualquier otra. `Y2–Y11` tocan todas `editor-libre.tsx`: **van en serie, no en paralelo** (Regla 10). **`W9` (exportar) también toca el editor:** no corre en paralelo con `Y2`; si `Y2` llega primero, `W9` agrega su botón en la pestaña Exportar. La fase C (Y12a–Y17) se redactó al cerrar la fase B; la **raíz de la fase D** se redactó al cerrar la C (sus fichas Y18–Y24, de a una); las **raíces de las fases E y F** se redactaron el 2026-10-25 al cerrar la D (sus fichas Y25–Y29 e Y30–Y35, de a una, antes de asignarlas).
 
 **Fuera de alcance de toda la etapa:** contenedores y carriles (DY6); colaboración en tiempo real; importar `.vsdx`; migrar o borrar el bloque `diagrama` (eso es W10).
 
@@ -475,12 +475,114 @@ La ficha del índice (`Y24`) mezcla dos cosas de naturaleza distinta: **las viñ
 
 ---
 
-## Fases D–F — Índice (fichas por redactar al cerrar la fase anterior, Regla 10)
+## Fase E — Configuración y entorno (raíz)
+
+Redactada el 2026-10-25, al cerrar la fase D (Y18–Y24b en `main` y en «hecho»). **Esta raíz no es un paso con ID** (igual que la de la fase D): fija el marco, lo que el código ya tiene, las decisiones y el orden. **Los pasos son Y25–Y29 y todavía no están redactados**: según la Regla 10, cada ficha se redacta completa (alcance, entregable, pruebas y comando de verificación) **antes** de asignarse, de a una y en el orden de abajo, en su propio commit `chore(tablero): …`.
+
+- **Operador de la raíz:** Claude Code. **Estado:** redactada. **Precondición:** fase D en `main` (Y24b incluida).
+- **Alcance — PUEDE tocar:** `docs/tablero/etapa-Y.md` y `AGENTS.md` (solo la fila del índice). **No toca código.**
+- **Entregable:** esta sección y la fila del índice. **Cierre:** ninguno.
+
+**Qué busca la fase:** hoy el docente no puede cambiar el tamaño ni el fondo de la página, el panel de capas se queda corto con 200 o 500 formas, no sabe si lo que hizo «quedó guardado» ni qué se puede deshacer, y no puede ver el dibujo como lo verá el alumno sin cerrar el editor. La fase E ordena el entorno de trabajo, sin tocar el modelo.
+
+**Lo que ya existe y se reutiliza (no se rehace):** `Escena { ancho, alto, fondo }` con límites 100–10000 y 1280×720 por defecto (`normalizar.ts`); `PanelCapas`, `capasDe`, `nombreDeCapa`, `ocultarCapa`, `bloquearCapa`, `ordenarCapa`, `renombrarCapa` (`propiedades-capas.tsx`, `propiedades.ts`); `Historial` con tope de 100 entradas, `puedeDeshacer`, `tamano`, `enGesto` y `Parche`/`diferencia` (`@lumina/drawing/src/historial`); `DibujoSvg` y `escenaANodos` (el visor que ve el alumno, `dibujo-render.tsx`); `EditorLibreModal` con `onCambio`/`onCerrar` y el anfitrión `diagrama-editor.tsx`; `ZonaRedimensionable` y la convención `lumina.panel.<clave>` de `localStorage`; `colores-recientes.ts` y `preferencias-texto.ts` (preferencias del navegador, DY15); el registro de comandos, la cinta (pestaña «Vista»), el buscador y el menú contextual; la región `aria-live` de anuncios (`data-dibujo-anuncio`); `FieldHelp` (etapa R) y `CollapsibleSection` (etapa S).
+
+**Hechos del código que condicionan las fichas (comprobados, no supuestos):**
+- **El tamaño y el fondo de la página no se editan en ninguna parte.** `Escena.ancho/alto/fondo` existen, el normalizador los acota y el render y la exportación (`svgDeEscena`) respetan `fondo`; pero ningún control del editor los cambia, y `editor-libre.tsx` dibuja la página del lienzo con `var(--background)` fijo (`data-dibujo-pagina`). **Márgenes no existen en el modelo** (no hay campo): pedirlos es una decisión de modelo (ver «Preguntas abiertas»).
+- **Cambiar el tamaño de página no mueve nada hoy porque nadie lo cambia:** al hacerlo pueden quedar elementos fuera de la página; hay que decidir qué se hace (DY45).
+- **Preferencias:** las del navegador son tres familias sueltas (`lumina.dibujo.colores-recientes`, `lumina.dibujo.crecer-al-escribir`, `lumina.panel.<clave>-ancho|plegado`), cada una con su propio `try/catch`. **No hay un módulo único ni «restablecer», y `localStorage` es por navegador, no por docente.** No se halló en el editor ningún punto de enganche con preferencias de cuenta.
+- **Capas:** el panel ya permite elegir, subir/bajar, ocultar, bloquear y renombrar, pero **no busca, no filtra, no reordena arrastrando y pinta todas las filas** (sin virtualizar; con 500 formas son 500 filas). No hay «ocultar/bloquear todo» ni selección de un rango.
+- **Guardado:** el editor **no guarda nada por sí mismo**: cada cambio confirmado llama a `onCambio(escena)` y el anfitrión (`diagrama-editor.tsx`) hace `onChange({ ...block, escena })`. Lo que el docente ve como «guardado» depende del guardado general de la diapositiva/curso, que el editor no conoce. **No hay indicador alguno.**
+- **Historial:** `Historial` guarda `Parche`s **sin etiqueta** (no sabe «Cambiar el relleno» o «Organizar»); el editor anuncia en voz alta cada acción pero no la conserva. Para una lista visible hay que etiquetar las entradas; el tope es 100.
+- **Modo prueba:** el visor existe (`DibujoSvg`, estático, sin asas ni rejilla; los elementos ocultos no se dibujan) y `eventos.ts` solo resuelve «qué elemento hay bajo el puntero». **Hoy no hay forma de ver el dibujo así sin cerrar el editor.**
+
+**Decisiones de la fase (DY45–DY50). Las fija esta redacción; si el dueño no las objeta antes de tomar cada ficha, rigen:**
+- **DY45. La página usa los campos que ya existen** (`ancho`, `alto`, `fondo`) y **no toca el modelo**. Cambiar el tamaño **no mueve ni escala** el contenido; si quedan elementos total o parcialmente fuera, se **avisa cuántos** (y se ofrece seleccionarlos), sin recortar ni borrar nada. Orientación = intercambiar ancho y alto. Tamaños preestablecidos (16:9, 4:3, A4, cuadrado, personalizado) con los límites del normalizador. **El fondo elegido se ve en el lienzo y se exporta.** Una entrada de historial por cambio.
+- **DY46. Un solo módulo de preferencias del navegador** (`preferencias.ts`), con lectura/escritura protegida (DY15) y un «Restablecer preferencias» que borra **solo** las claves `lumina.dibujo.*`. Las claves actuales se **migran sin perder lo ya guardado**. **Siguen siendo del navegador, no de la cuenta** (ver «Preguntas abiertas»).
+- **DY47. Los valores por defecto se aplican solo a lo que se crea después** (forma, texto, conector nuevos; imán; zoom inicial), **nunca retroactivamente** ni a un dibujo ya guardado. Nada de esto viaja con el dibujo.
+- **DY48. Capas: sin cambio de modelo.** Buscar y filtrar (por tipo, ocultos, bloqueados) son estado del editor; **reordenar arrastrando** tiene su equivalente por teclado; la virtualización entra solo cuando hay filas de sobra (DW9: 500 formas), sin perder el orden de tabulación; cada acción masiva es **una** entrada de historial (DY5).
+- **DY49. El editor no inventa persistencia.** El indicador muestra el estado de **entrega al anfitrión** («Cambios entregados» / «Sin cambios») y, si el anfitrión lo informa por una prop opcional `estadoGuardado` (`guardando | guardado | error`), también ese. «Historial visible» = `Historial` gana una **etiqueta opcional** por entrada y una lista con las últimas; **saltar a una entrada equivale a deshacer/rehacer hasta ahí**, nunca reescribe el pasado.
+- **DY50. Modo prueba = solo lectura.** Usa el **mismo** `DibujoSvg` que ve el alumno, sin asas, rejilla, reglas ni mini barra; no escribe en la escena ni en el historial; se sale con `Escape` o su botón; y el foco vuelve a donde estaba. **No simula interacciones del alumno que el dibujo no tenga** (si `eventos.ts` no las define al redactar Y29, no se inventan).
+
+**Los cinco pasos (por redactar), en orden y con lo que cada uno resuelve:**
+
+| ID | Paso | Se apoya en | Toca el modelo | Riesgo a revisar al redactarla |
+|---|---|---|---|---|
+| **Y25** | **Ajustes de página:** tamaño, orientación y fondo (pestaña «Vista»/panel con nada elegido) | `Escena.ancho/alto/fondo`, `ajustarAVentana`, `svgDeEscena` | No | Elementos que quedan fuera (DY45); que el lienzo pinte `fondo` y la exportación coincida; fondo con tokens `var(--…)` (DY12); límites 100–10000 |
+| **Y26** | **Preferencias y valores por defecto** (módulo único, restablecer, estilo de lo nuevo, imán, zoom inicial) | `colores-recientes.ts`, `preferencias-texto.ts`, `zona-redimensionable.tsx` | No | Migrar las claves actuales sin perder datos; `localStorage` ausente; que un valor por defecto **no** cambie un dibujo ya guardado |
+| **Y27** | **Capas ampliado:** buscar, filtrar, reordenar arrastrando y con teclado, ocultar/bloquear en bloque, virtualizar | `PanelCapas`, `capasDe`, `ordenarCapa` | No | 500 filas (DW9); accesibilidad de la lista virtual; que reordenar respete grupos y la selección; una entrada de historial |
+| **Y28** | **Guardado y historial visibles:** indicador de entrega, prop opcional `estadoGuardado`, lista de historial con etiquetas | `Historial`, `onCambio`, `diagrama-editor.tsx` | No (`Historial` y la prop, no la escena) | Etiquetar **todas** las acciones sin repetir cadenas (DY3); saltar varias entradas; el anfitrión debe seguir funcionando sin la prop |
+| **Y29** | **Modo prueba:** ver como el alumno sin salir del editor | `DibujoSvg`, `escenaANodos`, `eventos.ts` | No | Foco y teclado al entrar/salir; que no quede estado de edición colgado; paridad exacta con lo que renderiza el bloque fuera del editor |
+
+**Preguntas abiertas para el dueño (cada una tiene un valor por defecto; rige si no hay objeción):**
+1. **Márgenes de página.** Por defecto **no se incluyen** (no hay campo en el modelo y la fase E no lo toca). Si se quieren, son un campo nuevo opcional de `Escena` (con las garantías de DY14) y una ficha aparte.
+2. **«Guardadas por docente».** Por defecto las preferencias son **del navegador** (DY15, DY46). Guardarlas **por cuenta** exige un punto de servidor y su autorización (Regla 5) y queda como ficha propia del backend.
+3. **Autoguardado (Y28).** Por defecto «guardado automático» **no crea** un guardado propio: informa el estado del que ya hay. Si se quiere un autoguardado del editor con borrador local, es una ficha aparte.
+
+**Orden y concurrencia de la fase E:** Y25 → Y26 → Y27 → Y28 → Y29, **en serie** (todas tocan `editor-libre.tsx`, `comandos-registro.ts` o la cinta). Y26 va después de Y25 porque necesita el tamaño y el fondo como valor por defecto elegible. Las partes **puras** (el módulo de preferencias, el filtrado de capas, las etiquetas del historial) pueden adelantarse en archivos disjuntos si la ficha se parte en «pura» e «integración» (Regla 10). Cada ficha lleva **mutaciones y comprobación en Chromium real**, como en las fases B, C y D.
+
+**Verificación común (Y25–Y29), salvo que la ficha diga otra cosa:** la de la fase D (`pnpm --filter @lumina/drawing build && pnpm --filter @lumina/drawing test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && npx tsc --noEmit -p packages/element-kit`); Y25 suma la prueba de **exportación con el fondo elegido**; Y28 suma las de `Historial` en `@lumina/drawing`. Recordatorio de CI: las pruebas jsdom con Radix son lentas (topes de 120 s) y las de rendimiento miden proporciones, no milisegundos absolutos.
+
+**Fuera de alcance de la fase E:** contenedores y carriles (DY6); preferencias por cuenta y cualquier ruta del backend (pregunta 2); autoguardado propio con borrador (pregunta 3); márgenes (pregunta 1); táctil, modo oscuro del editor, iconos, enlaces y minimapa (fase F).
+
+---
+
+## Fase F — Ampliaciones (raíz)
+
+Redactada el 2026-10-25, a pedido del dueño, **junto con la raíz de la fase E** (la fase F no depende del contenido de E, salvo el orden). **Esta raíz no es un paso con ID**: los pasos son **Y30–Y35** y **cada ficha se redacta completa antes de asignarse**, de a una y al llegar su turno (Regla 10); los hechos de abajo se **vuelven a comprobar** al redactar cada una, porque la fase E habrá movido `editor-libre.tsx` y la cinta.
+
+- **Operador de la raíz:** Claude Code. **Estado:** redactada. **Precondición:** fase D en `main` (cumplida). Los pasos tienen como precondición su predecesor.
+- **Alcance — PUEDE tocar:** `docs/tablero/etapa-Y.md` y `AGENTS.md` (solo la fila del índice). **No toca código.**
+- **Entregable:** esta sección y la fila del índice. **Cierre:** ninguno.
+
+**Qué busca la fase:** que el editor sirva también con el dedo y en pantallas oscuras, que tenga iconos listos, que un elemento pueda llevar un enlace o una nota, que se pueda ubicar uno en un dibujo grande y que el uso con teclado y lector de pantalla llegue al nivel del resto del producto.
+
+**Lo que ya existe y se reutiliza (no se rehace):** `tipoPuntero` y el estado `tactil` de `editor-libre.tsx` (los puertos ya agrandan su radio de atracción con el dedo, `conectores.ts`); `Vista`, `zoomEn`, `desplazar`, `ajustarAVentana` (`vista.ts`); el catálogo de formas con su trazado y `parametros` (`formas/catalogo.ts`); `lucide-react` (ya es dependencia y la cinta y el panel de capas la usan); `Elemento.nombre` y `Elemento.descripcion` (texto alternativo, `CampoDescripcion`); `accesibilidad.tsx`, `useFocoAtrapado` y la región `aria-live`; los tokens del tema (`bg-background`, `text-foreground`, `var(--…)`) con los que ya se dibuja casi toda la interfaz del editor.
+
+**Hechos del código que condicionan las fichas (comprobados, no supuestos):**
+- **Táctil:** hay `PointerEvent` y `setPointerCapture`, y con el dedo los puertos son más fáciles de acertar; **no hay pellizco para el zoom, ni desplazamiento con dos dedos, ni `touch-action` en el lienzo** (el navegador puede tomar el gesto para hacer scroll o zoom de página), y los botones de la cinta y las asas **no tienen objetivos de 44 px** con el dedo.
+- **Modo oscuro del editor:** casi todo usa tokens que ya siguen al tema de la app, pero hay **colores fijos** (el azul de selección `COLOR_SELECCION`, el naranja del extremo libre `#ea580c`, las guías y reglas) y la página del lienzo es `var(--background)`. **No hay un interruptor propio del editor**: depende del tema general.
+- **Iconos:** `lucide-react` se importa en la interfaz, pero **no hay iconos como contenido del dibujo**. El modelo solo conoce las formas del catálogo (`forma` es una clave que el normalizador valida): **un icono nuevo es una forma nueva del catálogo, con su trazado, y el normalizador debe conocerla**.
+- **Enlaces y notas:** `Elemento` solo tiene `nombre` y `descripcion`. **No hay campo de enlace ni de nota**; añadirlos es cambio de modelo (DY14 aplica igual: opcional, omitido cuando está vacío, escena vieja idéntica), y el render y el exportador tendrían que tratarlos.
+- **Minimapa:** no existe; la `Vista` (zoom 0,1–8, desplazamiento) y el tamaño de la escena bastan para calcularlo. Es UI pura.
+- **Accesibilidad:** hay región `aria-live`, foco atrapado en diálogos, roving tabindex en la cinta y `aria-*` en los controles nuevos de las fases B–D; **mover/transformar un elemento solo con teclado, recorrer los elementos del lienzo con Tab o flechas y describir el dibujo completo a un lector de pantalla** están por auditar al redactar Y35.
+
+**Decisiones de la fase (DY51–DY55). Las fija esta redacción; si el dueño no las objeta antes de tomar cada ficha, rigen:**
+- **DY51. Táctil con Pointer Events, sin romper el ratón.** `touch-action: none` en el lienzo; **dos dedos = desplazar y pellizcar = zoom** (con `acotarZoom`); un dedo sigue siendo la herramienta activa; los objetivos de **44 px** se aplican **solo cuando el puntero es táctil** (no se agranda la interfaz de escritorio); no hay «doble toque» nuevo que choque con el de edición de texto. Se prueba con Chromium real y `hasTouch`.
+- **DY52. Modo oscuro = seguir el tema de la app.** Sin interruptor propio. La ficha **audita y reemplaza los colores fijos** por tokens con su pareja oscura, y comprueba contraste (WCAG AA) de selección, guías, reglas y asas sobre fondo claro y oscuro. **El dibujo no cambia** (sus colores son los suyos; DW5).
+- **DY53. Iconos como formas del catálogo**, un conjunto **mínimo y curado** (alrededor de 30), con el trazado del icono incorporado al catálogo; **no se guarda ningún nombre de librería** ni se importa `lucide` al modelo. Cambia el conjunto de `forma` válidas del normalizador: **es la excepción de modelo de esta fase** y cumple DY14 (una escena guardada antes se renderiza y se exporta idéntica). Se revisa la licencia de los trazados (`lucide`: ISC) y la accesibilidad (cada icono tiene `descripcion`).
+- **DY54. Enlaces y notas: dos campos opcionales de `Elemento` (`enlace`, `nota`)**, con DY14. **Seguridad:** el enlace admite solo `https:`, `http:`, `mailto:` y un ancla interna; **nunca** `javascript:` ni `data:`; se normaliza en `normalizar.ts` y se abre con `rel="noopener noreferrer"`. **La nota es privada del docente por defecto: no se dibuja para el alumno ni se exporta** (ver «Preguntas abiertas»).
+- **DY55. Minimapa y accesibilidad avanzada no tocan el modelo.** El minimapa es una vista reducida con el rectángulo de la ventana (arrastrarlo desplaza), plegable y ocultable (preferencia del navegador, DY46); la accesibilidad avanzada se mide con una auditoría de teclado y de lector de pantalla, no con una lista de adornos.
+
+**Los seis pasos (por redactar), en orden y con lo que cada uno resuelve:**
+
+| ID | Paso | Se apoya en | Toca el modelo | Riesgo a revisar al redactarla |
+|---|---|---|---|---|
+| **Y30** | **Táctil:** pellizcar, dos dedos, objetivos de 44 px | `tipoPuntero`, `vista.ts`, `gestos.ts` | No | Que un dedo y dos no se confundan a mitad de gesto; que el gesto de zoom de la página no se cuele; cancelar un gesto al llegar el segundo dedo (DY5) |
+| **Y31** | **Modo oscuro del editor:** colores fijos a tokens y contraste | tokens de tema, `COLOR_SELECCION`, reglas y guías | No | Que la selección se vea sobre cualquier fondo de dibujo (no solo sobre `--background`); la exportación no cambia |
+| **Y32** | **Biblioteca de iconos mínima** como formas del catálogo | `formas/catalogo.ts`, `lucide-react` | **Sí (DY53, excepción acotada)** | Escena vieja idéntica; trazados dentro de los límites del normalizador; `descripcion` por defecto; el panel de inserción no se vuelve interminable |
+| **Y33** | **Enlaces y notas por elemento** | `Elemento`, `CampoDescripcion`, `normalizar.ts` | **Sí (DY54)** | Esquemas permitidos y `javascript:` rechazado con prueba de mutación; que la nota **no salga** en el visor ni en la exportación; foco y teclado para abrir un enlace |
+| **Y34** | **Minimapa** | `vista.ts`, tamaño de la escena | No | Rendimiento con 500 formas (se dibuja simplificado, DW9); arrastrar el rectángulo y teclado; ocultable |
+| **Y35** | **Accesibilidad avanzada:** teclado para mover y transformar, recorrer elementos, descripción del dibujo | `accesibilidad.tsx`, `comandos-registro.ts`, región `aria-live` | No | Qué se anuncia y cuándo sin saturar al lector; atajos que no choquen con los del navegador ni con Y5 |
+
+**Preguntas abiertas para el dueño (cada una tiene un valor por defecto; rige si no hay objeción):**
+4. **Visibilidad de las notas (Y33).** Por defecto **privadas del docente** (no se ven en el visor del alumno ni se exportan). Si se quieren notas visibles para el alumno, es otro campo o un indicador distinto y se discute aparte.
+5. **Qué abre un enlace (Y33).** Por defecto **una pestaña nueva** con `noopener`; los anclas internas llevan al elemento. Si el curso exige que el enlace no salga de la plataforma, se cambia.
+
+**Orden y concurrencia de la fase F:** Y30 → Y31 → Y32 → Y33 → Y34 → Y35, **en serie** (todas tocan `editor-libre.tsx`, la cinta o el catálogo). Y32 e Y33 son las dos únicas que tocan el modelo y **no corren en paralelo** (ambas editan `normalizar.ts`). Cada ficha lleva **mutaciones y comprobación en Chromium real** (táctil con `hasTouch`; oscuro con `colorScheme: "dark"`).
+
+**Verificación común (Y30–Y35), salvo que la ficha diga otra cosa:** la de la fase E; Y32 e Y33 suman la prueba de **escena vieja idéntica** (golden) y la de exportación; Y33 suma la de **seguridad de enlaces** (esquemas) y la de que la nota **no** aparece en el SVG exportado.
+
+**Fuera de alcance de la fase F:** contenedores y carriles (DY6); colaboración en tiempo real; importar `.vsdx`; sincronizar preferencias por cuenta; un editor de iconos propio (solo el conjunto curado); animaciones del dibujo.
+
+---
+
+## Fases C–F — Índice (Regla 10)
 
 | Fase | Contenido | IDs reservados |
 |---|---|---|
 | **C — Productividad** | **Redactada (Y12a–Y17), ver arriba.** Portapapeles y copiar formato · organizar automáticamente · pegar esquema · selección avanzada · reglas, guías, medidas y espaciado igual · menú contextual | Y12a, Y12b, Y13, Y14, Y15, Y16a, Y16b, Y17 |
-| **D — Edición directa y apartado gráfico** | **Raíz redactada (2026-10-23), ver arriba; Y18, Y19, Y20, Y21, Y22 e Y23 en revisión; Y24a e Y24b en revisión; Y24 se redactan una a una antes de asignarlas.** Mini barra flotante junto a la selección y pestaña «Formato de forma» · Cambiar forma sin perder nada · Asas amarillas de ajuste (radio, punta, grosor) · Estilos predefinidos y temas (tokens `var(--…)`, DW5) · Colores recientes y cuentagotas · Relleno y efectos ampliados · Texto (autoajuste, viñetas, la forma crece al escribir) | Y18–Y24 |
-| **E — Configuración y entorno** | Ajustes de página (tamaño, orientación, fondo, márgenes) · Preferencias y valores por defecto (guardadas por docente) · Panel de capas ampliado (bloquear, ocultar, buscar, virtualizar, DW9) · Guardado automático con indicador e historial visible · Modo prueba (ver como el alumno) | Y25–Y29 |
-| **F — Ampliaciones** | Táctil (pellizcar, dos dedos, objetivos de 44 px) · Modo oscuro del editor · Biblioteca de iconos mínima (`lucide`) · Hipervínculos y notas por elemento · Minimapa · Accesibilidad avanzada | Y30+ |
+| **D — Edición directa y apartado gráfico** | **Cerrada (Y18–Y24b en «hecho»), ver arriba.** Mini barra y pestaña «Formato de forma» · cambiar forma · asas amarillas · estilos y temas · colores recientes y cuentagotas · relleno y efectos ampliados · texto (viñetas, ajustar al texto, crecer al escribir) | Y18–Y24b |
+| **E — Configuración y entorno** | **Raíz redactada (2026-10-25), ver arriba; Y25–Y29 se redactan una a una antes de asignarlas.** Ajustes de página (tamaño, orientación, fondo) · Preferencias y valores por defecto · Capas ampliado (buscar, filtrar, reordenar, virtualizar, DW9) · Guardado e historial visibles · Modo prueba (ver como el alumno) | Y25–Y29 |
+| **F — Ampliaciones** | **Raíz redactada (2026-10-25), ver arriba; Y30–Y35 se redactan una a una antes de asignarlas.** Táctil · Modo oscuro del editor · Biblioteca de iconos mínima (excepción de modelo, DY53) · Enlaces y notas por elemento (modelo, DY54) · Minimapa · Accesibilidad avanzada | Y30–Y35 |
 | **Contenedores y carriles** | **Después de W10** (DY6). Ficha raíz: se redacta al cerrar W10. | — |
