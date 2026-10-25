@@ -32,7 +32,7 @@ export interface Esquema {
   sobrantes: number;
   /** Cuántas líneas se recortaron por pasar el largo máximo. */
   recortadas: number;
-  /** No se detectó jerarquía: hay 3 o más nodos y todos son raíz (Y36). Es `false` si se aplicó `primeraLineaEsTema`. */
+  /** No se detectó jerarquía: hay 3 o más nodos y todos son raíz (Y36). Con `primeraLineaEsTema` hay una sola raíz y es `false`. */
   sinJerarquia: boolean;
 }
 
@@ -54,7 +54,7 @@ export function analizarEsquema(texto: string, opciones: OpcionesAnalisis = {}):
   const base = construir(items, items.length);
   if (!opciones.primeraLineaEsTema || items.length === 0) return base;
   const desplazados = items.map((it, i) => (i === 0 ? it : { ...it, nivel: it.nivel + 1 }));
-  return { ...construir(desplazados, items.length), sinJerarquia: false };
+  return construir(desplazados, items.length); // con un tema y el resto debajo hay una sola raíz: ya no es «sin jerarquía»
 }
 
 function construir(items: ReadonlyArray<{ nivel: number; texto: string }>, total: number): Esquema {

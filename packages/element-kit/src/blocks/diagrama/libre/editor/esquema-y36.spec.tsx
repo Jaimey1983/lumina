@@ -93,8 +93,9 @@ describe("Y36 — la vista previa muestra la jerarquía", () => {
     abrir();
     const lineasTexto = ["Tema", ...Array.from({ length: 75 }, (_v, i) => `  Nodo ${i}`)];
     escribir(lineasTexto.join("\n"));
-    expect(within(arbol() as HTMLElement).getAllByRole("listitem")).toHaveLength(MAX_FILAS_ARBOL);
-    expect(document.querySelector("[data-esquema-arbol-mas]")?.textContent?.trim()).toBe(`… y ${76 - MAX_FILAS_ARBOL} más`);
+    expect(MAX_FILAS_ARBOL).toBe(60);
+    expect(within(arbol() as HTMLElement).getAllByRole("listitem")).toHaveLength(60);
+    expect(document.querySelector("[data-esquema-arbol-mas]")?.textContent?.trim()).toBe("… y 16 más");
     fireEvent.click(crear());
     expect(formas(ultima())).toHaveLength(76);
   });
@@ -102,8 +103,8 @@ describe("Y36 — la vista previa muestra la jerarquía", () => {
   it("justo en el tope no hay «… y N más»", () => {
     montar();
     abrir();
-    escribir(["Tema", ...Array.from({ length: MAX_FILAS_ARBOL - 1 }, (_v, i) => `  N${i}`)].join("\n"));
-    expect(within(arbol() as HTMLElement).getAllByRole("listitem")).toHaveLength(MAX_FILAS_ARBOL);
+    escribir(["Tema", ...Array.from({ length: 59 }, (_v, i) => `  N${i}`)].join("\n"));
+    expect(within(arbol() as HTMLElement).getAllByRole("listitem")).toHaveLength(60);
     expect(document.querySelector("[data-esquema-arbol-mas]")).toBeNull();
   });
 });
