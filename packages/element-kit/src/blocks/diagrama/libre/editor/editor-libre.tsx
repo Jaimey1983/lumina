@@ -26,6 +26,10 @@ import {
   escenaConRutas,
   esquinas,
   conectarFormas,
+  fijarPagina,
+  fueraDePagina,
+  girarPagina,
+  type CambioDePagina,
   crearHijo,
   crearHijoEn,
   ajustarAlTexto,
@@ -120,6 +124,7 @@ import {
 } from "./conectores.js";
 import { BotonExportar } from "./exportar-panel.js";
 import { PanelPropiedades } from "./propiedades-panel.js";
+import { textoFuera } from "./pagina-ajustes.js";
 import { ZonaRedimensionable } from "./zona-redimensionable.js";
 import { TextoEnSitio } from "./texto-en-sitio.js";
 import {
@@ -565,6 +570,29 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       if (nueva !== actual) confirmar(actual, { escena: nueva, seleccion: sel });
     },
     [confirmar, finVistaPanel],
+  );
+
+  /**
+   * Ajustes de página (Y25): una entrada de historial por cambio. Si cambia el tamaño, la vista se ajusta para mostrar la página nueva;
+   * si queda algo fuera o cortado, el anuncio lo dice. Cambiar solo el fondo no mueve la vista.
+   */
+  const aplicarPagina = useCallback(
+    (cambio: CambioDePagina): void => {
+      finVistaPanel();
+      const { escena: actual, seleccion: sel } = vivo.current;
+      const nueva = fijarPagina(actual, cambio);
+      if (nueva === actual) return;
+      confirmar(actual, { escena: nueva, seleccion: sel });
+      const cambioTamano = nueva.ancho !== actual.ancho || nueva.alto !== actual.alto;
+      const fuera = cambioTamano ? fueraDePagina(nueva).length : 0;
+      if (cambioTamano) {
+        setVista(ajustarAVentana(nueva, medir()));
+        setAnuncio(`Página de ${nueva.ancho} × ${nueva.alto}.${fuera > 0 ? ` ${textoFuera(fuera)}.` : ""}`);
+      } else {
+        setAnuncio(nueva.fondo === null ? "Fondo transparente." : "Fondo cambiado.");
+      }
+    },
+    [confirmar, finVistaPanel, medir],
   );
 
   const seleccionarDesdeCapas = useCallback((ids: string[], sumar: boolean): void => {
@@ -1623,6 +1651,20 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       case "ajustar-vista":
         ajustar();
         return;
+      case "girar-pagina": {
+        // Girar la página (Y25): intercambia ancho y alto, una entrada de historial; en una cuadrada no hay nada que girar.
+        const { escena: actual, seleccion: sel } = vivo.current;
+        const nueva = girarPagina(actual);
+        if (nueva === actual) {
+          setAnuncio("La página ya es cuadrada.");
+          return;
+        }
+        confirmar(actual, { escena: nueva, seleccion: sel });
+        setVista(ajustarAVentana(nueva, medir()));
+        const fuera = fueraDePagina(nueva).length;
+        setAnuncio(`Página girada: ${nueva.ancho} × ${nueva.alto}.${fuera > 0 ? ` ${textoFuera(fuera)}.` : ""}`);
+        return;
+      }
       case "cuadricula":
         setCuadricula((v) => !v);
         return;
@@ -2042,7 +2084,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       </div>
       </div>
       <ZonaRedimensionable etiqueta="Propiedades" clave="dibujo-panel">
-        {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} crecerAlEscribir={crecer} onCrecerAlEscribir={() => ejecutarOrden({ tipo: "crecer-al-escribir" })} onAjustarAlTexto={() => ejecutarOrden({ tipo: "ajustar-al-texto" })} />}
+        {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} crecerAlEscribir={crecer} onCrecerAlEscribir={() => ejecutarOrden({ tipo: "crecer-al-escribir" })} onAjustarAlTexto={() => ejecutarOrden({ tipo: "ajustar-al-texto" })} onPagina={aplicarPagina} />}
       </ZonaRedimensionable>
       </div>
 

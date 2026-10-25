@@ -54,6 +54,7 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   alejar: "Vista",
   acercar: "Vista",
   "ajustar-vista": "Vista",
+  "girar-pagina": "Vista",
   cuadricula: "Vista",
   imantar: "Vista",
   reglas: "Vista",
@@ -547,6 +548,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
             {boton("quitar-guias", "medium")}
             {boton("atajos", "medium")}
           </RibbonGroup>
+          <RibbonGroup label="Página">{boton("girar-pagina", "large")}</RibbonGroup>
         </>
       ),
     },
