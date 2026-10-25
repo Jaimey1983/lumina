@@ -7,7 +7,7 @@ import {
   aplicarDisposicion,
   cajaDeNodos,
   componerPosiciones,
-  comprimir,
+  comprimirParaQueQuepa,
   disponerArbol,
   disponerRadial,
   esBosque,
@@ -159,15 +159,8 @@ export function organizarAuto(escena: Escena, ids: readonly string[], opciones: 
       elegido = trasladarAPagina(ultimo, grafo.nodos, pagina, margen);
     }
     if (!elegido && opciones.modo === "radial") {
-      const caja = cajaDeNodos(grafo.nodos, ultimo);
-      if (caja) {
-        const fx = Math.min(1, (pagina.ancho - 2 * margen) / caja.ancho);
-        const fy = Math.min(1, (pagina.alto - 2 * margen) / caja.alto);
-        if (Math.min(fx, fy) >= COMPRESION_MINIMA) {
-          const apretada = comprimir(ultimo, grafo.nodos, { fx, fy });
-          if (!hayPisadas(grafo.nodos, apretada)) elegido = trasladarAPagina(apretada, grafo.nodos, pagina, margen);
-        }
-      }
+      const apretada = comprimirParaQueQuepa(ultimo, grafo.nodos, pagina, margen, COMPRESION_MINIMA);
+      if (apretada && !hayPisadas(grafo.nodos, apretada)) elegido = trasladarAPagina(apretada, grafo.nodos, pagina, margen);
     }
   }
   const posiciones = elegido ?? normal;

@@ -463,3 +463,217 @@ describe("organizarAuto: árbol y jerárquico en orden de lectura (Y37a)", () =>
     }
   });
 });
+
+// ─── Y37b: todo dentro de la página ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+describe("organizarAuto: encajar en la página (Y37b)", () => {
+  /** Una raíz con `ramas` ramas de `hojas` hojas cada una; cajas de `ancho` × 44 amontonadas en el medio de una página `pw` × `ph`. */
+  function arbolDe(ramas: number, hojas: number, ancho = 120, pw = 1280, ph = 720): Escena {
+    const els = [forma("r", pw / 2 - ancho / 2, ph / 2 - 22, ancho, 44)];
+    const aristas: Array<[string, string]> = [];
+    for (let i = 0; i < ramas; i++) {
+      els.push(forma(`b${i}`, pw / 2 - ancho / 2 + i * 7, ph / 2 + i * 5, ancho, 44));
+      aristas.push(["r", `b${i}`]);
+      for (let j = 0; j < hojas; j++) {
+        els.push(forma(`h${i}_${j}`, pw / 2 - ancho / 2 + j * 9, ph / 2 + 100 + i * 3, ancho, 44));
+        aristas.push([`b${i}`, `h${i}_${j}`]);
+      }
+    }
+    let e = normalizarEscena({ ancho: pw, alto: ph, elementos: els });
+    for (const [p, h] of aristas) e = conectarFormas(e, p, h);
+    return e;
+  }
+  const caja = (e: Escena): { x0: number; y0: number; x1: number; y1: number } => {
+    const fs = formas(e);
+    return {
+      x0: Math.min(...fs.map((f) => f.transformacion.x)),
+      y0: Math.min(...fs.map((f) => f.transformacion.y)),
+      x1: Math.max(...fs.map((f) => f.transformacion.x + f.transformacion.ancho)),
+      y1: Math.max(...fs.map((f) => f.transformacion.y + f.transformacion.alto)),
+    };
+  };
+  const dentro = (e: Escena, margen = 0): boolean => {
+    const c = caja(e);
+    return c.x0 >= margen - 1e-6 && c.y0 >= margen - 1e-6 && c.x1 <= e.ancho - margen + 1e-6 && c.y1 <= e.alto - margen + 1e-6;
+  };
+  const tamanos = (e: Escena): Array<[string, number, number]> => formas(e).map((f) => [f.id, f.transformacion.ancho, f.transformacion.alto]);
+
+  it("el radial de 13, 21 y 33 formas queda entero dentro de 1280 × 720, sin pisarse y sin aviso", () => {
+    for (const [ramas, hojas] of [[4, 2], [5, 3], [8, 3]] as const) {
+      const e = arbolDe(ramas, hojas);
+      const r = organizarAuto(e, [], { modo: "radial" });
+      expect(r.aviso, `${ramas}x${hojas}`).toBeUndefined();
+      expect(dentro(r.escena), `${ramas}x${hojas}`).toBe(true);
+      expect(pisadas(r.escena), `${ramas}x${hojas}`).toEqual([]);
+    }
+  });
+
+  it("comprimir mueve posiciones, nunca tamaños; los conectores siguen pegados a las mismas formas", () => {
+    const e = arbolDe(6, 3);
+    const r = organizarAuto(e, [], { modo: "radial" });
+    expect(r.aviso).toBeUndefined();
+    expect(tamanos(r.escena)).toEqual(tamanos(e));
+    const pegados = (x: Escena): string[] => lineas(x).map((l) => `${l.origen?.elementoId}>${l.destino?.elementoId}`);
+    expect(pegados(r.escena)).toEqual(pegados(e));
+  });
+
+  it("con una página mayor no se compacta ni se comprime: el resultado es el de la disposición normal", () => {
+    const e = arbolDe(5, 3);
+    const encajado = organizarAuto(e, [], { modo: "radial" }).escena;
+    const enGrande = arbolDe(5, 3, 120, 4000, 3000);
+    const sinTope = organizarAuto(enGrande, [], { modo: "radial" }).escena;
+    // La disposición normal mide más de 720 de alto: la que se encajó en la página tuvo que apretarse.
+    expect(caja(sinTope).y1 - caja(sinTope).y0).toBeGreaterThan(720);
+    expect(caja(encajado).y1 - caja(encajado).y0).toBeLessThanOrEqual(720 + 1e-6);
+    // Y en la página enorme no hay aviso ni traslado: la raíz queda donde estaba.
+    expect(organizarAuto(enGrande, [], { modo: "radial" }).aviso).toBeUndefined();
+    expect(cx(get(sinTope, "r"))).toBeCloseTo(cx(get(enGrande, "r")), 6);
+    expect(cy(get(sinTope, "r"))).toBeCloseTo(cy(get(enGrande, "r")), 6);
+  });
+
+  it("lo que cabe con la separación normal no se compacta (hermanos a 30)", () => {
+    const e = arbolDe(8, 0);
+    const r = organizarAuto(e, [], { modo: "arbol", direccion: "abajo" });
+    expect(r.aviso).toBeUndefined();
+    const xs = ["b0", "b1"].map((id) => get(r.escena, id).transformacion.x);
+    expect((xs[1] as number) - (xs[0] as number) - 120).toBeCloseTo(30, 6);
+  });
+
+  it("si con la normal no cabe pero compacta sí, se compacta lo mínimo (hermanos a 20)", () => {
+    const r = organizarAuto(arbolDe(9, 0), [], { modo: "arbol", direccion: "abajo" });
+    expect(r.aviso).toBeUndefined();
+    expect(dentro(r.escena)).toBe(true);
+    const xs = ["b0", "b1"].map((id) => get(r.escena, id).transformacion.x);
+    expect((xs[1] as number) - (xs[0] as number) - 120).toBeCloseTo(20, 6);
+  });
+
+  it("la más compacta (hermanos a 12) cuando la compacta tampoco alcanza", () => {
+    const r = organizarAuto(arbolDe(9, 0, 130), [], { modo: "arbol", direccion: "abajo" });
+    expect(r.aviso).toBeUndefined();
+    expect(dentro(r.escena)).toBe(true);
+    const xs = ["b0", "b1"].map((id) => get(r.escena, id).transformacion.x);
+    expect((xs[1] as number) - (xs[0] as number) - 130).toBeCloseTo(12, 6);
+  });
+
+  it("el jerárquico compacta igual (por el motor de árbol y por dagre)", () => {
+    const r = organizarAuto(arbolDe(9, 0), [], { modo: "jerarquico", direccion: "abajo" });
+    expect(r.aviso).toBeUndefined();
+    expect(dentro(r.escena)).toBe(true);
+    // Con una unión (un nodo con dos padres) usa dagre y también se compacta.
+    let u = normalizarEscena({ ancho: 600, alto: 700, elementos: [forma("r", 250, 20, 100, 44), forma("a", 100, 200, 100, 44), forma("b", 400, 200, 100, 44), forma("d", 250, 400, 100, 44)] });
+    for (const [p, h] of [["r", "a"], ["r", "b"], ["a", "d"], ["b", "d"]] as const) u = conectarFormas(u, p, h);
+    const ru = organizarAuto(u, [], { modo: "jerarquico", direccion: "abajo" });
+    expect(dentro(ru.escena)).toBe(true);
+    expect(ru.aviso).toBeUndefined();
+  });
+
+  it("lo que no cabe ni compacto se organiza igual con la disposición normal, avisa y no mueve la raíz", () => {
+    const e = arbolDe(6, 4);
+    for (const [modo, direccion] of [["arbol", "derecha"], ["jerarquico", "abajo"]] as const) {
+      const r = organizarAuto(e, [], { modo, direccion });
+      expect(r.aviso, modo).toBe("fuera-de-pagina");
+      expect(r.motivo, modo).toBeUndefined();
+      expect(cx(get(r.escena, "r")), modo).toBeCloseTo(cx(get(e, "r")), 6);
+      expect(cy(get(r.escena, "r")), modo).toBeCloseTo(cy(get(e, "r")), 6);
+      expect(pisadas(r.escena), modo).toEqual([]);
+    }
+  });
+
+  it("un radial que no cabe ni comprimido (más de 55 %) avisa y no se comprime", () => {
+    const e = arbolDe(12, 6);
+    const r = organizarAuto(e, [], { modo: "radial" });
+    expect(r.aviso).toBe("fuera-de-pagina");
+    expect(pisadas(r.escena)).toEqual([]);
+  });
+
+  it("con la raíz pegada al borde se traslada lo justo para entrar (el menor desplazamiento)", () => {
+    const e = arbol7(); // la raíz está en (0, 0): el abanico de hijos se sale por la izquierda
+    const enGrande = normalizarEscena({ ...(e as unknown as Record<string, unknown>), ancho: 100000, alto: 100000 });
+    const sin = organizarAuto(enGrande, [], { modo: "jerarquico", direccion: "abajo" }).escena;
+    const con = organizarAuto(e, [], { modo: "jerarquico", direccion: "abajo" }).escena;
+    expect(dentro(con)).toBe(true);
+    expect(caja(con).x0).toBeCloseTo(0, 6); // pegado al borde: no más de lo necesario
+    // Es el mismo dibujo, solo corrido.
+    const dx = get(con, "r").transformacion.x - get(sin, "r").transformacion.x;
+    const dy = get(con, "r").transformacion.y - get(sin, "r").transformacion.y;
+    for (const f of formas(sin)) {
+      expect(get(con, f.id).transformacion.x - f.transformacion.x, f.id).toBeCloseTo(dx, 6);
+      expect(get(con, f.id).transformacion.y - f.transformacion.y, f.id).toBeCloseTo(dy, 6);
+    }
+  });
+
+  it("un diagrama que ya cabía no se mueve al organizarlo dos veces", () => {
+    for (const modo of ["arbol", "jerarquico", "radial"] as const) {
+      const una = organizarAuto(arbolDe(5, 3), [], { modo }).escena;
+      const dos = organizarAuto(una, [], { modo });
+      expect(dos.motivo, modo).toBe("sin-cambios");
+    }
+  });
+
+  it("con `centro` queda centrado ahí si cabe, y trasladado con margen si no", () => {
+    const e = arbolDe(3, 1);
+    const centrado = organizarAuto(e, [], { modo: "arbol", centro: { x: 640, y: 360 } }).escena;
+    const c = caja(centrado);
+    expect((c.x0 + c.x1) / 2).toBeCloseTo(640, 6);
+    expect((c.y0 + c.y1) / 2).toBeCloseTo(360, 6);
+    const enLaEsquina = organizarAuto(e, [], { modo: "arbol", centro: { x: 50, y: 50 } }).escena;
+    expect(dentro(enLaEsquina, 24)).toBe(true);
+    expect(caja(enLaEsquina).x0).toBeCloseTo(24, 6);
+    expect(caja(enLaEsquina).y0).toBeCloseTo(24, 6);
+  });
+
+  it("con `centro` el margen de 24 también cuenta para elegir: lo que cabe sin margen pero no con él se compacta más", () => {
+    // 9 ramas de 122 de ancho: la compacta (hermanos a 20) mide 1258: cabe en 1280 pero no en los 1232 que quedan con margen de 24.
+    const hueco = (e: Escena): number => get(e, "b1").transformacion.x - get(e, "b0").transformacion.x - 122;
+    const sinCentro = organizarAuto(arbolDe(9, 0, 122), [], { modo: "arbol", direccion: "abajo" });
+    expect(sinCentro.aviso).toBeUndefined();
+    expect(hueco(sinCentro.escena)).toBeCloseTo(20, 6);
+    const conCentro = organizarAuto(arbolDe(9, 0, 122), [], { modo: "arbol", direccion: "abajo", centro: { x: 640, y: 360 } });
+    expect(conCentro.aviso).toBeUndefined();
+    expect(hueco(conCentro.escena)).toBeCloseTo(12, 6);
+    expect(dentro(conCentro.escena, 24)).toBe(true);
+  });
+
+  it("lo suelto (sin conectores) también tiene que caber, debajo de lo organizado", () => {
+    let e = normalizarEscena({ ancho: 1280, alto: 200, elementos: [forma("r", 100, 20, 100, 44), forma("a", 100, 100, 100, 44), forma("b", 100, 150, 100, 44), forma("s", 700, 20, 100, 44)] });
+    for (const h of ["a", "b"]) e = conectarFormas(e, "r", h);
+    const apretada = organizarAuto(e, [], { modo: "arbol" });
+    expect(apretada.aviso).toBe("fuera-de-pagina"); // la forma suelta va 80 debajo de lo organizado y no entra en 200
+    const holgada = organizarAuto(normalizarEscena({ ...(e as unknown as Record<string, unknown>), alto: 600 }), [], { modo: "arbol" });
+    expect(holgada.aviso).toBeUndefined();
+    expect(dentro(holgada.escena)).toBe(true);
+  });
+
+  it("con 500 formas se avisa, no se comprime y no cuesta más que con una página enorme (no se prueban las compactas)", () => {
+    const e = diagramaAlAzar(500, 8);
+    const grande = normalizarEscena({ ...(e as unknown as Record<string, unknown>), ancho: 100000, alto: 100000 });
+    const medir = (x: Escena, modo: ModoOrganizar): number => {
+      let m = Infinity;
+      for (let i = 0; i < 3; i++) {
+        const t = performance.now();
+        organizarAuto(x, [], { modo });
+        m = Math.min(m, performance.now() - t);
+      }
+      return m;
+    };
+    for (const modo of ["arbol", "jerarquico", "radial"] as const) {
+      expect(organizarAuto(e, [], { modo }).aviso, modo).toBe("fuera-de-pagina");
+      const chica = medir(e, modo);
+      const enorme = medir(grande, modo);
+      expect(chica, modo).toBeLessThan(Math.max(enorme, 20) * 2.5);
+    }
+  });
+
+  it("ninguna forma pisa a otra aunque se compacte o se comprima (barrido, siete combinaciones, páginas de varios tamaños)", () => {
+    const combos: Array<[ModoOrganizar, DireccionOrganizar | undefined]> = [["jerarquico", "abajo"], ["jerarquico", "izquierda"], ["arbol", "derecha"], ["arbol", "abajo"], ["radial", undefined]];
+    for (const n of [20, 100]) {
+      for (const [pw, ph] of [[1280, 720], [1000, 600], [800, 450]] as const) {
+        const base = diagramaAlAzar(n, n + 11);
+        const e = normalizarEscena({ ...(base as unknown as Record<string, unknown>), ancho: pw, alto: ph });
+        for (const [modo, direccion] of combos) {
+          expect(pisadas(organizarAuto(e, [], { modo, ...(direccion ? { direccion } : {}) }).escena), `${n}/${pw}/${modo}/${direccion}`).toEqual([]);
+        }
+      }
+    }
+  });
+});

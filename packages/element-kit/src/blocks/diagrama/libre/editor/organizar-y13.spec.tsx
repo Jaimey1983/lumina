@@ -98,7 +98,10 @@ describe("Y13 — organizar desde la cinta", () => {
     expect(pos(r)).not.toEqual(pos(e));
     const raiz = formas(r).find((f) => f.id === "r") as Forma;
     expect(raiz.transformacion.x).toBeCloseTo(300, 6);
-    expect(raiz.transformacion.y).toBeCloseTo(400, 6);
+    // Y37b: la raíz está a 400 de una página de 600 y el jerárquico necesita bajar tres niveles: se corre hacia arriba lo justo para que
+    // lo de más abajo quede pegado al borde (antes se quedaba en su sitio y el diagrama se salía de la página).
+    expect(raiz.transformacion.y).toBeCloseTo(400 - 170, 6);
+    expect(Math.max(...formas(r).map((f) => f.transformacion.y + f.transformacion.alto))).toBeCloseTo(600, 6);
     expect(lineas(r).map((l) => [l.origen?.elementoId, l.destino?.elementoId])).toEqual(lineas(e).map((l) => [l.origen?.elementoId, l.destino?.elementoId]));
     expect(m.anuncio()).toBe("Diagrama organizado de forma jerárquica.");
   });
@@ -200,4 +203,26 @@ describe("Y13 — las variantes del menú", () => {
     fireEvent.click(items[4] as HTMLElement);
     expect(m.anuncio()).toBe("Diagrama organizado de forma en árbol.");
   }, 120000);
+});
+
+describe("Y37b — el anuncio cuando no cabe en la página", () => {
+  /** Una raíz con 12 hijos lado a lado: el abanico mide más que los 1000 de ancho de la página. */
+  const abanico = (): Escena => {
+    let e = escena(forma("r", 450, 20, 100, 44), ...Array.from({ length: 12 }, (_, i) => forma(`h${i}`, 20 + i * 70, 300, 100, 44)));
+    for (let i = 0; i < 12; i++) e = conectarFormas(e, "r", `h${i}`);
+    return e;
+  };
+
+  it("si no cabe ni compacto, se organiza igual y el anuncio lo dice", () => {
+    const m = montar(abanico());
+    fireEvent.click(organizar());
+    expect(m.cuenta()).toBe(1);
+    expect(m.anuncio()).toBe("Diagrama organizado de forma jerárquica. Es más grande que la página: parte queda fuera.");
+  });
+
+  it("si cabe, el anuncio es el de siempre (sin aviso)", () => {
+    const m = montar(desordenado());
+    fireEvent.click(organizar());
+    expect(m.anuncio()).toBe("Diagrama organizado de forma jerárquica.");
+  });
 });

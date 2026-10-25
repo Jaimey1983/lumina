@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { escenaVacia, type Escena, type Forma, type Linea } from "@lumina/drawing";
+import { escenaVacia, normalizarEscena, type Escena, type Forma, type Linea } from "@lumina/drawing";
 import { analizarEsquema, COLORES_DE_RAMA, esquemaAEscena, MAX_LARGO_LINEA_ESQUEMA, MAX_NODOS_ESQUEMA } from "./esquema-a-escena.js";
 
 const textos = (s: string): string[] => analizarEsquema(s).nodos.map((n) => n.texto);
@@ -279,6 +279,85 @@ describe("esquemaAEscena: orden de lectura, tema centrado y niveles alineados (Y
         const b = (fs[j] as Forma).transformacion;
         expect(a.x < b.x + b.ancho - 1e-6 && b.x < a.x + a.ancho - 1e-6 && a.y < b.y + b.alto - 1e-6 && b.y < a.y + a.alto - 1e-6, `${i}/${j}`).toBe(false);
       }
+    }
+  });
+});
+
+describe("esquemaAEscena: dentro de la página (Y37b)", () => {
+  const CELULA = "La célula\n  Membrana\n    Fosfolípidos\n    Proteínas\n  Núcleo\n    ADN\n    Nucléolo\n  Citoplasma\n    Mitocondrias\n    Ribosomas\n    Retículo endoplasmático\n  Pared celular";
+  const grande = (ramas: number, hojas: number): string =>
+    ["Tema", ...Array.from({ length: ramas }, (_v, r) => [`  Rama ${r}`, ...Array.from({ length: hojas }, (_w, h) => `    Hoja ${r}.${h}`)].join("\n"))].join("\n");
+  const centro = { x: 640, y: 360 };
+  const enPagina = (modo: "arbol" | "radial" | "jerarquico", texto: string, c = centro) => esquemaAEscena(escenaVacia(), analizarEsquema(texto), { modo, centro: c });
+  const caja = (e: Escena): { x0: number; y0: number; x1: number; y1: number } => {
+    const fs = formas(e);
+    return {
+      x0: Math.min(...fs.map((f) => f.transformacion.x)),
+      y0: Math.min(...fs.map((f) => f.transformacion.y)),
+      x1: Math.max(...fs.map((f) => f.transformacion.x + f.transformacion.ancho)),
+      y1: Math.max(...fs.map((f) => f.transformacion.y + f.transformacion.alto)),
+    };
+  };
+  const conMargen = (e: Escena): boolean => {
+    const c = caja(e);
+    return c.x0 >= 24 - 1e-6 && c.y0 >= 24 - 1e-6 && c.x1 <= e.ancho - 24 + 1e-6 && c.y1 <= e.alto - 24 + 1e-6;
+  };
+
+  it("«La célula» en las tres disposiciones queda entera en la página de 1280 × 720, con margen y sin aviso", () => {
+    for (const modo of ["arbol", "jerarquico", "radial"] as const) {
+      const r = enPagina(modo, CELULA);
+      expect(conMargen(r.escena), modo).toBe(true);
+      expect(r.fueraDePagina, modo).toBeUndefined();
+    }
+  });
+
+  it("un esquema grande en radial se encaja; en árbol, que no cabe, se crea igual y avisa", () => {
+    const radial = enPagina("radial", grande(5, 3));
+    expect(radial.fueraDePagina).toBeUndefined();
+    expect(conMargen(radial.escena)).toBe(true);
+    const arbol = enPagina("arbol", grande(5, 3));
+    expect(arbol.fueraDePagina).toBe(true);
+    expect(formas(arbol.escena)).toHaveLength(21);
+    expect(lineas(arbol.escena)).toHaveLength(20);
+  });
+
+  it("queda centrado en el punto pedido cuando cabe", () => {
+    const c = caja(enPagina("arbol", CELULA).escena);
+    expect((c.x0 + c.x1) / 2).toBeCloseTo(640, 6);
+    expect((c.y0 + c.y1) / 2).toBeCloseTo(360, 6);
+  });
+
+  it("con el centro cerca de una esquina se corre lo justo para entrar con margen", () => {
+    const r = enPagina("jerarquico", CELULA, { x: 100, y: 100 });
+    expect(conMargen(r.escena)).toBe(true);
+    const c = caja(r.escena);
+    expect(c.x0).toBeCloseTo(24, 6);
+    expect(c.y0).toBeCloseTo(24, 6);
+  });
+
+  it("un solo nodo se centra, y cerca del borde se corre para dejar margen", () => {
+    const centrado = enPagina("arbol", "Tema").escena;
+    const a = caja(centrado);
+    expect((a.x0 + a.x1) / 2).toBeCloseTo(640, 6);
+    const borde = enPagina("arbol", "Tema", { x: 10, y: 10 }).escena;
+    const b = caja(borde);
+    expect(b.x0).toBeCloseTo(24, 6);
+    expect(b.y0).toBeCloseTo(24, 6);
+  });
+
+  it("con una página mayor no se compacta: el esquema es el mismo que con la separación normal", () => {
+    const enorme = (modo: "arbol" | "radial"): Escena => esquemaAEscena(normalizarEscena({ ...(escenaVacia() as unknown as Record<string, unknown>), ancho: 20000, alto: 20000 }), analizarEsquema(grande(5, 3)), { modo, centro: { x: 10000, y: 10000 } }).escena;
+    const cajaRadial = caja(enorme("radial"));
+    expect(cajaRadial.y1 - cajaRadial.y0).toBeGreaterThan(720);
+  });
+
+  it("los conectores salen y llegan bien tras encajar (siguen pegados padre → hijo)", () => {
+    const r = enPagina("radial", grande(5, 3)).escena;
+    const fs = formas(r);
+    const ids = new Set(fs.map((f) => f.id));
+    for (const l of lineas(r)) {
+      expect(ids.has(l.origen?.elementoId as string)).toBe(true);
+      expect(ids.has(l.destino?.elementoId as string)).toBe(true);
     }
   });
 });
