@@ -43,6 +43,12 @@ const arbol7 = (): Escena => {
   for (const [p, h] of [["r", "a"], ["r", "b"], ["a", "c"], ["a", "d"], ["b", "x"], ["b", "y"]] as const) e = conectarFormas(e, p, h);
   return e;
 };
+/** Lo mismo que `arbol7`, pero con todo corrido al medio de la página (Y37b). */
+const arbolEnElMedio = (): Escena => {
+  let e = escena(...["r", "a", "b", "c", "d", "x", "y"].map((id, i) => forma(id, 400 + ((i * 137) % 600) / 3, 240 + ((i * 91) % 400) / 3)));
+  for (const [p, h] of [["r", "a"], ["r", "b"], ["a", "c"], ["a", "d"], ["b", "x"], ["b", "y"]] as const) e = conectarFormas(e, p, h);
+  return e;
+};
 
 describe("organizarAuto: jerárquico en las cuatro direcciones", () => {
   it("cada hijo queda más allá de su padre en el sentido elegido", () => {
@@ -122,7 +128,9 @@ describe("organizarAuto: ninguna forma pisa a otra", () => {
 
 describe("organizarAuto: ancla, determinismo y conectores", () => {
   it("la raíz no cambia de sitio en ningún modo", () => {
-    const e = arbol7();
+    // Y37b: con la raíz pegada al borde de la página (como en `arbol7`, en (0, 0)) lo organizado se sale y se traslada lo justo; para
+    // probar el ancla, el diagrama está en el medio de la página (el traslado a la página se prueba en los casos de Y37b).
+    const e = arbolEnElMedio();
     for (const [modo, direccion] of [["jerarquico", "abajo"], ["jerarquico", "izquierda"], ["arbol", "derecha"], ["radial", undefined]] as const) {
       const r = organizarAuto(e, [], { modo, ...(direccion ? { direccion } : {}) }).escena;
       expect(cx(get(r, "r")), `${modo}/${direccion}`).toBeCloseTo(cx(get(e, "r")), 6);
