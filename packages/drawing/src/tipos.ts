@@ -168,6 +168,8 @@ export interface Forma extends ElementoBase {
   estiloTexto: EstiloTexto;
   /** Parámetros propios de la forma (p. ej. número de puntas de la estrella). */
   parametros?: Record<string, number>;
+  /** Rama plegada (Y38a): lo que cuelga de esta forma por sus conectores no se ve. Ausente = desplegada. */
+  colapsado?: true;
 }
 
 export interface Linea extends ElementoBase {

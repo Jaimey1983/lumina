@@ -3,6 +3,7 @@
 
 import { puertosForma } from '../formas/index.js';
 import type { Escena, Forma, Punto } from '../tipos.js';
+import { ocultosPorColapso } from '../operaciones/colapso.js';
 
 export type Lado = 'arriba' | 'derecha' | 'abajo' | 'izquierda';
 
@@ -74,6 +75,7 @@ function ocultas(escena: Escena): Set<string> {
     if (e?.tipo === 'grupo') e.hijos.forEach(ocultar);
   };
   for (const e of escena.elementos) if (e.oculto) ocultar(e.id);
+  for (const id of ocultosPorColapso(escena)) ocultar(id); // lo plegado (Y38a) no ofrece puertos ni estorba a los conectores
   return salida;
 }
 
