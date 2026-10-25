@@ -5,7 +5,7 @@
 // lado. Sin React: los iconos son componentes de `lucide-react` (referencias, no JSX).
 
 import type { ComponentType } from "react";
-import { FORMAS, TIPOS_FORMA, type Escena, type TipoForma } from "@lumina/drawing";
+import { FORMAS, TIPOS_FORMA, tieneHijos, type Escena, type TipoForma } from "@lumina/drawing";
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -65,6 +65,8 @@ import {
   List,
   ListTree,
   FoldVertical,
+  ListCollapse,
+  ChevronsUpDown,
   MoveDown,
   Undo2,
   Ungroup,
@@ -179,6 +181,12 @@ const puedeOrganizar = (c: ContextoComando): true | string => {
 const tres = (c: ContextoComando): true | string => (c.seleccion.length > 2 ? true : "Elige 3 o más elementos");
 const hayGrupo = (c: ContextoComando): true | string =>
   c.escena.elementos.some((e) => e.tipo === "grupo" && c.seleccion.includes(e.id)) ? true : "Elige un grupo";
+
+/** Plegar o desplegar rama (Y38b): hay una forma con hijos elegida. */
+const hayRamaElegida = (c: ContextoComando): true | string =>
+  c.escena.elementos.some((e) => e.tipo === "forma" && c.seleccion.includes(e.id) && tieneHijos(c.escena, e.id)) ? true : "Elige una forma con ramas";
+/** Desplegar todas las ramas (Y38b): hay alguna plegada. */
+const hayPlegada = (c: ContextoComando): true | string => (c.escena.elementos.some((e) => e.tipo === "forma" && e.colapsado === true) ? true : "No hay ramas plegadas");
 
 const hayFormaElegida = (c: ContextoComando): true | string => {
   const ids = new Set(c.seleccion);
@@ -436,6 +444,24 @@ export const COMANDOS: readonly DefinicionComando[] = [
     orden: { tipo: "eliminar-rama" },
     soloLienzo: true,
     habilitado: unaForma,
+  },
+  {
+    id: "plegar-rama", menu: { forma: { grupo: "jerarquia", si: (c) => hayRamaElegida(c) === true } },
+    etiqueta: "Plegar o desplegar rama",
+    icono: ListCollapse,
+    grupo: "edicion",
+    atajos: [{ tecla: "/" }],
+    orden: { tipo: "plegar-rama" },
+    soloLienzo: true,
+    habilitado: hayRamaElegida,
+  },
+  {
+    id: "desplegar-todo", menu: { vacio: { grupo: "vista", si: (c) => hayPlegada(c) === true } },
+    etiqueta: "Desplegar todas las ramas",
+    icono: ChevronsUpDown,
+    grupo: "vista",
+    orden: { tipo: "desplegar-todo" },
+    habilitado: hayPlegada,
   },
   {
     id: "conectar-cadena", sinMenu: true,

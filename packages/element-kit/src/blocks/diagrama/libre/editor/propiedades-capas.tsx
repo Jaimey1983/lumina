@@ -38,7 +38,7 @@ export function PanelCapas({ escena, seleccion, onAplicar, onSeleccionar }: Prop
             key={c.id}
             data-capa-id={c.id}
             aria-current={elegida ? "true" : undefined}
-            className={`flex items-center gap-0.5 rounded px-1 ${elegida ? "bg-primary/10" : ""} ${c.oculto ? "opacity-50" : ""}`}
+            className={`flex items-center gap-0.5 rounded px-1 ${elegida ? "bg-primary/10" : ""} ${c.oculto || c.plegado ? "opacity-50" : ""}`}
             style={{ paddingLeft: 4 + c.nivel * 14 }}
           >
             {renombrando?.id === c.id ? (
@@ -66,11 +66,13 @@ export function PanelCapas({ escena, seleccion, onAplicar, onSeleccionar }: Prop
                 type="button"
                 aria-label={`Elegir ${c.nombre}`}
                 aria-pressed={elegida}
+                disabled={c.plegado}
                 className="min-w-0 flex-1 truncate rounded py-1 text-left text-xs outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={(e) => onSeleccionar([c.id], e.shiftKey)}
                 onDoubleClick={() => setRenombrando({ id: c.id, valor: escena.elementos.find((x) => x.id === c.id)?.nombre ?? "" })}
               >
                 {c.nombre}
+                {c.plegado ? <span className="ml-1 text-[10px] text-muted-foreground">plegado</span> : null}
               </button>
             )}
             <button
@@ -107,7 +109,8 @@ export function PanelCapas({ escena, seleccion, onAplicar, onSeleccionar }: Prop
               className={botonClase}
               aria-label={`${c.oculto ? "Mostrar" : "Ocultar"} ${c.nombre}`}
               aria-pressed={c.oculto}
-              title={c.oculto ? "Mostrar" : "Ocultar"}
+              title={c.plegado ? "Oculto por una rama plegada" : c.oculto ? "Mostrar" : "Ocultar"}
+              disabled={c.plegado}
               onClick={() => onAplicar((e) => ocultarCapa(e, c.id, !c.oculto))}
             >
               {c.oculto ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}

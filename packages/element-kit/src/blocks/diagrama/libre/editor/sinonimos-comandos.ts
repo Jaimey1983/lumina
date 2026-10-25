@@ -49,6 +49,8 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   acercar: ["zoom", "ampliar", "lupa"],
   alejar: ["zoom", "reducir", "lupa"],
   "ajustar-vista": ["zoom", "lupa"],
+  "plegar-rama": ["colapsar", "contraer", "expandir", "ocultar rama", "mostrar rama", "plegar", "desplegar"],
+  "desplegar-todo": ["expandir todo", "mostrar todo", "colapsar", "ramas plegadas"],
   "girar-pagina": ["orientación", "vertical", "horizontal", "apaisado", "rotar página", "tamaño de página"],
   cuadricula: ["rejilla"],
   imantar: ["iman", "magnetico"],

@@ -10,6 +10,7 @@ import { estadoDelTextoElegido } from "./ajuste-texto.js";
 import { MiniaturaPatron } from "./miniatura-patron.js";
 import { PanelCapas } from "./propiedades-capas.js";
 import { SeccionPagina } from "./pagina-panel.js";
+import { SeccionRama } from "./rama-panel.js";
 import {
   MAX_PARADAS,
   PATRONES_DE_RELLENO,
@@ -65,6 +66,8 @@ export interface PanelPropiedadesProps {
   onAjustarAlTexto?: () => void;
   /** Cambia el tamaño o el fondo de la página (Y25); sin él, con nada elegido el panel no ofrece los ajustes de página. */
   onPagina?: (cambio: CambioDePagina) => void;
+  /** Plegar o desplegar la rama de lo elegido, y desplegarlas todas (Y38b): las mismas órdenes que el atajo y la cinta. */
+  onRama?: { plegar: () => void; desplegarTodo: () => void };
 }
 
 const FUENTES: ReadonlyArray<{ valor: string; nombre: string }> = [
@@ -144,7 +147,7 @@ function CampoGrid(props: Parameters<typeof CampoNumero>[0]): ReactElement {
 
 const porcentaje = (n: number): string => `${Math.round(n * 100)}%`;
 
-export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinVista, onSeleccionar, onPlegar, crecerAlEscribir, onCrecerAlEscribir, onAjustarAlTexto, onPagina }: PanelPropiedadesProps): ReactElement {
+export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinVista, onSeleccionar, onPlegar, crecerAlEscribir, onCrecerAlEscribir, onAjustarAlTexto, onPagina, onRama }: PanelPropiedadesProps): ReactElement {
   const todas = hojasDeSeleccion(escena, seleccion);
   const editables = hojasEditables(escena, seleccion);
   const bloqueadas = todas.length > 0 && editables.length === 0;
@@ -255,6 +258,8 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
           onSeleccionar={onSeleccionar}
         />
       ) : null}
+
+      {onRama ? <SeccionRama escena={escena} seleccion={seleccion} onPlegar={onRama.plegar} onDesplegarTodo={onRama.desplegarTodo} /> : null}
 
       {editables.length > 0 ? (
         <div className="divide-y px-3">

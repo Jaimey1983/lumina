@@ -10,6 +10,7 @@ import {
   fijarParametro,
   resolverParametros,
   bloquear,
+  ocultosPorColapso,
   cajaDeSeleccion,
   cambiarEstilo,
   mover,
@@ -355,7 +356,10 @@ export interface Capa {
   tipo: Elemento["tipo"];
   /** 0 = de primer nivel; 1 = hijo de un grupo… */
   nivel: number;
+  /** Oculto a mano (o por su grupo): lo que controla el ojo de la capa. */
   oculto: boolean;
+  /** Oculto por una rama plegada (Y38b): no se elige ni se muestra desde acá; se despliega la rama. */
+  plegado: boolean;
   bloqueado: boolean;
   /** Puede subir o bajar (solo los de primer nivel: un hijo se mueve con su grupo). */
   puedeSubir: boolean;
@@ -383,6 +387,7 @@ export function capasDe(escena: Escena): Capa[] {
     if (e?.tipo === "grupo") e.hijos.forEach(marcarOculto);
   };
   escena.elementos.filter((e) => e.oculto).forEach((e) => marcarOculto(e.id));
+  const plegados = ocultosPorColapso(escena);
 
   // El apilado real: cada elemento de primer nivel (con su grupo) va donde aparece su primer miembro en la escena.
   const padreDe = new Map<string, string>();
@@ -414,6 +419,7 @@ export function capasDe(escena: Escena): Capa[] {
       tipo: e.tipo,
       nivel,
       oculto: ocultos.has(e.id),
+      plegado: plegados.has(e.id),
       bloqueado: bloqueados.has(e.id),
       puedeSubir: nivel === 0 && i < hermanos.length - 1,
       puedeBajar: nivel === 0 && i > 0,

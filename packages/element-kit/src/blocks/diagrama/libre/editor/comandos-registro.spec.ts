@@ -92,6 +92,7 @@ describe("registro de comandos (DY3)", () => {
       "crear-hijo",
       "crear-hermano",
       "eliminar-rama",
+      "plegar-rama",
       "conectar-cadena",
     ]);
   });
