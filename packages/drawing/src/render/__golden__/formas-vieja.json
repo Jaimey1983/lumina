@@ -1,0 +1,327 @@
+{
+ "ancho": 820,
+ "alto": 520,
+ "elementos": [
+  {
+   "id": "f1",
+   "tipo": "forma",
+   "forma": "rectangulo",
+   "transformacion": {
+    "x": 20,
+    "y": 20,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "rectangulo"
+  },
+  {
+   "id": "f2",
+   "tipo": "forma",
+   "forma": "rectangulo-redondeado",
+   "transformacion": {
+    "x": 150,
+    "y": 20,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "rectangulo"
+  },
+  {
+   "id": "f3",
+   "tipo": "forma",
+   "forma": "elipse",
+   "transformacion": {
+    "x": 280,
+    "y": 20,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "elipse"
+  },
+  {
+   "id": "f4",
+   "tipo": "forma",
+   "forma": "circulo",
+   "transformacion": {
+    "x": 410,
+    "y": 20,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "circulo"
+  },
+  {
+   "id": "f5",
+   "tipo": "forma",
+   "forma": "rombo",
+   "transformacion": {
+    "x": 540,
+    "y": 20,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "rombo"
+  },
+  {
+   "id": "f6",
+   "tipo": "forma",
+   "forma": "triangulo",
+   "transformacion": {
+    "x": 670,
+    "y": 20,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "triangulo"
+  },
+  {
+   "id": "f7",
+   "tipo": "forma",
+   "forma": "triangulo-rectangulo",
+   "transformacion": {
+    "x": 20,
+    "y": 130,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "triangulo-"
+  },
+  {
+   "id": "f8",
+   "tipo": "forma",
+   "forma": "trapecio",
+   "transformacion": {
+    "x": 150,
+    "y": 130,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "trapecio"
+  },
+  {
+   "id": "f9",
+   "tipo": "forma",
+   "forma": "trapecio-invertido",
+   "transformacion": {
+    "x": 280,
+    "y": 130,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "trapecio-i"
+  },
+  {
+   "id": "f10",
+   "tipo": "forma",
+   "forma": "paralelogramo",
+   "transformacion": {
+    "x": 410,
+    "y": 130,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "paralelogr"
+  },
+  {
+   "id": "f11",
+   "tipo": "forma",
+   "forma": "pentagono",
+   "transformacion": {
+    "x": 540,
+    "y": 130,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "pentagono"
+  },
+  {
+   "id": "f12",
+   "tipo": "forma",
+   "forma": "hexagono",
+   "transformacion": {
+    "x": 670,
+    "y": 130,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "hexagono"
+  },
+  {
+   "id": "f13",
+   "tipo": "forma",
+   "forma": "octogono",
+   "transformacion": {
+    "x": 20,
+    "y": 240,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "octogono"
+  },
+  {
+   "id": "f14",
+   "tipo": "forma",
+   "forma": "estrella",
+   "transformacion": {
+    "x": 150,
+    "y": 240,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "estrella"
+  },
+  {
+   "id": "f15",
+   "tipo": "forma",
+   "forma": "cruz",
+   "transformacion": {
+    "x": 280,
+    "y": 240,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "cruz"
+  },
+  {
+   "id": "f16",
+   "tipo": "forma",
+   "forma": "flecha-derecha",
+   "transformacion": {
+    "x": 410,
+    "y": 240,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "flecha-der"
+  },
+  {
+   "id": "f17",
+   "tipo": "forma",
+   "forma": "flecha-izquierda",
+   "transformacion": {
+    "x": 540,
+    "y": 240,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "flecha-izq"
+  },
+  {
+   "id": "f18",
+   "tipo": "forma",
+   "forma": "flecha-doble",
+   "transformacion": {
+    "x": 670,
+    "y": 240,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "flecha-dob"
+  },
+  {
+   "id": "f19",
+   "tipo": "forma",
+   "forma": "cilindro",
+   "transformacion": {
+    "x": 20,
+    "y": 350,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "cilindro"
+  },
+  {
+   "id": "f20",
+   "tipo": "forma",
+   "forma": "nube",
+   "transformacion": {
+    "x": 150,
+    "y": 350,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "nube"
+  },
+  {
+   "id": "f21",
+   "tipo": "forma",
+   "forma": "llave",
+   "transformacion": {
+    "x": 280,
+    "y": 350,
+    "ancho": 50,
+    "alto": 90,
+    "rotacion": 0
+   },
+   "texto": "llave"
+  },
+  {
+   "id": "f22",
+   "tipo": "forma",
+   "forma": "callout",
+   "transformacion": {
+    "x": 410,
+    "y": 350,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "callout"
+  },
+  {
+   "id": "f23",
+   "tipo": "forma",
+   "forma": "icono-inexistente",
+   "transformacion": {
+    "x": 540,
+    "y": 350,
+    "ancho": 110,
+    "alto": 80,
+    "rotacion": 0
+   },
+   "texto": "icono-inex"
+  },
+  {
+   "id": "c1",
+   "tipo": "linea",
+   "puntos": [
+    {
+     "x": 130,
+     "y": 60
+    },
+    {
+     "x": 150,
+     "y": 60
+    }
+   ],
+   "origen": {
+    "elementoId": "f1",
+    "puerto": 1
+   },
+   "destino": {
+    "elementoId": "f2",
+    "puerto": 3
+   }
+  }
+ ]
+}

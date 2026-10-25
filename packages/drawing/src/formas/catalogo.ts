@@ -4,9 +4,10 @@
 // contorno no se deforma. Coordenadas locales: (0, 0) es la esquina superior
 // izquierda de la caja de la forma.
 
-import type { Punto, TipoForma } from '../tipos.js';
+import type { Estilo, Punto, TipoForma, TipoFormaGeometrica } from '../tipos.js';
+import { ICONOS } from './iconos.js';
 
-export type GrupoForma = 'basicas' | 'flechas' | 'diagramas';
+export type GrupoForma = 'basicas' | 'flechas' | 'diagramas' | 'iconos';
 
 export interface Rectangulo {
   x: number;
@@ -50,6 +51,8 @@ export interface DefinicionForma {
   grupo: GrupoForma;
   /** Tamaño con el que se inserta con un clic. */
   tamano: { ancho: number; alto: number };
+  /** Estilo con el que nace la forma al insertarla (Y32a, DY89): del catálogo, no de la escena. Los iconos nacen sin relleno. */
+  estiloInicial?: Partial<Estilo>;
   parametros: readonly ParametroForma[];
   /** Asas de ajuste que se arrastran en el lienzo (Y20); ninguna si la forma no tiene nada que ajustar (o no tiene asa fiel, como la estrella). */
   asasAjuste?: readonly AsaAjuste[];
@@ -239,7 +242,7 @@ function poligonal(
   return { ...base, trazado: (ancho, alto, p) => trazadoPoligono(base.poligono(ancho, alto, p)) };
 }
 
-export const FORMAS: Record<TipoForma, DefinicionForma> = {
+const FORMAS_GEOMETRICAS: Record<TipoFormaGeometrica, DefinicionForma> = {
   rectangulo: {
     id: 'rectangulo',
     nombre: 'Rectángulo',
@@ -687,3 +690,6 @@ export const FORMAS: Record<TipoForma, DefinicionForma> = {
     },
   },
 };
+
+/** Todas las formas del catálogo: las 22 geométricas y los iconos (Y32a). */
+export const FORMAS: Record<TipoForma, DefinicionForma> = { ...FORMAS_GEOMETRICAS, ...ICONOS };

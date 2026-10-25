@@ -1,8 +1,11 @@
 import type { Punto, TipoForma } from '../tipos.js';
 import { TIPOS_FORMA } from '../tipos.js';
+import { GRUPOS_ICONO } from './iconos.js';
 import { FORMAS, type DefinicionForma, type GrupoForma, type Rectangulo, type ValoresParametros } from './catalogo.js';
 
 export { FORMAS, trazadoPoligono } from './catalogo.js';
+export { GRUPOS_ICONO, type GrupoDeIconos } from './iconos.js';
+export { escalarTrazado } from './trazado-escalado.js';
 export type { AsaAjuste, DefinicionForma, GrupoForma, LadoAsaAjuste, ParametroForma, Rectangulo, ValoresParametros } from './catalogo.js';
 
 export interface OpcionesForma {
@@ -48,10 +51,15 @@ export function poligonoForma(forma: TipoForma, ancho: number, alto: number, opc
 
 /** Formas agrupadas para la paleta del editor, en el orden del catálogo. */
 export function formasPorGrupo(): Array<{ grupo: GrupoForma; nombre: string; formas: DefinicionForma[] }> {
-  const nombres: Record<GrupoForma, string> = { basicas: 'Formas básicas', flechas: 'Flechas', diagramas: 'Diagramas' };
+  const nombres: Record<GrupoForma, string> = { basicas: 'Formas básicas', flechas: 'Flechas', diagramas: 'Diagramas', iconos: 'Iconos' };
   return (['basicas', 'flechas', 'diagramas'] as const).map((grupo) => ({
     grupo,
     nombre: nombres[grupo],
     formas: TIPOS_FORMA.map((t) => FORMAS[t]).filter((f) => f.grupo === grupo),
   }));
+}
+
+/** Los iconos agrupados para la galería (Y32a), en orden: cada grupo con sus definiciones del catálogo. */
+export function iconosPorGrupo(): Array<{ id: string; nombre: string; formas: DefinicionForma[] }> {
+  return GRUPOS_ICONO.map((g) => ({ id: g.id, nombre: g.nombre, formas: g.iconos.map((i) => FORMAS[i]) }));
 }

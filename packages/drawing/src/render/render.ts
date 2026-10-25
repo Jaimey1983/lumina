@@ -6,7 +6,7 @@
 import { formasVisibles, puntoDePuerto } from '../conectores/puertos.js';
 import { formasConHijos, resumenDeColapso } from '../operaciones/colapso.js';
 import { cajaDeForma, cajasDeFormas, trazarLinea, type CajaObstaculo } from '../conectores/trazado.js';
-import { rectanguloTexto, trazadoForma } from '../formas/index.js';
+import { FORMAS, rectanguloTexto, trazadoForma } from '../formas/index.js';
 import type { Elemento, Escena, Estilo, EstiloTexto, Extremo, Forma, Linea, Punto, Relleno, Sombra, Texto } from '../tipos.js';
 import { resolverColor, type ModoColor, type Pintura } from './colores.js';
 import { ajustarComposicion, componerTexto, INTERLINEADO } from './texto.js';
@@ -240,7 +240,9 @@ function nodoForma(f: Forma, ctx: Contexto): NodoSvg {
   const hijos: NodoSvg[] = [];
   const titulo = etiquetaAccesible(f);
   if (titulo) hijos.push(nodo('title', {}, undefined, titulo));
-  hijos.push(nodo('path', { d: trazadoForma(f.forma, t.ancho, t.alto, { parametros: f.parametros, radio: f.estilo.radio }), ...atributosEstilo(f.estilo, ctx, true) }));
+  // Los iconos (Y32a) se dibujan con extremos redondeados, como en la librería de origen; las demás formas, igual que siempre.
+  const extremos: NodoSvg['attrs'] = FORMAS[f.forma].grupo === 'iconos' ? { 'stroke-linecap': 'round' } : {};
+  hijos.push(nodo('path', { d: trazadoForma(f.forma, t.ancho, t.alto, { parametros: f.parametros, radio: f.estilo.radio }), ...atributosEstilo(f.estilo, ctx, true), ...extremos }));
   if (f.texto) {
     hijos.push(...nodosTexto(f.texto, rectanguloTexto(f.forma, t.ancho, t.alto, { parametros: f.parametros }), f.estiloTexto, ctx, true, true));
   }

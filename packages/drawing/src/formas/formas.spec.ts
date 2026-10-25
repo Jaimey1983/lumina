@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { TIPOS_FORMA, type Punto, type TipoForma } from '../tipos.js';
+import { TIPOS_FORMA, TIPOS_FORMA_VALIDOS, type Punto, type TipoForma } from '../tipos.js';
 import {
   FORMAS,
   formasPorGrupo,
@@ -61,8 +61,9 @@ const ELIPTICAS: TipoForma[] = ['elipse', 'circulo'];
 
 describe('catálogo de formas', () => {
   it('declara exactamente las formas del modelo, cada una con su propio id', () => {
-    expect(Object.keys(FORMAS).sort()).toEqual([...TIPOS_FORMA].sort());
-    for (const t of TIPOS_FORMA) expect(FORMAS[t].id).toBe(t);
+    // Con los iconos (Y32a) el catálogo declara las 22 geométricas y los 30 iconos: este caso se ajustó a `TIPOS_FORMA_VALIDOS`.
+    expect(Object.keys(FORMAS).sort()).toEqual([...TIPOS_FORMA_VALIDOS].sort());
+    for (const t of TIPOS_FORMA_VALIDOS) expect(FORMAS[t].id).toBe(t);
   });
 
   it('tiene al menos 20 formas con nombre, grupo y tamaño de inserción', () => {
