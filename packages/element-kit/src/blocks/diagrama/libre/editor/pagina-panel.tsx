@@ -3,7 +3,7 @@
 import { useRef, type ReactElement } from "react";
 import { fijarPagina, fueraDePagina, type CambioDePagina, type Escena } from "@lumina/drawing";
 import { CollapsibleSection } from "@lumina/ui/collapsible-section";
-import { CampoNumero, Conmutador, Fila, FilaColor, Opciones } from "./propiedades-campos.js";
+import { CampoNumero, Conmutador, Fila, FilaColor } from "./propiedades-campos.js";
 import { ID_PERSONALIZADO, LIMITE_ALTO, LIMITE_ANCHO, TAMANOS_DE_PAGINA, tamanoDe, textoFuera } from "./pagina-ajustes.js";
 
 /** El color de fondo que se pone al quitar y volver a poner el fondo, si nunca hubo uno (sigue al tema, DY12). */
