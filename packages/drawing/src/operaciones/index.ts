@@ -79,3 +79,4 @@ export {
   type OpcionesRotar,
 } from './transformar.js';
 export { ajustarAlTexto, estadoDelTexto, ALTO_MINIMO_AJUSTE, CRECIMIENTO_MAXIMO, MARGEN_VECINAS, type CambioDeAjuste, type EstadoDelTexto, type OpcionesAjustarTexto, type ResultadoDeAjuste } from './ajustar-texto.js';
+export { fijarPagina, fueraDePagina, girarPagina, type CambioDePagina } from './pagina.js';

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
-import { LIMITES, type Contorno, type Escena, type Relleno, type Sombra } from "@lumina/drawing";
+import { LIMITES, type CambioDePagina, type Contorno, type Escena, type Relleno, type Sombra } from "@lumina/drawing";
 import { CollapsibleSection, type CollapsibleSectionProps } from "@lumina/ui/collapsible-section";
 import { FieldHelp } from "@lumina/ui/field-help";
 import { AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Italic, PanelRightClose, Underline } from "lucide-react";
@@ -9,6 +9,7 @@ import { ALINEACION_H, CampoNumero, Conmutador, Deslizador, Fila, Opciones, Fila
 import { estadoDelTextoElegido } from "./ajuste-texto.js";
 import { MiniaturaPatron } from "./miniatura-patron.js";
 import { PanelCapas } from "./propiedades-capas.js";
+import { SeccionPagina } from "./pagina-panel.js";
 import {
   MAX_PARADAS,
   PATRONES_DE_RELLENO,
@@ -62,6 +63,8 @@ export interface PanelPropiedadesProps {
   onCrecerAlEscribir?: () => void;
   /** Ajusta la forma elegida a su texto (el comando «Ajustar al texto»). */
   onAjustarAlTexto?: () => void;
+  /** Cambia el tamaño o el fondo de la página (Y25); sin él, con nada elegido el panel no ofrece los ajustes de página. */
+  onPagina?: (cambio: CambioDePagina) => void;
 }
 
 const FUENTES: ReadonlyArray<{ valor: string; nombre: string }> = [
@@ -141,7 +144,7 @@ function CampoGrid(props: Parameters<typeof CampoNumero>[0]): ReactElement {
 
 const porcentaje = (n: number): string => `${Math.round(n * 100)}%`;
 
-export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinVista, onSeleccionar, onPlegar, crecerAlEscribir, onCrecerAlEscribir, onAjustarAlTexto }: PanelPropiedadesProps): ReactElement {
+export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinVista, onSeleccionar, onPlegar, crecerAlEscribir, onCrecerAlEscribir, onAjustarAlTexto, onPagina }: PanelPropiedadesProps): ReactElement {
   const todas = hojasDeSeleccion(escena, seleccion);
   const editables = hojasEditables(escena, seleccion);
   const bloqueadas = todas.length > 0 && editables.length === 0;
@@ -241,6 +244,16 @@ export function PanelPropiedades({ escena, seleccion, onAplicar, onVista, onFinV
         <p className="px-3 py-3 text-xs text-muted-foreground" data-propiedades-bloqueado="">
           Lo que elegiste está bloqueado. Desbloquéalo en Capas para cambiarlo.
         </p>
+      ) : null}
+
+      {todas.length === 0 && onPagina ? (
+        <SeccionPagina
+          escena={escena}
+          onPagina={onPagina}
+          onVista={onVista}
+          onFinVista={onFinVista}
+          onSeleccionar={onSeleccionar}
+        />
       ) : null}
 
       {editables.length > 0 ? (

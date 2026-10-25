@@ -110,6 +110,7 @@ export type Orden =
   | { tipo: "herramienta-forma"; forma: TipoForma }
   | { tipo: "zoom"; factor: number }
   | { tipo: "ajustar-vista" }
+  | { tipo: "girar-pagina" }
   | { tipo: "cuadricula" }
   | { tipo: "imantar" }
   /** «Listo»: cierra el editor y devuelve la escena (a diferencia de Escape, que primero suelta lo que haya). */
