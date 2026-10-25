@@ -675,7 +675,7 @@ Redactada el 2026-10-25, a pedido del dueño, después de recortar las fases E y
 
 #### Y37b — Todo dentro de la página
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y37a en `main`.
 - **Hechos del código que la condicionan (comprobados el 2026-10-25):**
   - **El radial se sale de la página.** Con «La célula» (12 nodos) y el centro de la página (640, 360) quedan cajas en `y = −19` y por debajo de 720 (la página por defecto mide 1280×720): lo que queda fuera **no se ve en la vista del estudiante ni en la exportación** (`svgDeEscena` recorta a la página).
