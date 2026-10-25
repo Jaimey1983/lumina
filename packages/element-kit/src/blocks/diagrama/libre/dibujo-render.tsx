@@ -53,16 +53,21 @@ export interface DibujoSvgProps {
   /** `css` (por defecto) sigue el tema de la app; `claro`/`oscuro` fijan los colores. */
   modo?: ModoColor;
   className?: string;
+  /** Qué marcadores de rama se dibujan (Y38c). Sin esto, los de las ramas plegadas (como siempre). */
+  indicadoresRama?: OpcionesRender["indicadoresRama"];
 }
 
 /**
  * Dibuja una escena como SVG que llena su contenedor (conserva la proporción). Sin `innerHTML`:
  * el árbol que produce `@lumina/drawing` se convierte en elementos de React.
  */
-export function DibujoSvg({ escena, titulo, descripcion, modo = "css", className }: DibujoSvgProps): ReactElement {
+export function DibujoSvg({ escena, titulo, descripcion, modo = "css", className, indicadoresRama }: DibujoSvgProps): ReactElement {
   // Los ids de degradados y sombras son globales en la página: se prefijan con un id único por instancia.
   const prefijo = useId().replace(/[^A-Za-z0-9_-]/g, "");
-  const { ancho, alto, nodos } = useMemo(() => escenaANodos(escena, { modo, prefijoIds: `dibujo${prefijo}` }), [escena, modo, prefijo]);
+  const { ancho, alto, nodos } = useMemo(
+    () => escenaANodos(escena, { modo, prefijoIds: `dibujo${prefijo}`, ...(indicadoresRama ? { indicadoresRama } : {}) }),
+    [escena, modo, prefijo, indicadoresRama],
+  );
   return (
     <svg
       className={className}

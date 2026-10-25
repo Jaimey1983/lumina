@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { cajaDeElemento, type Escena } from "@lumina/drawing";
+import { cajaDeElemento, resumenDeColapso, tieneHijos, type Escena } from "@lumina/drawing";
 import { capasDe } from "./editor/propiedades.js";
 
 export interface ElementoAccesible {
@@ -10,6 +10,8 @@ export interface ElementoAccesible {
   etiqueta: string;
   /** `true` si la etiqueta es la descripción escrita por el docente (y no una inventada). */
   conDescripcion: boolean;
+  /** Solo en las formas con hijos (Y38c): si su rama está plegada y cuántos elementos oculta. */
+  rama?: { plegada: boolean; ocultos: number };
 }
 
 /** Dos elementos están «en la misma fila» si sus centros verticales distan menos que esto (unidades de escena). */
@@ -22,12 +24,14 @@ const TOLERANCIA_FILA = 30;
  */
 export function elementosAccesibles(escena: Escena): ElementoAccesible[] {
   const capas = new Map(capasDe(escena).map((c) => [c.id, c]));
+  const { cuentas } = resumenDeColapso(escena);
   const lista = escena.elementos.flatMap((e) => {
     const capa = capas.get(e.id);
     if (e.tipo === "grupo" || !capa || capa.oculto || capa.plegado) return [];
     const descripcion = e.descripcion?.trim();
     const caja = cajaDeElemento(escena, e);
-    return [{ id: e.id, etiqueta: descripcion || capa.nombre, conDescripcion: Boolean(descripcion), centro: (caja?.y ?? 0) + (caja?.alto ?? 0) / 2, x: caja?.x ?? 0 }];
+    const rama = e.tipo === "forma" && tieneHijos(escena, e.id) ? { plegada: e.colapsado === true, ocultos: cuentas.get(e.id) ?? 0 } : undefined;
+    return [{ id: e.id, etiqueta: descripcion || capa.nombre, conDescripcion: Boolean(descripcion), ...(rama ? { rama } : {}), centro: (caja?.y ?? 0) + (caja?.alto ?? 0) / 2, x: caja?.x ?? 0 }];
   });
   const porAltura = [...lista].sort((a, b) => a.centro - b.centro);
   const filas: (typeof lista)[] = [];
@@ -36,7 +40,7 @@ export function elementosAccesibles(escena: Escena): ElementoAccesible[] {
     if (fila && item.centro - (fila[0]?.centro ?? 0) < TOLERANCIA_FILA) fila.push(item);
     else filas.push([item]);
   }
-  return filas.flatMap((fila) => fila.sort((a, b) => a.x - b.x)).map(({ id, etiqueta, conDescripcion }) => ({ id, etiqueta, conDescripcion }));
+  return filas.flatMap((fila) => fila.sort((a, b) => a.x - b.x)).map(({ id, etiqueta, conDescripcion, rama }) => ({ id, etiqueta, conDescripcion, ...(rama ? { rama } : {}) }));
 }
 
 /**
@@ -44,7 +48,7 @@ export function elementosAccesibles(escena: Escena): ElementoAccesible[] {
  * Con `onElegir` cada elemento es un botón: es la vía del teclado y del lector para activarlo, igual que el clic.
  * Está fuera de la vista y solo aparece (arriba a la izquierda) mientras el foco está dentro.
  */
-export function ListaAccesible({ escena, onElegir }: { escena: Escena; onElegir?: (id: string) => void }): ReactElement | null {
+export function ListaAccesible({ escena, onElegir, onAlternarRama }: { escena: Escena; onElegir?: (id: string) => void; onAlternarRama?: (id: string) => void }): ReactElement | null {
   const elementos = elementosAccesibles(escena);
   if (elementos.length === 0) return null;
   return (
@@ -54,7 +58,7 @@ export function ListaAccesible({ escena, onElegir }: { escena: Escena; onElegir?
       className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:left-2 focus-within:top-2 focus-within:z-10 focus-within:max-h-40 focus-within:overflow-y-auto focus-within:rounded-md focus-within:border focus-within:bg-background focus-within:p-1 focus-within:text-xs focus-within:shadow-md"
     >
       {elementos.map((e) => (
-        <li key={e.id} data-elemento-lista={e.id}>
+        <li key={e.id} data-elemento-lista={e.id} {...(onAlternarRama && e.rama ? { className: "flex items-center gap-1" } : {})}>
           {onElegir ? (
             <button
               type="button"
@@ -70,6 +74,22 @@ export function ListaAccesible({ escena, onElegir }: { escena: Escena; onElegir?
           ) : (
             e.etiqueta
           )}
+          {onAlternarRama && e.rama ? (
+            <button
+              type="button"
+              data-rama-lista={e.id}
+              aria-expanded={!e.rama.plegada}
+              aria-label={`${e.rama.plegada ? "Desplegar" : "Plegar"} la rama de ${e.etiqueta}`}
+              className="shrink-0 rounded border px-2 py-1 outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={(ev) => {
+                // Un control del visor, no una parte del diagrama: no llega al contenedor (que emitiría `clic`).
+                ev.stopPropagation();
+                onAlternarRama(e.id);
+              }}
+            >
+              {e.rama.plegada ? (e.rama.ocultos > 0 ? `Desplegar rama (${e.rama.ocultos} ocultos)` : "Desplegar rama") : "Plegar rama"}
+            </button>
+          ) : null}
         </li>
       ))}
     </ul>
