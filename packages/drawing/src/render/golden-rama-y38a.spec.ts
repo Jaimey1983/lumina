@@ -34,7 +34,7 @@ describe('escena vieja con ramas idéntica (golden de Y38a)', () => {
   it('el golden tiene lo que dice: ramas con conectores, una forma oculta a mano, un grupo y un texto', () => {
     const e = normalizarEscena(entrada);
     expect(e.elementos.filter((x) => x.tipo === 'forma')).toHaveLength(10);
-    expect(e.elementos.filter((x) => x.tipo === 'linea')).toHaveLength(8);
+    expect(e.elementos.filter((x) => x.tipo === 'linea')).toHaveLength(7); // no hay conector a la forma oculta (no ofrece puertos)
     expect(e.elementos.some((x) => x.tipo === 'forma' && x.oculto)).toBe(true);
     expect(e.elementos.some((x) => x.tipo === 'grupo')).toBe(true);
     expect(e.elementos.some((x) => x.tipo === 'texto')).toBe(true);
