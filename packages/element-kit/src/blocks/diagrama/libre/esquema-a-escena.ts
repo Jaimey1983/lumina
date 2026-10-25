@@ -1,10 +1,10 @@
-// ─── Esquema de texto → diagrama (Y14) ────────────────────────────────────────
-// Puro: sin React ni DOM. Analiza un esquema por sangría (`analizarEsquema`) y lo vuelve formas y conectores de la
-// escena (`esquemaAEscena`). Del analizador viejo solo se usa `parseOutlineLines`; el modelo viejo no se toca.
+// ─── Esquema de texto → diagrama (Y14, Y36) ───────────────────────────────────
+// Puro: sin React ni DOM. Analiza un esquema (`analizarEsquema`: sangría, encabezados y numeración, ver `esquema-niveles.ts`) y lo
+// vuelve formas y conectores de la escena (`esquemaAEscena`). El analizador del bloque `diagrama` anterior no se usa ni se toca.
 
 import { agregar, cajaDeElemento, mover, sincronizarConectores, conectarFormas, type Escena, type Forma, type Punto } from "@lumina/drawing";
 import { PALETAS_DIAGRAMA } from "../diagrama-temas.js";
-import { parseOutlineLines } from "../diagrama-outline-parser.js";
+import { nivelesDeLineas } from "./esquema-niveles.js";
 import { organizarAuto, type ModoOrganizar } from "./editor/organizar-auto.js";
 
 /** Nodos que entran de una vez (DW9). */
@@ -32,22 +32,32 @@ export interface Esquema {
   sobrantes: number;
   /** Cuántas líneas se recortaron por pasar el largo máximo. */
   recortadas: number;
+  /** No se detectó jerarquía: hay 3 o más nodos y todos son raíz (Y36). Con `primeraLineaEsTema` hay una sola raíz y es `false`. */
+  sinJerarquia: boolean;
 }
 
-/** Numeración que el analizador viejo no quita: `1)`, `1.1.`, `a)` no; solo dígitos con `.` o `)` final y un espacio. */
-const NUMERACION = /^\d+(?:\.\d+)*[.)]\s+/;
-const VINETA_MAS = /^\+\s+/;
+export interface OpcionesAnalisis {
+  /** La primera línea es el tema y todas las demás suben un nivel (Y36). Solo desplaza niveles: no reinterpreta nada. */
+  primeraLineaEsTema?: boolean;
+}
+
+/** Con 3 o más nodos y todos raíz no hay jerarquía: es lo que pasa con un esquema pegado sin sangría (Y36). */
+const MIN_NODOS_SIN_JERARQUIA = 3;
 
 /**
- * Lee el esquema: sangría con espacios (2 = un nivel) o tabuladores, viñetas (`-`, `*`, `+`, `•`), numeración (`1.`, `1)`) y
- * listas de Markdown; las líneas vacías no cuentan. Un nivel que salta de golpe cuelga del nivel anterior, y varias raíces
- * forman un bosque.
+ * Lee el esquema: encabezados `#`, sangría con espacios (2 = un nivel) o tabuladores, viñetas (`-`, `*`, `+`, `•`), numeración
+ * (`1.`, `1)`, y `1.1`, `1.1.1` en las líneas sin sangría) y listas de Markdown; las líneas vacías no cuentan. Un nivel que salta de
+ * golpe cuelga del nivel anterior, y varias raíces forman un bosque. Los niveles de cada línea los fija `nivelesDeLineas` (DY56).
  */
-export function analizarEsquema(texto: string): Esquema {
-  const items = parseOutlineLines(texto)
-    .map((i) => ({ nivel: i.level, texto: i.text.replace(VINETA_MAS, "").replace(NUMERACION, "").trim() }))
-    .filter((i) => i.texto !== "");
+export function analizarEsquema(texto: string, opciones: OpcionesAnalisis = {}): Esquema {
+  const items = nivelesDeLineas(texto);
+  const base = construir(items, items.length);
+  if (!opciones.primeraLineaEsTema || items.length === 0) return base;
+  const desplazados = items.map((it, i) => (i === 0 ? it : { ...it, nivel: it.nivel + 1 }));
+  return construir(desplazados, items.length); // con un tema y el resto debajo hay una sola raíz: ya no es «sin jerarquía»
+}
 
+function construir(items: ReadonlyArray<{ nivel: number; texto: string }>, total: number): Esquema {
   const nodos: NodoEsquema[] = [];
   const pila: { indice: number; sangria: number }[] = [];
   let ramas = 0;
@@ -63,12 +73,14 @@ export function analizarEsquema(texto: string): Esquema {
     nodos.push({ texto: letras.slice(0, MAX_LARGO_LINEA_ESQUEMA).join(""), padre, nivel, rama });
     pila.push({ indice: nodos.length - 1, sangria: item.nivel });
   }
+  const raices = nodos.filter((n) => n.padre === null).length;
   return {
     nodos,
-    raices: nodos.filter((n) => n.padre === null).length,
+    raices,
     niveles: nodos.reduce((m, n) => Math.max(m, n.nivel + 1), 0),
-    sobrantes: Math.max(0, items.length - MAX_NODOS_ESQUEMA),
+    sobrantes: Math.max(0, total - MAX_NODOS_ESQUEMA),
     recortadas,
+    sinJerarquia: nodos.length >= MIN_NODOS_SIN_JERARQUIA && raices === nodos.length,
   };
 }
 

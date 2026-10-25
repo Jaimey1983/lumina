@@ -1,10 +1,11 @@
 "use client";
 
-// Diálogo «Esquema…» (Y14): un área de texto y una vista previa en vivo (nodos, niveles, raíces), sin dibujar nada.
+// Diálogo «Esquema…» (Y14, Y36): un área de texto y una vista previa en vivo (el árbol de la jerarquía y las cantidades), sin
+// dibujar nada. Si no se detecta jerarquía avisa y ofrece usar la primera línea como tema (desmarcado por defecto, DY61).
 // Se monta solo mientras está abierto: cada vez empieza vacío, y cancelar o Escape no deja nada en el dibujo.
 
-import { useId, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactElement } from "react";
-import { analizarEsquema, MAX_LARGO_LINEA_ESQUEMA, MAX_NODOS_ESQUEMA, type Esquema } from "../esquema-a-escena.js";
+import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactElement } from "react";
+import { analizarEsquema, MAX_LARGO_LINEA_ESQUEMA, MAX_NODOS_ESQUEMA, type Esquema, type NodoEsquema } from "../esquema-a-escena.js";
 import type { ModoOrganizar } from "./organizar-auto.js";
 import { useFocoAtrapado } from "./foco-atrapado.js";
 
@@ -30,19 +31,80 @@ export function resumenDeEsquema(e: Esquema): string {
   return partes.join(" · ");
 }
 
+/** Filas del árbol de la vista previa; el resto se resume en «… y N más». */
+export const MAX_FILAS_ARBOL = 60;
+
+export const AVISO_SIN_JERARQUIA = "No se detectó jerarquía: todas las líneas quedaron en el mismo nivel. Usa sangría, numeración (1., 1.1) o encabezados (#).";
+
 export function avisosDeEsquema(e: Esquema): string[] {
   const avisos: string[] = [];
+  if (e.sinJerarquia) avisos.push(AVISO_SIN_JERARQUIA);
   if (e.sobrantes > 0) avisos.push(`Hay ${plural(e.sobrantes + e.nodos.length, "línea", "líneas")}: solo se crean las primeras ${MAX_NODOS_ESQUEMA}.`);
   if (e.recortadas > 0) avisos.push(`${plural(e.recortadas, "línea se recortó", "líneas se recortaron")} a ${MAX_LARGO_LINEA_ESQUEMA} caracteres.`);
   return avisos;
+}
+
+interface ArbolNodo {
+  texto: string;
+  hijos: ArbolNodo[];
+}
+
+/** Árbol de los primeros `tope` nodos (los nodos vienen en orden: cada padre antes que sus hijos). */
+function armarArbol(nodos: readonly NodoEsquema[], tope: number): ArbolNodo[] {
+  const raices: ArbolNodo[] = [];
+  const porIndice: ArbolNodo[] = [];
+  nodos.slice(0, tope).forEach((n, i) => {
+    const nodo: ArbolNodo = { texto: n.texto, hijos: [] };
+    porIndice[i] = nodo;
+    if (n.padre === null) raices.push(nodo);
+    else (porIndice[n.padre] as ArbolNodo).hijos.push(nodo);
+  });
+  return raices;
+}
+
+function ListaArbol({ nodos, etiqueta }: { nodos: readonly ArbolNodo[]; etiqueta?: string }): ReactElement {
+  return (
+    <ul aria-label={etiqueta} className={`list-disc space-y-0.5 pl-4 ${etiqueta ? "" : "mt-0.5"}`}>
+      {nodos.map((n, i) => (
+        <li key={i} className="break-words">
+          {n.texto}
+          {n.hijos.length > 0 ? <ListaArbol nodos={n.hijos} /> : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Vista previa de la jerarquía: lista anidada (se recorre con un lector de pantalla), con tope de filas. */
+function ArbolEsquema({ esquema }: { esquema: Esquema }): ReactElement | null {
+  const arbol = useMemo(() => armarArbol(esquema.nodos, MAX_FILAS_ARBOL), [esquema]);
+  if (esquema.nodos.length === 0) return null;
+  const resto = esquema.nodos.length - MAX_FILAS_ARBOL;
+  return (
+    <div className="max-h-40 overflow-y-auto rounded-md border bg-muted/30 p-2 text-sm" data-esquema-arbol="">
+      <ListaArbol nodos={arbol} etiqueta="Vista previa de la jerarquía" />
+      {resto > 0 ? (
+        <p className="mt-1 text-muted-foreground" data-esquema-arbol-mas="">
+          … y {resto} más
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function DialogoEsquema({ onCerrar, onAceptar, focoLienzo }: DialogoEsquemaProps): ReactElement {
   const dialogoRef = useRef<HTMLDivElement>(null);
   const [texto, setTexto] = useState("");
   const [modo, setModo] = useState<ModoOrganizar>("arbol");
+  const [primeraEsTema, setPrimeraEsTema] = useState(false);
   const id = useId();
-  const esquema = useMemo(() => analizarEsquema(texto), [texto]);
+  const base = useMemo(() => analizarEsquema(texto), [texto]);
+  // La casilla solo existe cuando no se detectó jerarquía; si deja de ser así (p. ej. se agrega sangría) se desmarca sola.
+  const ofrecerTema = base.sinJerarquia;
+  useEffect(() => {
+    if (!ofrecerTema) setPrimeraEsTema(false);
+  }, [ofrecerTema]);
+  const esquema = useMemo(() => (ofrecerTema && primeraEsTema ? analizarEsquema(texto, { primeraLineaEsTema: true }) : base), [texto, base, ofrecerTema, primeraEsTema]);
   const vacio = esquema.nodos.length === 0;
 
   // Escape, el clic fuera y el retorno de foco los lleva el hook.
@@ -87,6 +149,13 @@ export function DialogoEsquema({ onCerrar, onAceptar, focoLienzo }: DialogoEsque
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setTexto(e.target.value)}
             />
           </label>
+          {ofrecerTema ? (
+            <label className="flex items-center gap-1.5 text-sm" data-esquema-primera-tema="">
+              <input type="checkbox" checked={primeraEsTema} aria-describedby={`${id}-vista`} onChange={(e) => setPrimeraEsTema(e.target.checked)} />
+              Usar la primera línea como tema
+            </label>
+          ) : null}
+          <ArbolEsquema esquema={esquema} />
           <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <legend className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Disposición</legend>
             {DISPOSICIONES.map((d) => (
