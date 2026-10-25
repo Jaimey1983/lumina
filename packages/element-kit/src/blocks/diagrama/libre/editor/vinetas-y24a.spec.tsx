@@ -226,7 +226,9 @@ describe("el cuadro de edición en sitio con lista", () => {
     const m = montar(base());
     const caja = abrir(m, 480, 150);
     fireEvent.change(caja, { target: { value: "Primero\nSegundo" } });
-    fireEvent.keyDown(caja, { key: "Enter" });
+    fireEvent.keyDown(caja, { key: "Enter" }); // con lista es ítem nuevo: no confirma
+    expect(m.onCambio).not.toHaveBeenCalled();
+    fireEvent.keyDown(caja, { key: "Enter", ctrlKey: true });
     expect(f(m.ultima(), "B").texto).toBe("Primero\nSegundo");
     expect(f(m.ultima(), "B").estiloTexto.vinetas).toBe("puntos");
   });

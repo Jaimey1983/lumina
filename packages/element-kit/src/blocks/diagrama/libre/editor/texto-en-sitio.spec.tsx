@@ -75,6 +75,33 @@ describe("TextoEnSitio", () => {
     expect(onCambio).toHaveBeenCalledWith("Nuevo");
   });
 
+  it("con lista, Enter no confirma (es ítem nuevo): se confirma con Ctrl/Cmd+Enter, y Escape sigue cancelando", () => {
+    for (const vinetas of ["puntos", "numeros"] as const) {
+      cleanup();
+      const { caja, onConfirmar, onCancelar } = montar({ vinetas });
+      const enter = fireEvent.keyDown(caja, { key: "Enter" });
+      expect(enter).toBe(true); // sin preventDefault: el cuadro mete el salto de línea
+      expect(onConfirmar).not.toHaveBeenCalled();
+      fireEvent.keyDown(caja, { key: "Enter", ctrlKey: true });
+      expect(onConfirmar).toHaveBeenCalledTimes(1);
+      fireEvent.keyDown(caja, { key: "Enter", metaKey: true });
+      expect(onConfirmar).toHaveBeenCalledTimes(2);
+      fireEvent.keyDown(caja, { key: "Escape" });
+      expect(onCancelar).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it("sin lista, Enter sí confirma (y se evita el salto de línea)", () => {
+    const { caja } = montar();
+    expect(fireEvent.keyDown(caja, { key: "Enter" })).toBe(false);
+  });
+
+  it("la ayuda del cuadro dice cómo terminar, según haya lista o no", () => {
+    expect(montar().caja.title).toMatch(/Enter: terminar/);
+    cleanup();
+    expect(montar({ vinetas: "puntos" }).caja.title).toMatch(/Ctrl\+Enter/);
+  });
+
   it("perder el foco confirma", () => {
     const { caja, onConfirmar } = montar();
     fireEvent.blur(caja);

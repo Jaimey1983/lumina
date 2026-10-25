@@ -10,7 +10,7 @@ export interface TextoEnSitioProps {
   valor: string;
   vista: Vista;
   onCambio: (valor: string) => void;
-  /** Enter (sin Mayús) o perder el foco. */
+  /** Enter (sin Mayús; con lista, Ctrl/Cmd+Enter) o perder el foco. */
   onConfirmar: () => void;
   /** Escape. */
   onCancelar: () => void;
@@ -21,7 +21,8 @@ const ALINEACION_V = { arriba: "flex-start", medio: "center", abajo: "flex-end" 
 /**
  * Cuadro de texto que se pone justo encima del elemento que se está escribiendo (misma zona, giro,
  * tamaño de letra y alineación, ya con el zoom aplicado). Enter confirma, Mayús+Enter salta de línea,
- * Escape cancela.
+ * Escape cancela. En un elemento con lista (viñetas o números) Enter salta de línea —cada línea es un
+ * ítem— y se confirma con Ctrl/Cmd+Enter, con un clic fuera o perdiendo el foco.
  */
 export function TextoEnSitio({ area, valor, vista, onCambio, onConfirmar, onCancelar }: TextoEnSitioProps): ReactElement {
   const ref = useRef<HTMLTextAreaElement | null>(null);
@@ -62,6 +63,8 @@ export function TextoEnSitio({ area, valor, vista, onCambio, onConfirmar, onCanc
       e.preventDefault();
       onCancelar();
     } else if (e.key === "Enter" && !e.shiftKey) {
+      // Con lista, Enter es «ítem nuevo» (el salto de línea lo hace el cuadro); confirmar pide Ctrl/Cmd.
+      if (area.vinetas && !e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
       onConfirmar();
     }
@@ -73,6 +76,7 @@ export function TextoEnSitio({ area, valor, vista, onCambio, onConfirmar, onCanc
         ref={ref}
         value={valor}
         aria-label="Texto del elemento"
+        title={area.vinetas ? "Enter: ítem nuevo · Ctrl+Enter o clic fuera: terminar" : "Enter: terminar · Mayús+Enter: línea nueva"}
         rows={1}
         spellCheck={false}
         onChange={(e) => onCambio(e.target.value)}
