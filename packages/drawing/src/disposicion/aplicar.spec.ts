@@ -214,3 +214,48 @@ describe('aplicarDisposicion', () => {
     expect(getLinea(r, l0.id).trazado).toBe(l0.trazado);
   });
 });
+
+describe('aplicarDisposicion: cada nodo se mueve su propio vector', () => {
+  it('formas sueltas y un grupo van cada una a su sitio, y lo demás no se toca', () => {
+    let e = escena(forma('a', 0, 0), forma('b', 300, 0), forma('c', 600, 0), forma('d', 900, 0), grupo('G', ['b', 'c']));
+    e = conectarFormas(e, 'a', 'b');
+    e = conectarFormas(e, 'c', 'd');
+    const g = extraerGrafo(e, []) as Grafo;
+    const destino = new Map([
+      ['a', { x: 10, y: 20 }],
+      ['G', { x: 500, y: 700 }], // el grupo b+c: su caja envolvente va a (500, 700)
+      ['d', { x: 40, y: 50 }],
+    ]);
+    const r = aplicarDisposicion(e, g, destino);
+    expect(getForma(r, 'a').transformacion).toMatchObject({ x: 10, y: 20 });
+    expect(getForma(r, 'd').transformacion).toMatchObject({ x: 40, y: 50 });
+    // el grupo conserva la distancia entre sus formas (b a 300 de c… 300 de b hasta 600): b queda en 500 y c en 800
+    expect(getForma(r, 'b').transformacion).toMatchObject({ x: 500, y: 700 });
+    expect(getForma(r, 'c').transformacion).toMatchObject({ x: 800, y: 700 });
+    expect(getGrupo(r, 'G').hijos).toEqual(['b', 'c']);
+  });
+
+  it('un conector dentro de un grupo conserva sus conexiones con lo del mismo grupo; los que salen del grupo se vuelven a pegar', () => {
+    let e = escena(forma('a', 0, 0), forma('b', 300, 100), forma('c', 600, 0), forma('d', 100, 400));
+    e = conectarFormas(e, 'a', 'b');
+    e = conectarFormas(e, 'b', 'c');
+    e = conectarFormas(e, 'a', 'd');
+    const lineas = e.elementos.filter((x): x is Linea => x.tipo === 'linea').map((x) => x.id);
+    e = escena(...e.elementos.map((x) => x as never), grupo('G', ['a', 'b', lineas[0] as string, lineas[2] as string]));
+    const g = extraerGrafo(e, []) as Grafo;
+    const { conectados } = separarSueltos(g);
+    const r = aplicarDisposicion(e, g, componerPosiciones(g, disponerArbol(conectados, g.aristas, { orientacion: 'abajo', separacionNiveles: 150, separacionHermanos: 50 })), { flujo: 'abajo' });
+    const conexion = (id: string) => ({ origen: getLinea(r, id).origen, destino: getLinea(r, id).destino });
+    // Los dos extremos están en el mismo grupo: se mueven juntos y no se vuelven a escoger (quedan como estaban)…
+    expect(conexion(lineas[0] as string)).toEqual({ origen: { elementoId: 'a', puerto: 1 }, destino: { elementoId: 'b', puerto: 3 } });
+    // …y los que salen del grupo sí se vuelven a pegar por el lado del flujo.
+    expect(conexion(lineas[1] as string)).toEqual({ origen: { elementoId: 'b', puerto: 2 }, destino: { elementoId: 'c', puerto: 0 } });
+    expect(conexion(lineas[2] as string)).toEqual({ origen: { elementoId: 'a', puerto: 2 }, destino: { elementoId: 'd', puerto: 0 } });
+  });
+
+  it('nada que mover devuelve la misma escena', () => {
+    const e = desordenado();
+    const g = extraerGrafo(e, []) as Grafo;
+    expect(aplicarDisposicion(e, g, new Map())).toBe(e);
+  });
+});
