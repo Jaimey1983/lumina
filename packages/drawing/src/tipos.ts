@@ -30,7 +30,53 @@ export const TIPOS_FORMA = [
   'llave',
   'callout',
 ] as const;
-export type TipoForma = (typeof TIPOS_FORMA)[number];
+/** Las 22 formas geométricas del catálogo (lo que ofrecen «Insertar» y «Cambiar forma»). */
+export type TipoFormaGeometrica = (typeof TIPOS_FORMA)[number];
+
+/**
+ * Los iconos del catálogo (Y32a, DY86): formas con id propio, en una lista aparte para que `TIPOS_FORMA` siga siendo las 22 de siempre.
+ * Se guarda solo el id (`icono-persona`): ni el nombre de una librería ni el trazado.
+ */
+export const TIPOS_ICONO = [
+  'icono-persona',
+  'icono-grupo',
+  'icono-birrete',
+  'icono-libro',
+  'icono-documento',
+  'icono-matraz',
+  'icono-atomo',
+  'icono-microscopio',
+  'icono-bombilla',
+  'icono-cerebro',
+  'icono-lupa',
+  'icono-check',
+  'icono-error',
+  'icono-alerta',
+  'icono-pregunta',
+  'icono-info',
+  'icono-objetivo',
+  'icono-engranaje',
+  'icono-reloj',
+  'icono-calendario',
+  'icono-candado',
+  'icono-ordenador',
+  'icono-casa',
+  'icono-mundo',
+  'icono-sol',
+  'icono-luna',
+  'icono-gota',
+  'icono-hoja',
+  'icono-corazon',
+  'icono-cohete',
+] as const;
+
+export type TipoIcono = (typeof TIPOS_ICONO)[number];
+
+/** Todo lo que puede ser el `forma` de una forma: las 22 geométricas y los 30 iconos. */
+export type TipoForma = TipoFormaGeometrica | TipoIcono;
+
+/** Todos los ids de forma válidos para el normalizador. */
+export const TIPOS_FORMA_VALIDOS: readonly TipoForma[] = [...TIPOS_FORMA, ...TIPOS_ICONO];
 
 export const PATRONES_LINEA = ['solido', 'guiones', 'puntos'] as const;
 export type PatronLinea = (typeof PATRONES_LINEA)[number];

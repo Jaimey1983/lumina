@@ -10,7 +10,7 @@ import {
   EXTREMOS,
   PATRONES_LINEA,
   PATRONES_RELLENO,
-  TIPOS_FORMA,
+  TIPOS_FORMA_VALIDOS,
   TRAZADOS,
   VINETAS,
   type Color,
@@ -299,7 +299,7 @@ function normalizarForma(r: Registro, usados: Set<string>): Forma {
   return {
     ...cabecera(r, 'forma', usados),
     tipo: 'forma',
-    forma: enumerado<TipoForma>(r.forma, TIPOS_FORMA, 'rectangulo'),
+    forma: enumerado<TipoForma>(r.forma, TIPOS_FORMA_VALIDOS, 'rectangulo'),
     transformacion: normalizarTransformacion(r.transformacion, { ancho: 160, alto: 100 }),
     estilo: normalizarEstilo(r.estilo, 'forma'),
     ...(t ? { texto: t } : {}),
