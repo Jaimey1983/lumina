@@ -224,3 +224,81 @@ describe('disponerArbol: alineación y espejo (Y37a)', () => {
     expect(nuevo).toBeLessThan(1000);
   });
 });
+
+describe("disponerArbol: centrar sobre el primer y el último hijo (Y37a)", () => {
+  const cy = (ns: NodoDisposicion[], p: Posiciones, id: string): number => centro(ns.find((n) => n.id === id) as NodoDisposicion, p).y;
+  const cxx = (ns: NodoDisposicion[], p: Posiciones, id: string): number => centro(ns.find((n) => n.id === id) as NodoDisposicion, p).x;
+
+  /** r → a, b ; a tiene tres hojas, b una: el abanico de «a» es mucho más ancho que el de «b». */
+  const asimetrico = (): { ns: NodoDisposicion[]; aristas: Array<{ desde: string; hasta: string }> } => ({
+    ns: ['r', 'a', 'b', 'a1', 'a2', 'a3', 'b1'].map((id) => nodo(id, 100, 60)),
+    aristas: [['r', 'a'], ['r', 'b'], ['a', 'a1'], ['a', 'a2'], ['a', 'a3'], ['b', 'b1']].map(([desde, hasta]) => ({ desde: desde as string, hasta: hasta as string })),
+  });
+
+  it("con `hijos` el padre queda a medio camino entre el centro del primer hijo y el del último", () => {
+    const { ns, aristas } = asimetrico();
+    const p = disponerArbol(ns, aristas, { centrar: 'hijos' });
+    expect(cy(ns, p, 'r')).toBeCloseTo((cy(ns, p, 'a') + cy(ns, p, 'b')) / 2, 6);
+    expect(cy(ns, p, 'a')).toBeCloseTo((cy(ns, p, 'a1') + cy(ns, p, 'a3')) / 2, 6);
+  });
+
+  it("con `bloque` (el valor por defecto) sigue centrado sobre todo lo que ocupan los hijos: no es lo mismo", () => {
+    const { ns, aristas } = asimetrico();
+    const bloque = disponerArbol(ns, aristas);
+    const hijos = disponerArbol(ns, aristas, { centrar: 'hijos' });
+    expect(cy(ns, bloque, 'r')).not.toBeCloseTo((cy(ns, bloque, 'a') + cy(ns, bloque, 'b')) / 2, 3);
+    expect([...bloque]).toEqual([...disponerArbol(ns, aristas, { centrar: 'bloque' })]);
+    expect([...hijos]).not.toEqual([...bloque]);
+  });
+
+  it("en un árbol simétrico las dos formas dan lo mismo", () => {
+    const ns = ['r', 'a', 'b', 'c', 'd'].map((id) => nodo(id));
+    const aristas = [['r', 'a'], ['r', 'b'], ['a', 'c'], ['b', 'd']].map(([desde, hasta]) => ({ desde: desde as string, hasta: hasta as string }));
+    const x = disponerArbol(ns, aristas);
+    const y = disponerArbol(ns, aristas, { centrar: 'hijos' });
+    for (const n of ns) {
+      expect((y.get(n.id) as { x: number }).x).toBeCloseTo((x.get(n.id) as { x: number }).x, 6);
+      expect((y.get(n.id) as { y: number }).y).toBeCloseTo((x.get(n.id) as { y: number }).y, 6);
+    }
+  });
+
+  it("en `abajo` el centro de comparación es el horizontal", () => {
+    const { ns, aristas } = asimetrico();
+    const p = disponerArbol(ns, aristas, { centrar: 'hijos', orientacion: 'abajo' });
+    expect(cxx(ns, p, 'r')).toBeCloseTo((cxx(ns, p, 'a') + cxx(ns, p, 'b')) / 2, 6);
+  });
+
+  it("un padre más ancho que sus hijos no pisa a su vecino y sus hijos quedan centrados en él", () => {
+    const ns = [nodo('r1', 100, 400), nodo('h1', 100, 20), nodo('h2', 100, 20), nodo('r2', 100, 60), nodo('h3', 100, 20)];
+    const aristas = [['r1', 'h1'], ['r1', 'h2'], ['r2', 'h3']].map(([desde, hasta]) => ({ desde: desde as string, hasta: hasta as string }));
+    const p = disponerArbol(ns, aristas, { centrar: 'hijos' });
+    expect(solapes(ns, p)).toEqual([]);
+    expect(cy(ns, p, 'r1')).toBeCloseTo((cy(ns, p, 'h1') + cy(ns, p, 'h2')) / 2, 6);
+  });
+
+  it("propiedad barrida: 20, 100 y 500 nodos de tamaños distintos: nunca se pisan y el padre queda en el medio de sus extremos", () => {
+    for (const n of [20, 100, 500]) {
+      for (const semilla of [1, 2]) {
+        const { nodos, aristas } = arbolAlAzar(n, semilla * 100 + n);
+        for (const orientacion of ['derecha', 'abajo'] as const) {
+          for (const invertir of [false, true]) {
+            const p = disponerArbol(nodos, aristas, { orientacion, invertir, centrar: 'hijos', alinear: 'inicio' });
+            const etiqueta = `${n}/${semilla}/${orientacion}/${invertir}`;
+            expect(p.size, etiqueta).toBe(n);
+            expect(solapes(nodos, p), etiqueta).toEqual([]);
+            const c = (id: string): number => {
+              const q = centro(nodos.find((x) => x.id === id) as NodoDisposicion, p);
+              return orientacion === 'derecha' ? q.y : q.x;
+            };
+            const hs = new Map<string, string[]>();
+            for (const a of aristas) hs.set(a.desde, [...(hs.get(a.desde) ?? []), a.hasta]);
+            for (const [padre, lista] of hs) {
+              // Los hijos van en el orden de las aristas: el primero y el último son los extremos.
+              expect(c(padre), `${etiqueta} ${padre}`).toBeCloseTo((c(lista[0] as string) + c(lista[lista.length - 1] as string)) / 2, 6);
+            }
+          }
+        }
+      }
+    }
+  });
+});
