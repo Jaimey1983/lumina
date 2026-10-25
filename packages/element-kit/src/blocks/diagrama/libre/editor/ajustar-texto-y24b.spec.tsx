@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Escena, Forma, Texto } from "@lumina/drawing";
+import { COMANDOS, estadoComando, type ContextoComando } from "./comandos-registro.js";
 import { CLAVE_CRECER_AL_ESCRIBIR } from "./preferencias-texto.js";
 import { EditorLibre } from "./editor-libre.js";
 import { PanelPropiedades } from "./propiedades-panel.js";
@@ -312,5 +313,48 @@ describe("«Crecer al escribir»: al confirmar el texto", () => {
     const l = m.ultima().elementos.find((x) => x.id === "L") as unknown as { puntos: Array<{ x: number; y: number }> };
     expect(l.puntos[0]).toEqual({ x: 200, y: 208 }); // el puerto de abajo de A: 100 + 108
     expect(l.puntos[1]).toEqual({ x: 200, y: 400 });
+  });
+});
+
+describe("los comandos de Y24b en el registro", () => {
+  const ctx = (extra: Partial<ContextoComando> = {}): ContextoComando => ({ escena: base(), seleccion: [], herramienta: { tipo: "seleccionar" } as never, puedeDeshacer: false, puedeRehacer: false, zoom: 1, cuadricula: false, imantar: false, ...extra });
+  const def = (id: string) => COMANDOS.find((c) => c.id === id);
+
+  it("existen en el grupo «formato» y sin atajo", () => {
+    for (const id of ["ajustar-al-texto", "crecer-al-escribir"]) {
+      expect(def(id)?.grupo).toBe("formato");
+      expect(def(id)?.atajos).toBeUndefined();
+    }
+    expect(def("ajustar-al-texto")?.orden).toEqual({ tipo: "ajustar-al-texto" });
+    expect(def("crecer-al-escribir")?.orden).toEqual({ tipo: "crecer-al-escribir" });
+  });
+
+  it("«Ajustar al texto» va en el menú de forma; «Crecer al escribir» en ninguno", () => {
+    expect(def("ajustar-al-texto")?.menu).toEqual({ forma: { grupo: "edicion" } });
+    expect(def("crecer-al-escribir")?.sinMenu).toBe(true);
+    expect(def("crecer-al-escribir")?.menu).toBeUndefined();
+  });
+
+  it("«Crecer al escribir» se marca activo solo con la preferencia encendida, y siempre se puede usar", () => {
+    const c = def("crecer-al-escribir") as NonNullable<ReturnType<typeof def>>;
+    expect(estadoComando(c, ctx({ crecerAlEscribir: true })).activo).toBe(true);
+    expect(estadoComando(c, ctx({ crecerAlEscribir: false })).activo).toBe(false);
+    expect(estadoComando(c, ctx()).activo).toBe(false);
+    expect(estadoComando(c, ctx()).habilitado).toBe(true);
+  });
+
+  it("«Ajustar al texto» da sus motivos desde el registro", () => {
+    const c = def("ajustar-al-texto") as NonNullable<ReturnType<typeof def>>;
+    expect(estadoComando(c, ctx({ seleccion: ["A"] })).habilitado).toBe(true);
+    expect(estadoComando(c, ctx({ seleccion: ["C"] })).motivo).toBe("Ya cabe");
+    expect(estadoComando(c, ctx({ seleccion: ["S"] })).motivo).toBe("Elige una forma o un texto con texto");
+    expect(estadoComando(c, ctx()).motivo).toBe("Elige una forma o un texto con texto");
+  });
+});
+
+describe("el panel sin el manejador de la preferencia", () => {
+  it("no ofrece «Crecer al escribir» (no habría a quién avisar)", () => {
+    montarPanel(base(), ["A"]);
+    expect(hayBoton("Crecer al escribir")).toBe(false);
   });
 });

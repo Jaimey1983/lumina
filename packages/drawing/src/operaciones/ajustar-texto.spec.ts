@@ -245,6 +245,16 @@ describe('ajustarAlTexto: no pisa a las vecinas', () => {
     expect(altoDe(ajustarAlTexto(e, ['A']).escena, 'A')).toBe(28);
   });
 
+  it('lo que una elegida ya creció cuenta para las siguientes: una girada que crece de lado frena a la que viene después', () => {
+    // A (girada 90°) crece hacia la izquierda: su caja pasa de x 370–430 a x 322–430. E, más a la izquierda y más arriba, crecería hacia abajo
+    // dentro de ese hueco: con la caja nueva de A frena en 82; con la vieja habría llegado a 108.
+    const e = escena(f('A', 300, 200, 200, 60, { transformacion: { x: 300, y: 200, ancho: 200, alto: 60, rotacion: 90 } }), f('E', 100, 40, 230, 60));
+    expect(esquinas(getForma(e, 'A').transformacion).map((p) => Math.round(p.x))).toEqual([430, 430, 370, 370]);
+    const r = ajustarAlTexto(e, ['A', 'E']).escena;
+    expect(altoDe(r, 'A')).toBe(108);
+    expect(altoDe(r, 'E')).toBe(82);
+  });
+
   it('dos elegidas, una encima de la otra: la de arriba la frena la de abajo', () => {
     const e = escena(f('A', 0, 0, 200, 60), f('B', 0, 100, 200, 60));
     const r = ajustarAlTexto(e, ['A', 'B']).escena;
