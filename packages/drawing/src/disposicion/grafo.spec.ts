@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { conectarFormas } from '../conectores/enlazar.js';
 import { escena, forma, grupo, linea, texto } from '../operaciones/util-pruebas.js';
-import { bosqueDe, extraerGrafo, MAX_FORMAS_DISPOSICION, separarSueltos, type Grafo } from './grafo.js';
+import { bosqueDe, esBosque, extraerGrafo, MAX_FORMAS_DISPOSICION, separarSueltos, type Grafo, type NodoDisposicion } from './grafo.js';
 
 const grafo = (e: ReturnType<typeof escena>, ids?: string[]): Grafo => {
   const g = extraerGrafo(e, ids);
@@ -135,5 +135,81 @@ describe('bosqueDe', () => {
   it('un auto-ciclo no rompe nada', () => {
     const b = bosqueDe(['a'].map(n), [{ desde: 'a', hasta: 'a' }]);
     expect(b.raices).toEqual(['a']);
+  });
+});
+
+describe('bosqueDe: orden de lectura (Y37a)', () => {
+  const nodo = (id: string, x: number, y = 0): NodoDisposicion => ({ id, x, y, ancho: 100, alto: 60 });
+  const porX = (a: NodoDisposicion, b: NodoDisposicion): number => a.x - b.x;
+
+  it('sin `ordenHermanos` todo sigue como antes: hijos en el orden de las aristas', () => {
+    const ns = [nodo('r', 0), nodo('a', 300), nodo('b', 100), nodo('c', 200)];
+    const aristas = [{ desde: 'r', hasta: 'a' }, { desde: 'r', hasta: 'b' }, { desde: 'r', hasta: 'c' }];
+    expect(bosqueDe(ns, aristas).hijos.get('r')).toEqual(['a', 'b', 'c']);
+    expect(bosqueDe(ns, aristas, {}).hijos.get('r')).toEqual(['a', 'b', 'c']);
+  });
+
+  it('con `ordenHermanos` los hijos salen en ese orden', () => {
+    const ns = [nodo('r', 0), nodo('a', 300), nodo('b', 100), nodo('c', 200)];
+    const aristas = [{ desde: 'r', hasta: 'a' }, { desde: 'r', hasta: 'b' }, { desde: 'r', hasta: 'c' }];
+    expect(bosqueDe(ns, aristas, { ordenHermanos: porX }).hijos.get('r')).toEqual(['b', 'c', 'a']);
+  });
+
+  it('un empate se resuelve con el orden de las aristas (el orden es estable)', () => {
+    const ns = [nodo('r', 0), nodo('a', 100), nodo('b', 100), nodo('c', 100)];
+    const aristas = [{ desde: 'r', hasta: 'c' }, { desde: 'r', hasta: 'a' }, { desde: 'r', hasta: 'b' }];
+    expect(bosqueDe(ns, aristas, { ordenHermanos: porX }).hijos.get('r')).toEqual(['c', 'a', 'b']);
+  });
+
+  it('también ordena las raíces', () => {
+    const ns = [nodo('p', 500), nodo('q', 100), nodo('s', 300)];
+    expect(bosqueDe(ns, [], { ordenHermanos: porX }).raices).toEqual(['q', 's', 'p']);
+    expect(bosqueDe(ns, []).raices).toEqual(['p', 'q', 's']);
+  });
+
+  it('ordena los hijos de cada nivel, no solo los del primero', () => {
+    const ns = [nodo('r', 0), nodo('a', 100), nodo('x', 500), nodo('y', 200)];
+    const aristas = [{ desde: 'r', hasta: 'a' }, { desde: 'a', hasta: 'x' }, { desde: 'a', hasta: 'y' }];
+    expect(bosqueDe(ns, aristas, { ordenHermanos: porX }).hijos.get('a')).toEqual(['y', 'x']);
+  });
+
+  it('un ciclo no se cuelga con orden', () => {
+    const ns = [nodo('a', 0), nodo('b', 100), nodo('c', 200)];
+    const b = bosqueDe(ns, [{ desde: 'a', hasta: 'b' }, { desde: 'b', hasta: 'c' }, { desde: 'c', hasta: 'a' }], { ordenHermanos: porX });
+    expect(b.raices).toEqual(['a']);
+  });
+});
+
+describe('esBosque (Y37a)', () => {
+  const ns = (...ids: string[]): NodoDisposicion[] => ids.map((id, i) => ({ id, x: i * 100, y: 0, ancho: 100, alto: 60 }));
+  const ar = (...pares: Array<[string, string]>) => pares.map(([desde, hasta]) => ({ desde, hasta }));
+
+  it('un grafo sin aristas es un bosque de nodos sueltos', () => {
+    expect(esBosque(ns('a', 'b'), [])).toBe(true);
+  });
+  it('una cadena y un árbol lo son', () => {
+    expect(esBosque(ns('a', 'b', 'c'), ar(['a', 'b'], ['b', 'c']))).toBe(true);
+    expect(esBosque(ns('r', 'a', 'b', 'c'), ar(['r', 'a'], ['r', 'b'], ['a', 'c']))).toBe(true);
+  });
+  it('varios árboles lo son', () => {
+    expect(esBosque(ns('a', 'b', 'c', 'd'), ar(['a', 'b'], ['c', 'd']))).toBe(true);
+  });
+  it('un nodo con dos padres distintos no lo es', () => {
+    expect(esBosque(ns('a', 'b', 'c'), ar(['a', 'c'], ['b', 'c']))).toBe(false);
+  });
+  it('dos conectores del mismo padre al mismo hijo cuentan como uno', () => {
+    expect(esBosque(ns('a', 'b'), ar(['a', 'b'], ['a', 'b']))).toBe(true);
+  });
+  it('un ciclo no lo es', () => {
+    expect(esBosque(ns('a', 'b', 'c'), ar(['a', 'b'], ['b', 'c'], ['c', 'a']))).toBe(false);
+  });
+  it('un ciclo con una cola tampoco', () => {
+    expect(esBosque(ns('r', 'a', 'b', 'c'), ar(['r', 'a'], ['a', 'b'], ['b', 'c'], ['c', 'a']))).toBe(false);
+  });
+  it('un auto-ciclo no lo es', () => {
+    expect(esBosque(ns('a', 'b'), ar(['a', 'a']))).toBe(false);
+  });
+  it('un grafo vacío es un bosque (vacío)', () => {
+    expect(esBosque([], [])).toBe(true);
   });
 });

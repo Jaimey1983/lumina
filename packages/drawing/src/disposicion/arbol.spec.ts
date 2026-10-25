@@ -96,3 +96,131 @@ describe('disponerArbol', () => {
     expect(performance.now() - t).toBeLessThan(1000);
   });
 });
+
+describe('disponerArbol: alineación y espejo (Y37a)', () => {
+  const ancho = (n: NodoDisposicion): number => n.ancho;
+  const izq = (ns: NodoDisposicion[], p: Posiciones, id: string): number => (p.get(id) as { x: number }).x;
+  const arriba = (p: Posiciones, id: string): number => (p.get(id) as { y: number }).y;
+  const der = (ns: NodoDisposicion[], p: Posiciones, id: string): number => izq(ns, p, id) + ancho(ns.find((n) => n.id === id) as NodoDisposicion);
+  const base = (): { ns: NodoDisposicion[]; aristas: Array<{ desde: string; hasta: string }> } => ({
+    ns: [nodo('r', 100), nodo('a', 180), nodo('b', 60), nodo('c', 140), nodo('d', 90)],
+    aristas: [{ desde: 'r', hasta: 'a' }, { desde: 'r', hasta: 'b' }, { desde: 'a', hasta: 'c' }, { desde: 'b', hasta: 'd' }],
+  });
+
+  it('los valores por defecto dan exactamente lo de antes (compatibilidad)', () => {
+    const { ns, aristas } = base();
+    expect([...disponerArbol(ns, aristas, { alinear: 'centro', invertir: false })]).toEqual([...disponerArbol(ns, aristas)]);
+    expect([...disponerArbol(ns, aristas, { orientacion: 'abajo', alinear: 'centro' })]).toEqual([...disponerArbol(ns, aristas, { orientacion: 'abajo' })]);
+  });
+
+  it("`alinear: 'inicio'` en `derecha`: los bordes izquierdos de un nivel coinciden aunque midan distinto", () => {
+    const { ns, aristas } = base();
+    const p = disponerArbol(ns, aristas, { alinear: 'inicio' });
+    expect(izq(ns, p, 'a')).toBe(izq(ns, p, 'b'));
+    expect(izq(ns, p, 'c')).toBe(izq(ns, p, 'd'));
+    // Con `centro` no coinciden: es justo lo que se corrige.
+    const centrado = disponerArbol(ns, aristas);
+    expect(izq(ns, centrado, 'a')).not.toBe(izq(ns, centrado, 'b'));
+  });
+
+  it("`alinear: 'inicio'` en `abajo`: los bordes de arriba de un nivel coinciden aunque midan distinto de alto", () => {
+    const ns = [nodo('r', 100, 60), nodo('a', 100, 120), nodo('b', 100, 40)];
+    const p = disponerArbol(ns, [{ desde: 'r', hasta: 'a' }, { desde: 'r', hasta: 'b' }], { orientacion: 'abajo', alinear: 'inicio' });
+    expect(arriba(p, 'a')).toBe(arriba(p, 'b'));
+  });
+
+  it("con `inicio` la separación entre niveles sigue siendo de 80 entre el borde de la caja mayor y el siguiente nivel", () => {
+    const { ns, aristas } = base();
+    const p = disponerArbol(ns, aristas, { alinear: 'inicio' });
+    // La caja mayor del nivel 1 es «a» (180): el nivel 2 empieza 80 después de su borde derecho.
+    expect(izq(ns, p, 'c') - (izq(ns, p, 'a') + 180)).toBe(80);
+  });
+
+  it("`inicio` no descentra al padre sobre sus hijos", () => {
+    const { ns, aristas } = base();
+    const p = disponerArbol(ns, aristas, { alinear: 'inicio' });
+    const cy = (id: string): number => centro(ns.find((n) => n.id === id) as NodoDisposicion, p).y;
+    expect(cy('r')).toBeCloseTo((cy('a') + cy('b')) / 2, 6);
+  });
+
+  it('`invertir` en `derecha`: los hijos quedan a la izquierda del padre', () => {
+    const { ns, aristas } = base();
+    const p = disponerArbol(ns, aristas, { invertir: true });
+    expect(der(ns, p, 'a')).toBeLessThan(izq(ns, p, 'r'));
+    expect(der(ns, p, 'c')).toBeLessThan(izq(ns, p, 'a'));
+  });
+
+  it('`invertir` con `inicio`: los bordes alineados son los derechos', () => {
+    const { ns, aristas } = base();
+    const p = disponerArbol(ns, aristas, { invertir: true, alinear: 'inicio' });
+    expect(der(ns, p, 'a')).toBe(der(ns, p, 'b'));
+    expect(der(ns, p, 'c')).toBe(der(ns, p, 'd'));
+  });
+
+  it('`invertir` en `abajo`: los hijos quedan arriba del padre', () => {
+    const ns = [nodo('r'), nodo('a'), nodo('b')];
+    const p = disponerArbol(ns, [{ desde: 'r', hasta: 'a' }, { desde: 'r', hasta: 'b' }], { orientacion: 'abajo', invertir: true });
+    expect(arriba(p, 'a') + 60).toBeLessThan(arriba(p, 'r'));
+    // El orden entre hermanos no se espeja: solo el eje principal.
+    expect((p.get('a') as { x: number }).x).toBeLessThan((p.get('b') as { x: number }).x);
+  });
+
+  it('`invertir` conserva las distancias entre niveles y el centrado', () => {
+    const { ns, aristas } = base();
+    const normal = disponerArbol(ns, aristas, { alinear: 'inicio' });
+    const espejo = disponerArbol(ns, aristas, { alinear: 'inicio', invertir: true });
+    const cyN = (id: string): number => centro(ns.find((n) => n.id === id) as NodoDisposicion, normal).y;
+    const cyE = (id: string): number => centro(ns.find((n) => n.id === id) as NodoDisposicion, espejo).y;
+    for (const id of ['r', 'a', 'b', 'c', 'd']) expect(cyE(id)).toBeCloseTo(cyN(id), 6);
+  });
+
+  it('el orden de hermanos se pasa al motor', () => {
+    const ns = [nodo('r'), nodo('a'), nodo('b')];
+    const aristas = [{ desde: 'r', hasta: 'a' }, { desde: 'r', hasta: 'b' }];
+    const sin = disponerArbol(ns, aristas, { orientacion: 'abajo' });
+    expect((sin.get('a') as { x: number }).x).toBeLessThan((sin.get('b') as { x: number }).x);
+    const con = disponerArbol(ns, aristas, { orientacion: 'abajo', ordenHermanos: (x, y) => y.id.localeCompare(x.id) });
+    expect((con.get('b') as { x: number }).x).toBeLessThan((con.get('a') as { x: number }).x);
+  });
+
+  it('propiedad barrida: 20, 100 y 500 nodos de tamaños distintos, nunca se pisan, en las cuatro combinaciones y las dos alineaciones', () => {
+    for (const n of [20, 100, 500]) {
+      for (const semilla of [1, 2]) {
+        const { nodos, aristas } = arbolAlAzar(n, semilla * 100 + n);
+        for (const orientacion of ['derecha', 'abajo'] as const) {
+          for (const invertir of [false, true]) {
+            for (const alinear of ['centro', 'inicio'] as const) {
+              const p = disponerArbol(nodos, aristas, { orientacion, invertir, alinear });
+              expect(p.size, `${n}/${semilla}/${orientacion}/${invertir}/${alinear}`).toBe(n);
+              expect(solapes(nodos, p), `${n}/${semilla}/${orientacion}/${invertir}/${alinear}`).toEqual([]);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it('es determinista con todas las opciones', () => {
+    const { nodos, aristas } = arbolAlAzar(60, 9);
+    const o = { orientacion: 'abajo', invertir: true, alinear: 'inicio' } as const;
+    expect([...disponerArbol(nodos, aristas, o)]).toEqual([...disponerArbol(nodos, aristas, o)]);
+  });
+
+  it('500 nodos con las opciones nuevas se calculan sin diferencia con los de siempre (proporción)', () => {
+    const { nodos, aristas } = arbolAlAzar(500, 42);
+    const medir = (o: Parameters<typeof disponerArbol>[2]): number => {
+      for (let i = 0; i < 3; i++) disponerArbol(nodos, aristas, o);
+      const m: number[] = [];
+      for (let i = 0; i < 7; i++) {
+        const a = performance.now();
+        disponerArbol(nodos, aristas, o);
+        m.push(performance.now() - a);
+      }
+      return [...m].sort((x, y) => x - y)[3] as number;
+    };
+    const base0 = medir({});
+    const nuevo = medir({ alinear: 'inicio', invertir: true, ordenHermanos: (a, b) => a.x - b.x });
+    expect(nuevo).toBeLessThan(Math.max(base0, 1) * 6);
+    expect(nuevo).toBeLessThan(1000);
+  });
+});

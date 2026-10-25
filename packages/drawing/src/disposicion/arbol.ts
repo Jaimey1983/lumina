@@ -1,12 +1,19 @@
 // ─── Disposición en árbol (Y13) ───────────────────────────────────────────────
 // Puro. Cada padre queda centrado respecto de sus hijos; los niveles son columnas (o filas) y los hermanos se apilan.
 
-import { bosqueDe, type AristaDisposicion, type NodoDisposicion, type Posiciones } from './grafo.js';
+import { bosqueDe, type AristaDisposicion, type NodoDisposicion, type OpcionesBosque, type Posiciones } from './grafo.js';
 
 export type OrientacionArbol = 'derecha' | 'abajo';
 
-export interface OpcionesArbol {
+export interface OpcionesArbol extends OpcionesBosque {
   orientacion?: OrientacionArbol;
+  /**
+   * Cómo se acomoda cada caja dentro de la columna (o fila) de su nivel: `centro` (por defecto, lo de siempre) o `inicio`, que alinea el
+   * borde de entrada —el izquierdo con `derecha`, el de arriba con `abajo`— de todas las cajas del nivel (Y37a).
+   */
+  alinear?: 'centro' | 'inicio';
+  /** Espeja el eje principal: los hijos quedan antes que su padre (flujo hacia arriba o hacia la izquierda) (Y37a). */
+  invertir?: boolean;
   /** Separación entre niveles. */
   separacionNiveles?: number;
   /** Separación entre hermanos (y entre árboles). */
@@ -19,7 +26,8 @@ export function disponerArbol(nodos: readonly NodoDisposicion[], aristas: readon
   const sepNiveles = opciones.separacionNiveles ?? 80;
   const sepHermanos = opciones.separacionHermanos ?? 30;
   const porId = new Map(nodos.map((n) => [n.id, n]));
-  const { raices, hijos } = bosqueDe(nodos, aristas);
+  const alinear = opciones.alinear ?? 'centro';
+  const { raices, hijos } = bosqueDe(nodos, aristas, opciones.ordenHermanos ? { ordenHermanos: opciones.ordenHermanos } : {});
   // Eje principal: el de la profundidad; cruzado: el de los hermanos.
   const principal = (n: NodoDisposicion): number => (orientacion === 'derecha' ? n.ancho : n.alto);
   const cruzado = (n: NodoDisposicion): number => (orientacion === 'derecha' ? n.alto : n.ancho);
@@ -61,7 +69,7 @@ export function disponerArbol(nodos: readonly NodoDisposicion[], aristas: readon
     const mio = bloque.get(id) as number;
     const cruce = inicioCruzado + (mio - cruzado(n)) / 2;
     // Centrado dentro de la columna de su nivel.
-    const eje = (inicioNivel[nivel] ?? 0) + ((grosorNivel[nivel] ?? 0) - principal(n)) / 2;
+    const eje = (inicioNivel[nivel] ?? 0) + (alinear === 'centro' ? ((grosorNivel[nivel] ?? 0) - principal(n)) / 2 : 0);
     posiciones.set(id, orientacion === 'derecha' ? { x: eje, y: cruce } : { x: cruce, y: eje });
     const hs = hijos.get(id) ?? [];
     const total = hs.reduce((suma, h) => suma + (bloque.get(h) as number), 0) + Math.max(0, hs.length - 1) * sepHermanos;
@@ -75,6 +83,18 @@ export function disponerArbol(nodos: readonly NodoDisposicion[], aristas: readon
   for (const r of raices) {
     colocar(r, cursorRaices);
     cursorRaices += (bloque.get(r) as number) + sepHermanos * 2;
+  }
+  if (opciones.invertir) {
+    // Espejo del eje principal: x' = extensión − (x + ancho) (o y' con `abajo`). Los bordes alineados pasan al lado contrario.
+    let extension = 0;
+    for (const [id, p] of posiciones) {
+      const n = porId.get(id) as NodoDisposicion;
+      extension = Math.max(extension, orientacion === 'derecha' ? p.x + n.ancho : p.y + n.alto);
+    }
+    for (const [id, p] of posiciones) {
+      const n = porId.get(id) as NodoDisposicion;
+      posiciones.set(id, orientacion === 'derecha' ? { x: extension - (p.x + n.ancho), y: p.y } : { x: p.x, y: extension - (p.y + n.alto) });
+    }
   }
   return posiciones;
 }

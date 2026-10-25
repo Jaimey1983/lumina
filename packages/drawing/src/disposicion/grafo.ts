@@ -120,13 +120,25 @@ export interface Bosque {
   profundidad: Map<string, number>;
 }
 
-export function bosqueDe(nodos: readonly NodoDisposicion[], aristas: readonly AristaDisposicion[]): Bosque {
+export interface OpcionesBosque {
+  /**
+   * Orden de lectura (Y37a): ordena —de forma estable— los hijos de cada nodo y las raíces. Sin él, los hijos van en el orden de las
+   * aristas y las raíces en el de los nodos; con él, un empate se resuelve con ese mismo orden.
+   */
+  ordenHermanos?: (a: NodoDisposicion, b: NodoDisposicion) => number;
+}
+
+export function bosqueDe(nodos: readonly NodoDisposicion[], aristas: readonly AristaDisposicion[], opciones: OpcionesBosque = {}): Bosque {
   const salientes = new Map<string, string[]>();
   const entrantes = new Set<string>();
   for (const a of aristas) {
     salientes.set(a.desde, [...(salientes.get(a.desde) ?? []), a.hasta]);
     entrantes.add(a.hasta);
   }
+  const orden = opciones.ordenHermanos;
+  const porId = orden ? new Map(nodos.map((n) => [n.id, n])) : null;
+  const ordenar = (ids: string[]): string[] => (orden && porId ? [...ids].sort((a, b) => orden(porId.get(a) as NodoDisposicion, porId.get(b) as NodoDisposicion)) : ids);
+  if (orden) for (const [id, hs] of salientes) salientes.set(id, ordenar(hs));
   const visitado = new Set<string>();
   const raices: string[] = [];
   const hijos = new Map<string, string[]>();
@@ -147,7 +159,34 @@ export function bosqueDe(nodos: readonly NodoDisposicion[], aristas: readonly Ar
       }
     }
   };
-  for (const n of nodos) if (!entrantes.has(n.id) && !visitado.has(n.id)) recorrer(n.id);
+  const sinEntrada = ordenar(nodos.filter((n) => !entrantes.has(n.id)).map((n) => n.id));
+  for (const id of sinEntrada) if (!visitado.has(id)) recorrer(id);
   for (const n of nodos) if (!visitado.has(n.id)) recorrer(n.id);
   return { raices, hijos, profundidad };
+}
+
+/**
+ * `true` si el grafo es un bosque: cada nodo tiene a lo sumo un padre distinto y se llega a todos desde las raíces sin pasar por un
+ * ciclo (Y37a). Es lo que permite usar el motor de árbol sin perder aristas; un nodo con dos entradas o un ciclo no lo es.
+ */
+export function esBosque(nodos: readonly NodoDisposicion[], aristas: readonly AristaDisposicion[]): boolean {
+  const padre = new Map<string, string>();
+  const salientes = new Map<string, string[]>();
+  for (const a of aristas) {
+    const previo = padre.get(a.hasta);
+    if (previo !== undefined && previo !== a.desde) return false;
+    padre.set(a.hasta, a.desde);
+    salientes.set(a.desde, [...(salientes.get(a.desde) ?? []), a.hasta]);
+  }
+  const visitados = new Set<string>();
+  const cola = nodos.filter((n) => !padre.has(n.id)).map((n) => n.id);
+  for (const id of cola) visitados.add(id);
+  for (let i = 0; i < cola.length; i++) {
+    for (const h of salientes.get(cola[i] as string) ?? []) {
+      if (visitados.has(h)) continue;
+      visitados.add(h);
+      cola.push(h);
+    }
+  }
+  return visitados.size === nodos.length;
 }
