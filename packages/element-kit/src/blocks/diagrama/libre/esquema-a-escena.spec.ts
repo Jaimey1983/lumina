@@ -230,3 +230,55 @@ describe("regresión: el analizador viejo no se toca", () => {
     ]);
   });
 });
+
+describe("esquemaAEscena: orden de lectura, tema centrado y niveles alineados (Y37a)", () => {
+  const CELULA = "La célula\n  Membrana\n    Fosfolípidos\n    Proteínas\n  Núcleo\n    ADN\n    Nucléolo\n  Citoplasma\n    Mitocondrias\n    Ribosomas\n    Retículo endoplasmático\n  Pared celular";
+  const esq = analizarEsquema(CELULA);
+  const hijosDe = (i: number | null): number[] => esq.nodos.flatMap((n, k) => (n.padre === i ? [k] : []));
+  const cx = (f: Forma): number => f.transformacion.x + f.transformacion.ancho / 2;
+  const cy = (f: Forma): number => f.transformacion.y + f.transformacion.alto / 2;
+
+  for (const modo of ["arbol", "jerarquico"] as const) {
+    it(`${modo}: los hermanos salen en el orden del esquema`, () => {
+      const fs = formas(crear(CELULA, modo).escena);
+      const eje = modo === "arbol" ? cy : cx; // árbol fluye a la derecha (los hermanos se apilan); jerárquico, hacia abajo
+      for (let i = -1; i < esq.nodos.length; i++) {
+        const hs = hijosDe(i === -1 ? null : i);
+        for (let k = 1; k < hs.length; k++) expect(eje(fs[hs[k] as number] as Forma), `hijos de ${i}`).toBeGreaterThan(eje(fs[hs[k - 1] as number] as Forma));
+      }
+    });
+
+    it(`${modo}: cada nodo con hijos queda centrado sobre ellos`, () => {
+      const fs = formas(crear(CELULA, modo).escena);
+      const c = modo === "arbol" ? cy : cx;
+      for (let i = 0; i < esq.nodos.length; i++) {
+        const hs = hijosDe(i);
+        if (hs.length === 0) continue;
+        const primero = c(fs[hs[0] as number] as Forma);
+        const ultimo = c(fs[hs[hs.length - 1] as number] as Forma);
+        expect(c(fs[i] as Forma), `nodo ${i}`).toBeCloseTo((primero + ultimo) / 2, 0);
+      }
+    });
+
+    it(`${modo}: los nodos de un mismo nivel comparten su borde de entrada`, () => {
+      const fs = formas(crear(CELULA, modo).escena);
+      const borde = (f: Forma): number => (modo === "arbol" ? f.transformacion.x : f.transformacion.y);
+      for (let nivel = 0; nivel < esq.niveles; nivel++) {
+        const bordes = new Set(esq.nodos.flatMap((n, i) => (n.nivel === nivel ? [Math.round(borde(fs[i] as Forma) * 1000) / 1000] : [])));
+        expect(bordes.size, `nivel ${nivel}`).toBe(1);
+      }
+    });
+  }
+
+  it("el radial sigue sin pisarse y con la raíz en el centro", () => {
+    const { escena } = crear(CELULA, "radial");
+    const fs = formas(escena);
+    for (let i = 0; i < fs.length; i++) {
+      for (let j = i + 1; j < fs.length; j++) {
+        const a = (fs[i] as Forma).transformacion;
+        const b = (fs[j] as Forma).transformacion;
+        expect(a.x < b.x + b.ancho - 1e-6 && b.x < a.x + a.ancho - 1e-6 && a.y < b.y + b.alto - 1e-6 && b.y < a.y + a.alto - 1e-6, `${i}/${j}`).toBe(false);
+      }
+    }
+  });
+});

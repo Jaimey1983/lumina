@@ -8,6 +8,7 @@ import {
   componerPosiciones,
   disponerArbol,
   disponerRadial,
+  esBosque,
   extraerGrafo,
   separarSueltos,
   type AristaDisposicion,
@@ -37,6 +38,12 @@ export interface ResultadoOrganizar {
 const SEPARACION_NIVELES = 80;
 const SEPARACION_HERMANOS = 30;
 
+/**
+ * Orden de lectura (Y37a, DY63): los hermanos van como ya están sobre el eje cruzado —de izquierda a derecha si el flujo es vertical, de
+ * arriba abajo si es horizontal—, medido por el borde de entrada de cada caja. Un empate lo resuelve el orden de los conectores.
+ */
+const ordenDeLectura = (vertical: boolean) => (a: NodoDisposicion, b: NodoDisposicion): number => (vertical ? a.x - b.x : a.y - b.y);
+
 const DIRECCION_DAGRE = { abajo: "TB", derecha: "LR", arriba: "BT", izquierda: "RL" } as const;
 
 /** Dagre con el tamaño REAL de cada nodo (por defecto usaría uno solo para todos y los pisaría). */
@@ -64,13 +71,33 @@ export function organizarAuto(escena: Escena, ids: readonly string[], opciones: 
     if (opciones.modo === "radial") {
       disposicion = disponerRadial(conectados, grafo.aristas);
     } else if (opciones.modo === "arbol") {
+      const orientacion = opciones.direccion === "abajo" ? "abajo" : "derecha";
       disposicion = disponerArbol(conectados, grafo.aristas, {
-        orientacion: opciones.direccion === "abajo" ? "abajo" : "derecha",
+        orientacion,
         separacionNiveles: SEPARACION_NIVELES,
         separacionHermanos: SEPARACION_HERMANOS,
+        alinear: "inicio",
+        centrar: "hijos",
+        ordenHermanos: ordenDeLectura(orientacion === "abajo"),
       });
     } else {
-      disposicion = posicionesDagre(conectados, grafo.aristas, opciones.direccion ?? "abajo");
+      const direccion = opciones.direccion ?? "abajo";
+      // Un bosque (cada forma con un solo padre y sin ciclos) usa el motor de árbol: centrado, en orden de lectura y alineado por nivel
+      // (DY64). Un flujo con uniones o ciclos sigue con dagre, que minimiza los cruces.
+      if (esBosque(conectados, grafo.aristas)) {
+        const vertical = direccion === "abajo" || direccion === "arriba";
+        disposicion = disponerArbol(conectados, grafo.aristas, {
+          orientacion: vertical ? "abajo" : "derecha",
+          invertir: direccion === "arriba" || direccion === "izquierda",
+          separacionNiveles: SEPARACION_NIVELES,
+          separacionHermanos: SEPARACION_HERMANOS,
+          alinear: "inicio",
+          centrar: "hijos",
+          ordenHermanos: ordenDeLectura(vertical),
+        });
+      } else {
+        disposicion = posicionesDagre(conectados, grafo.aristas, direccion);
+      }
     }
   }
   // Jerárquico y árbol fluyen en una dirección y sus conectores salen por ese lado; el radial no tiene una.

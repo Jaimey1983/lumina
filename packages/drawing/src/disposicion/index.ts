@@ -3,6 +3,7 @@ export { disponerArbol, type OpcionesArbol, type OrientacionArbol } from './arbo
 export { disponerCuadricula, type OpcionesCuadricula } from './cuadricula.js';
 export {
   bosqueDe,
+  esBosque,
   extraerGrafo,
   MAX_FORMAS_DISPOSICION,
   separarSueltos,
@@ -11,6 +12,7 @@ export {
   type ErrorDisposicion,
   type Grafo,
   type NodoDisposicion,
+  type OpcionesBosque,
   type Posiciones,
 } from './grafo.js';
 export { disponerRadial, type OpcionesRadial } from './radial.js';

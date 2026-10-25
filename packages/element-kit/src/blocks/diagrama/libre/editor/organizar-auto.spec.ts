@@ -295,3 +295,163 @@ describe("formasAOrganizar", () => {
     expect(formasAOrganizar(e, ["l"])).toBe(0);
   });
 });
+
+// ─── Y37a: orden de lectura, tema centrado y niveles alineados ───────────────────────────────────────────────────────────────────────────
+
+describe("organizarAuto: árbol y jerárquico en orden de lectura (Y37a)", () => {
+  /** r con tres hijos a, b, c: conectados en ese orden pero colocados (de izquierda a derecha / de arriba abajo) como b, c, a. */
+  const fuera = (): Escena => {
+    let e = escena(forma("r", 400, 0, 100, 60), forma("a", 700, 300, 180, 60), forma("b", 100, 300, 60, 60), forma("c", 400, 300, 140, 60));
+    for (const h of ["a", "b", "c"]) e = conectarFormas(e, "r", h);
+    return e;
+  };
+  const fueraV = (): Escena => {
+    let e = escena(forma("r", 0, 400, 100, 60), forma("a", 400, 700, 180, 60), forma("b", 400, 100, 60, 60), forma("c", 400, 400, 140, 60));
+    for (const h of ["a", "b", "c"]) e = conectarFormas(e, "r", h);
+    return e;
+  };
+
+  it("los hermanos conservan el orden que ya tenían en el lienzo, no el de los conectores (flujo vertical: de izquierda a derecha)", () => {
+    for (const modo of ["jerarquico", "arbol"] as const) {
+      const r = organizarAuto(fuera(), [], { modo, direccion: "abajo" }).escena;
+      expect(cx(get(r, "b")), modo).toBeLessThan(cx(get(r, "c")));
+      expect(cx(get(r, "c")), modo).toBeLessThan(cx(get(r, "a")));
+    }
+  });
+
+  it("flujo horizontal: de arriba abajo", () => {
+    for (const modo of ["jerarquico", "arbol"] as const) {
+      const r = organizarAuto(fueraV(), [], { modo, direccion: "derecha" }).escena;
+      expect(cy(get(r, "b")), modo).toBeLessThan(cy(get(r, "c")));
+      expect(cy(get(r, "c")), modo).toBeLessThan(cy(get(r, "a")));
+    }
+  });
+
+  it("un empate se resuelve con el orden de los conectores", () => {
+    let e = escena(forma("r", 0, 0), forma("a", 300, 200, 100, 60), forma("b", 300, 200, 100, 60), forma("c", 300, 200, 100, 60));
+    for (const h of ["c", "a", "b"]) e = conectarFormas(e, "r", h);
+    const r = organizarAuto(e, [], { modo: "jerarquico", direccion: "abajo" }).escena;
+    expect(cx(get(r, "c"))).toBeLessThan(cx(get(r, "a")));
+    expect(cx(get(r, "a"))).toBeLessThan(cx(get(r, "b")));
+  });
+
+  it("arriba e izquierda no espejan el orden entre hermanos: solo el sentido del flujo", () => {
+    const arriba = organizarAuto(fuera(), [], { modo: "jerarquico", direccion: "arriba" }).escena;
+    expect(cy(get(arriba, "a"))).toBeLessThan(cy(get(arriba, "r")));
+    expect(cx(get(arriba, "b"))).toBeLessThan(cx(get(arriba, "c")));
+    expect(cx(get(arriba, "c"))).toBeLessThan(cx(get(arriba, "a")));
+    const izquierda = organizarAuto(fueraV(), [], { modo: "jerarquico", direccion: "izquierda" }).escena;
+    expect(cx(get(izquierda, "a"))).toBeLessThan(cx(get(izquierda, "r")));
+    expect(cy(get(izquierda, "b"))).toBeLessThan(cy(get(izquierda, "c")));
+    expect(cy(get(izquierda, "c"))).toBeLessThan(cy(get(izquierda, "a")));
+  });
+
+  it("el padre queda centrado sobre sus hijos en las cuatro direcciones y en árbol (± medio píxel)", () => {
+    const combos: Array<[ModoOrganizar, DireccionOrganizar]> = [["jerarquico", "abajo"], ["jerarquico", "arriba"], ["jerarquico", "derecha"], ["jerarquico", "izquierda"], ["arbol", "derecha"], ["arbol", "abajo"]];
+    for (const [modo, direccion] of combos) {
+      const r = organizarAuto(arbol7(), [], { modo, direccion }).escena;
+      const vertical = direccion === "abajo" || direccion === "arriba";
+      const c = (f: Forma): number => (vertical ? cx(f) : cy(f));
+      for (const [p, h1, h2] of [["r", "a", "b"], ["a", "c", "d"], ["b", "x", "y"]] as const) {
+        expect(c(get(r, p)), `${modo}/${direccion}: ${p}`).toBeCloseTo((c(get(r, h1)) + c(get(r, h2))) / 2, 0);
+      }
+    }
+  });
+
+  it("los niveles quedan alineados por su borde de entrada aunque las cajas midan distinto", () => {
+    let e = escena(forma("r", 0, 0, 100, 60), forma("a", 0, 0, 200, 40), forma("b", 0, 0, 90, 80), forma("c", 0, 0, 160, 50), forma("d", 0, 0, 70, 70));
+    for (const [p, h] of [["r", "a"], ["r", "b"], ["a", "c"], ["b", "d"]] as const) e = conectarFormas(e, p, h);
+    const izq = (r: Escena, id: string): number => get(r, id).transformacion.x;
+    const der = (r: Escena, id: string): number => get(r, id).transformacion.x + get(r, id).transformacion.ancho;
+    const sup = (r: Escena, id: string): number => get(r, id).transformacion.y;
+    for (const modo of ["jerarquico", "arbol"] as const) {
+      const d = organizarAuto(e, [], { modo, direccion: "derecha" }).escena;
+      expect(izq(d, "a"), `${modo} derecha nivel 1`).toBeCloseTo(izq(d, "b"), 6);
+      expect(izq(d, "c"), `${modo} derecha nivel 2`).toBeCloseTo(izq(d, "d"), 6);
+      const b = organizarAuto(e, [], { modo, direccion: "abajo" }).escena;
+      expect(sup(b, "a"), `${modo} abajo nivel 1`).toBeCloseTo(sup(b, "b"), 6);
+      expect(sup(b, "c"), `${modo} abajo nivel 2`).toBeCloseTo(sup(b, "d"), 6);
+    }
+    const i = organizarAuto(e, [], { modo: "jerarquico", direccion: "izquierda" }).escena;
+    expect(der(i, "a")).toBeCloseTo(der(i, "b"), 6);
+    expect(der(i, "c")).toBeCloseTo(der(i, "d"), 6);
+  });
+
+  /** Posiciones relativas de todas las formas respecto de la primera: no cambian con un traslado. */
+  const relativas = (e: Escena): Array<[number, number]> => {
+    const fs = formas(e);
+    const o = fs[0] as Forma;
+    return fs.map((f) => [f.transformacion.x - o.transformacion.x, f.transformacion.y - o.transformacion.y]);
+  };
+  const dagreRelativo = (e: Escena, direccion: DireccionOrganizar): Array<[number, number]> => {
+    const fs = formas(e);
+    const nodos = fs.map((f) => ({ id: f.id, x: f.transformacion.x, y: f.transformacion.y, ancho: f.transformacion.ancho, alto: f.transformacion.alto }));
+    const aristas = lineas(e).filter((l) => l.origen && l.destino).map((l) => ({ desde: l.origen!.elementoId, hasta: l.destino!.elementoId }));
+    const p = posicionesDagre(nodos, aristas, direccion);
+    const o = p.get((fs[0] as Forma).id) as { x: number; y: number };
+    return fs.map((f) => [(p.get(f.id) as { x: number }).x - o.x, (p.get(f.id) as { y: number }).y - o.y]);
+  };
+
+  it("un nodo con dos padres (una unión) sigue con dagre", () => {
+    let e = escena(forma("r", 0, 0), forma("a", 100, 200), forma("b", 300, 200), forma("d", 200, 400));
+    for (const [p, h] of [["r", "a"], ["r", "b"], ["a", "d"], ["b", "d"]] as const) e = conectarFormas(e, p, h);
+    const r = organizarAuto(e, [], { modo: "jerarquico", direccion: "abajo" }).escena;
+    const esperado = dagreRelativo(e, "abajo");
+    const real = relativas(r);
+    real.forEach(([x, y], i) => {
+      expect(x).toBeCloseTo((esperado[i] as [number, number])[0], 6);
+      expect(y).toBeCloseTo((esperado[i] as [number, number])[1], 6);
+    });
+  });
+
+  it("un ciclo sigue con dagre", () => {
+    let e = escena(forma("a", 0, 0), forma("b", 300, 0), forma("c", 600, 0));
+    for (const [p, h] of [["a", "b"], ["b", "c"], ["c", "a"]] as const) e = conectarFormas(e, p, h);
+    const r = organizarAuto(e, [], { modo: "jerarquico", direccion: "derecha" }).escena;
+    const esperado = dagreRelativo(e, "derecha");
+    relativas(r).forEach(([x, y], i) => {
+      expect(x).toBeCloseTo((esperado[i] as [number, number])[0], 6);
+      expect(y).toBeCloseTo((esperado[i] as [number, number])[1], 6);
+    });
+  });
+
+  it("el árbol con una unión usa el motor de árbol como siempre (no dagre)", () => {
+    let e = escena(forma("r", 0, 0), forma("a", 100, 200), forma("b", 300, 200), forma("d", 200, 400));
+    for (const [p, h] of [["r", "a"], ["r", "b"], ["a", "d"], ["b", "d"]] as const) e = conectarFormas(e, p, h);
+    const r = organizarAuto(e, [], { modo: "arbol", direccion: "abajo" }).escena;
+    expect(pisadas(r)).toEqual([]);
+    expect(cy(get(r, "r"))).toBeLessThan(cy(get(r, "a")));
+  });
+
+  it("organizar dos veces seguidas no cambia nada, con el orden de lectura y la alineación", () => {
+    const combos: Array<[ModoOrganizar, DireccionOrganizar]> = [["jerarquico", "abajo"], ["jerarquico", "izquierda"], ["arbol", "derecha"], ["arbol", "abajo"]];
+    for (const [modo, direccion] of combos) {
+      const una = organizarAuto(fuera(), [], { modo, direccion }).escena;
+      const dos = organizarAuto(una, [], { modo, direccion });
+      expect(dos.motivo, `${modo}/${direccion}`).toBe("sin-cambios");
+    }
+  });
+
+  it("DW9: un bosque de 500 formas por el jerárquico tarda menos de un segundo", () => {
+    const e = diagramaAlAzar(500, 5);
+    const mejor = (): number => {
+      let m = Infinity;
+      for (let i = 0; i < 3; i++) {
+        const t = performance.now();
+        organizarAuto(e, [], { modo: "jerarquico", direccion: "abajo" });
+        m = Math.min(m, performance.now() - t);
+      }
+      return m;
+    };
+    expect(mejor()).toBeLessThan(1000);
+  });
+
+  it("ninguna forma pisa a otra en el jerárquico de un bosque (barrido 20/100/500, cuatro direcciones)", () => {
+    for (const n of [20, 100, 500]) {
+      const e = diagramaAlAzar(n, n + 3);
+      for (const direccion of ["abajo", "arriba", "derecha", "izquierda"] as const) {
+        expect(pisadas(organizarAuto(e, [], { modo: "jerarquico", direccion }).escena), `${n}/${direccion}`).toEqual([]);
+      }
+    }
+  });
+});
