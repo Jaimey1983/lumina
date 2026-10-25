@@ -726,7 +726,7 @@ Redactada el 2026-10-25. **Qué busca:** plegar y desplegar una rama de un diagr
 
 ##### Y38a — Modelo, cálculo de lo plegado y dibujo con marcadores
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y25 en `main` (cumplida: `1bde031`). Y38b e Y38c la usan: va primero.
 - **Alcance — PUEDE tocar:** `@lumina/drawing`: `src/tipos.ts` (`Forma.colapsado?`), `src/normalizar.ts` (solo `normalizarForma`), `src/operaciones/colapso.ts` (nuevo, **puro**, hoja del grafo de importaciones: solo importa `tipos`) y su spec, `src/operaciones/utilidades.ts` (`ocultosEfectivos`), `src/conectores/puertos.ts` (`ocultas`), `src/render/render.ts` (`idsOcultos`, marcadores y la opción `indicadoresRama`), `src/operaciones/index.ts`, `src/render/index.ts` y los specs; `src/render/__golden__/` (archivos nuevos del golden). `@lumina/element-kit`: solo `libre/exportar.ts` si hace falta pasar la opción (por defecto no). `docs/tablero/etapa-Y.md` y `AGENTS.md` (solo la fila). **NO toca:** el editor ni sus paneles, el visor, el historial, la disposición, `normalizarEscena` más allá de la forma, ni `ESCENA_VERSION` (sigue en 1).
 - **Entregable:**
