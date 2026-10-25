@@ -651,7 +651,7 @@ Redactada el 2026-10-25, a pedido del dueño, después de recortar las fases E y
 
 #### Y37a — Árbol y jerárquico en orden de lectura, con el tema centrado y los niveles alineados
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** Y36 en `main` (cumplida: `d123831`). Independiente de Y37b, pero Y37b la usa: va primero.
 - **Hechos del código que la condicionan (comprobados el 2026-10-25 con «La célula», 12 nodos, y con pruebas en las tres disposiciones):**
   - **Jerárquico = dagre** (`posicionesDagre` en `organizar-auto.ts`, con `rankSep 80` y `nodeSep 30`). Con un árbol, dagre **invierte el orden de los hermanos** (el primero queda a la derecha; también los nietos) y **no centra el padre** sobre sus hijos (≈73 px de desvío en el ejemplo). Dagre decide el orden por minimización de cruces, no por el orden de escritura.
