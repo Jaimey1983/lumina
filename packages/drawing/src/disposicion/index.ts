@@ -16,3 +16,14 @@ export {
   type Posiciones,
 } from './grafo.js';
 export { disponerRadial, type OpcionesRadial } from './radial.js';
+export {
+  cajaDeNodos,
+  comprimir,
+  entraEnPagina,
+  hayPisadas,
+  MARGEN_PAGINA,
+  superficieDeNodos,
+  trasladarAPagina,
+  type CajaDeNodos,
+  type Pagina,
+} from './pagina.js';
