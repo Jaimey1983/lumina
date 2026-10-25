@@ -1,4 +1,4 @@
-import { TIPOS_FORMA, type TipoForma } from "@lumina/drawing";
+import { TIPOS_FORMA, TIPOS_ICONO, type TipoForma, type TipoIcono } from "@lumina/drawing";
 import type { DiagramaPaletaId } from "@lumina/types/slide";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import { ESTILOS_FORMA } from "./estilos-forma.js";
@@ -12,6 +12,40 @@ const PALABRAS_DE_FORMA: Partial<Record<TipoForma, readonly string[]>> = {
   "flecha-derecha": ["flecha"],
   "flecha-izquierda": ["flecha"],
   "flecha-doble": ["flecha"],
+};
+
+/** Palabras con las que se busca un icono además de su nombre (sin acentos; la consulta se normaliza igual). Las usan `Ctrl+K` y la galería «Iconos» (Y32b). */
+export const PALABRAS_DE_ICONO: Readonly<Record<TipoIcono, readonly string[]>> = {
+  "icono-persona": ["usuario", "alumno", "estudiante", "docente", "perfil"],
+  "icono-grupo": ["equipo", "personas", "clase"],
+  "icono-birrete": ["graduacion", "escuela", "estudio", "titulo"],
+  "icono-libro": ["lectura", "texto", "biblioteca"],
+  "icono-documento": ["archivo", "hoja", "papel"],
+  "icono-matraz": ["quimica", "laboratorio", "experimento"],
+  "icono-atomo": ["fisica", "quimica", "ciencia"],
+  "icono-microscopio": ["biologia", "laboratorio", "celula"],
+  "icono-bombilla": ["idea", "luz", "ocurrencia"],
+  "icono-cerebro": ["mente", "pensar"],
+  "icono-lupa": ["buscar", "investigar", "zoom"],
+  "icono-check": ["correcto", "bien", "listo", "ok", "si"],
+  "icono-error": ["incorrecto", "mal", "no"],
+  "icono-alerta": ["advertencia", "cuidado", "peligro", "atencion"],
+  "icono-pregunta": ["duda", "ayuda"],
+  "icono-info": ["informacion", "nota", "dato"],
+  "icono-objetivo": ["meta", "diana", "blanco"],
+  "icono-engranaje": ["configuracion", "ajustes", "proceso", "mecanismo"],
+  "icono-reloj": ["tiempo", "hora", "duracion"],
+  "icono-calendario": ["fecha", "agenda", "dia"],
+  "icono-candado": ["seguridad", "bloqueado", "privado"],
+  "icono-ordenador": ["computadora", "pantalla", "tecnologia"],
+  "icono-casa": ["hogar", "inicio", "vivienda"],
+  "icono-mundo": ["planeta", "tierra", "geografia"],
+  "icono-sol": ["dia", "energia", "clima"],
+  "icono-luna": ["noche", "satelite"],
+  "icono-gota": ["agua", "lluvia", "liquido"],
+  "icono-hoja": ["planta", "naturaleza", "vegetal"],
+  "icono-corazon": ["amor", "salud", "vida"],
+  "icono-cohete": ["lanzamiento", "espacio", "proyecto"],
 };
 
 /** Palabras alternativas por comando (minúsculas, sin acentos en el mapa; la consulta se normaliza igual). */
@@ -60,6 +94,7 @@ export const SINONIMOS_POR_COMANDO: Readonly<Record<string, readonly string[]>> 
   "forma-flecha-doble": ["flecha"],
   "forma-rectangulo": ["caja", "cuadro"],
   "forma-rectangulo-redondeado": ["caja", "cuadro"],
+  ...Object.fromEntries(TIPOS_ICONO.map((t) => [`forma-${t}`, ["icono", "simbolo", ...PALABRAS_DE_ICONO[t]]] as const)),
   ...Object.fromEntries(TIPOS_FORMA.map((t) => [`cambiar-forma-${t}`, ["transformar", "convertir", ...(PALABRAS_DE_FORMA[t] ?? [])]] as const)),
   ...Object.fromEntries(ESTILOS_FORMA.map((e) => [`estilo-${e.id}`, ["estilo", "aspecto", "formato", "color"]] as const)),
   ...Object.fromEntries((Object.keys(PALETAS_DIAGRAMA) as DiagramaPaletaId[]).map((p) => [`tema-${p}`, ["tema", "paleta", "colores", "colorear"]] as const)),

@@ -84,7 +84,9 @@ export function conMinimo(caja: Caja, minimo = TAMANO_MINIMO): Caja {
 }
 
 export function entradaForma(forma: TipoForma, caja: Caja): EntradaElemento {
-  return { tipo: "forma", forma, transformacion: { x: caja.x, y: caja.y, ancho: caja.ancho, alto: caja.alto, rotacion: 0 } };
+  // Un icono nace sin relleno (Y32): el estilo inicial es del catálogo y el normalizador completa el resto. Las demás formas, como siempre.
+  const estiloInicial = FORMAS[forma].estiloInicial;
+  return { tipo: "forma", forma, transformacion: { x: caja.x, y: caja.y, ancho: caja.ancho, alto: caja.alto, rotacion: 0 }, ...(estiloInicial ? { estilo: estiloInicial } : {}) };
 }
 
 export function entradaTexto(caja: Caja, texto: string): EntradaElemento {
