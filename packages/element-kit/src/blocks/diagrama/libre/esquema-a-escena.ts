@@ -2,7 +2,7 @@
 // Puro: sin React ni DOM. Analiza un esquema (`analizarEsquema`: sangría, encabezados y numeración, ver `esquema-niveles.ts`) y lo
 // vuelve formas y conectores de la escena (`esquemaAEscena`). El analizador del bloque `diagrama` anterior no se usa ni se toca.
 
-import { agregar, cajaDeElemento, mover, sincronizarConectores, conectarFormas, type Escena, type Forma, type Punto } from "@lumina/drawing";
+import { agregar, cajaDeElemento, MARGEN_PAGINA, mover, sincronizarConectores, conectarFormas, type Escena, type Forma, type Punto } from "@lumina/drawing";
 import { PALETAS_DIAGRAMA } from "../diagrama-temas.js";
 import { nivelesDeLineas } from "./esquema-niveles.js";
 import { organizarAuto, type ModoOrganizar } from "./editor/organizar-auto.js";
@@ -144,6 +144,8 @@ export interface ResultadoEsquemaAEscena {
   escena: Escena;
   /** Lo creado, para dejarlo elegido: las formas y sus conectores. */
   ids: string[];
+  /** Lo creado es más grande que la página y parte queda fuera (Y37b). */
+  fueraDePagina?: boolean;
 }
 
 /**
@@ -168,25 +170,38 @@ export function esquemaAEscena(escena: Escena, esquema: Esquema, opciones: Opcio
     if (nodo.padre !== null) actual = conectarFormas(actual, formas[nodo.padre] as string, formas[i] as string);
   });
 
-  const r = organizarAuto(actual, formas, { modo: opciones.modo, direccion: opciones.modo === "jerarquico" ? "abajo" : "derecha" });
-  if (r.motivo === undefined) actual = r.escena;
-
-  // Centrado: la caja de todas las formas nuevas va al centro pedido.
-  let x0 = Infinity;
-  let y0 = Infinity;
-  let x1 = -Infinity;
-  let y1 = -Infinity;
-  for (const e of actual.elementos) {
-    if (e.tipo !== "forma" || !formas.includes(e.id)) continue;
-    const c = cajaDeElemento(actual, e as Forma);
-    if (!c) continue;
-    x0 = Math.min(x0, c.x);
-    y0 = Math.min(y0, c.y);
-    x1 = Math.max(x1, c.x + c.ancho);
-    y1 = Math.max(y1, c.y + c.alto);
+  // Se dispone y se centra en `centro` dentro de la página (Y37b): `organizarAuto` lo traslada lo justo, compacta si no cabe y avisa si ni así.
+  const r = organizarAuto(actual, formas, { modo: opciones.modo, direccion: opciones.modo === "jerarquico" ? "abajo" : "derecha", centro: opciones.centro });
+  if (r.motivo === undefined) {
+    actual = sincronizarConectores(r.escena);
+  } else {
+    // Una sola forma (o ya estaba así): no hay disposición que calcular; solo se centra, dentro de la página si cabe.
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    for (const e of actual.elementos) {
+      if (e.tipo !== "forma" || !formas.includes(e.id)) continue;
+      const c = cajaDeElemento(actual, e as Forma);
+      if (!c) continue;
+      x0 = Math.min(x0, c.x);
+      y0 = Math.min(y0, c.y);
+      x1 = Math.max(x1, c.x + c.ancho);
+      y1 = Math.max(y1, c.y + c.alto);
+    }
+    if (Number.isFinite(x0)) {
+      // Centrada en `centro`; si no entra con margen en la página, se corre lo justo (si es más grande que la página, queda centrada).
+      const dentro = (inicio: number, fin: number, total: number): number => {
+        const largo = fin - inicio;
+        if (largo > total - 2 * MARGEN_PAGINA) return 0;
+        return Math.min(Math.max(inicio, MARGEN_PAGINA), total - MARGEN_PAGINA - largo) - inicio;
+      };
+      const dx = opciones.centro.x - (x0 + x1) / 2;
+      const dy = opciones.centro.y - (y0 + y1) / 2;
+      actual = sincronizarConectores(mover(actual, formas, dx + dentro(x0 + dx, x1 + dx, actual.ancho), dy + dentro(y0 + dy, y1 + dy, actual.alto)));
+    }
   }
-  if (Number.isFinite(x0)) actual = sincronizarConectores(mover(actual, formas, opciones.centro.x - (x0 + x1) / 2, opciones.centro.y - (y0 + y1) / 2));
 
   const lineas = actual.elementos.filter((e) => e.tipo === "linea" && !antes.has(e.id)).map((e) => e.id);
-  return { escena: actual, ids: [...formas, ...lineas] };
+  return { escena: actual, ids: [...formas, ...lineas], ...(r.aviso ? { fueraDePagina: true } : {}) };
 }

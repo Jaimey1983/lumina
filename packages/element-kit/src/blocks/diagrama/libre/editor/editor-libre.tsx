@@ -68,6 +68,9 @@ import { ambitoDeTema, aplicarTema } from "./temas-escena.js";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import { CapaFantasmaForma } from "./fantasma-forma.js";
 import { NOMBRE_MODO, organizarAuto, type ModoOrganizar } from "./organizar-auto.js";
+
+/** Lo organizado o creado no cabe en la página aunque se compacte (Y37b): se hace igual y se avisa. */
+const AVISO_FUERA_DE_PAGINA = "Es más grande que la página: parte queda fuera.";
 import { escribirEnPortapapeles, leerDePortapapeles, prepararCopia, type Copia, type EscribirDatos, type Lectura } from "./portapapeles.js";
 import { PanelAtajos } from "./panel-atajos.js";
 import { DialogoEsquema } from "./dialogo-esquema.js";
@@ -1591,6 +1594,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     if (r.ids.length === 0) return;
     confirmar(actual, { escena: r.escena, seleccion: r.ids });
     const avisos = [
+      r.fueraDePagina ? AVISO_FUERA_DE_PAGINA : "",
       esquema.sobrantes > 0 ? `Solo se crearon los primeros ${esquema.nodos.length} nodos; sobraron ${esquema.sobrantes}.` : "",
       esquema.recortadas > 0 ? `${esquema.recortadas} ${esquema.recortadas === 1 ? "línea se recortó" : "líneas se recortaron"}.` : "",
     ].filter(Boolean);
@@ -1654,7 +1658,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         else if (r.motivo === "sin-cambios") setAnuncio("Ya estaba organizado así.");
         else {
           confirmar(actual, { escena: r.escena, seleccion: sel });
-          setAnuncio(`Diagrama organizado de forma ${NOMBRE_MODO[orden.modo]}.`);
+          setAnuncio(`Diagrama organizado de forma ${NOMBRE_MODO[orden.modo]}.${r.aviso ? ` ${AVISO_FUERA_DE_PAGINA}` : ""}`);
         }
         svgRef.current?.focus();
         return;

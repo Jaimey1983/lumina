@@ -211,3 +211,34 @@ describe("Y36 — sin jerarquía: aviso y «primera línea como tema»", () => {
     expect(casilla()?.checked).toBe(false);
   });
 });
+
+describe("Y37b — el anuncio del esquema cuando no cabe", () => {
+  const anuncio = (): string => document.querySelector("[data-dibujo-anuncio]")?.textContent ?? "";
+  const CELULA = "La célula\n  Membrana\n    Fosfolípidos\n    Proteínas\n  Núcleo\n    ADN\n    Nucléolo\n  Citoplasma\n    Mitocondrias\n    Ribosomas\n    Retículo endoplasmático\n  Pared celular";
+
+  it("un esquema que cabe: «Esquema creado: 12 nodos.» sin aviso", () => {
+    montar();
+    abrir();
+    escribir(CELULA);
+    fireEvent.click(crear());
+    expect(anuncio()).toBe("Esquema creado: 12 nodos.");
+  });
+
+  it("un esquema que no cabe en árbol: se crea igual y el anuncio lo dice", () => {
+    const { ultima } = montar();
+    abrir();
+    escribir(["Tema", ...Array.from({ length: 5 }, (_v, r) => [`  Rama ${r}`, ...Array.from({ length: 4 }, (_w, h) => `    Hoja ${r}.${h}`)].join("\n"))].join("\n"));
+    fireEvent.click(crear());
+    expect(formas(ultima())).toHaveLength(26);
+    expect(anuncio()).toBe("Esquema creado: 26 nodos. Es más grande que la página: parte queda fuera.");
+  });
+
+  it("el mismo esquema en radial se encaja y no avisa", () => {
+    montar();
+    abrir();
+    escribir(["Tema", ...Array.from({ length: 5 }, (_v, r) => [`  Rama ${r}`, ...Array.from({ length: 3 }, (_w, h) => `    Hoja ${r}.${h}`)].join("\n"))].join("\n"));
+    fireEvent.click(screen.getByRole("radio", { name: "Radial" }));
+    fireEvent.click(crear());
+    expect(anuncio()).toBe("Esquema creado: 21 nodos.");
+  });
+});
