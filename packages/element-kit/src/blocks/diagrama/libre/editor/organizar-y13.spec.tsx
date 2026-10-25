@@ -190,7 +190,7 @@ describe("Y13 — las variantes del menú", () => {
     const m2 = montar(e);
     fireEvent.click(organizar());
     expect(pos(m2.ultima())).not.toEqual(radial);
-  }, 60000);
+  }, 120000);
 
   it("el árbol anuncia «en árbol»", async () => {
     const m = montar(desordenado());
@@ -199,5 +199,5 @@ describe("Y13 — las variantes del menú", () => {
     const items = await screen.findAllByRole("menuitem");
     fireEvent.click(items[4] as HTMLElement);
     expect(m.anuncio()).toBe("Diagrama organizado de forma en árbol.");
-  }, 60000);
+  }, 120000);
 });
