@@ -624,7 +624,7 @@ Redactada el 2026-10-25, a pedido del dueño, después de recortar las fases E y
 
 #### Y36 — Esquema con jerarquía clara
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** `main` con la fase D (cumplida). Independiente de Y37.
 - **Hechos del código que la condicionan (comprobados, no supuestos):**
   - **El analizador es puro y tiene su suite.** `analizarEsquema(texto)` (`esquema-a-escena.ts`) usa `parseOutlineLines` (`diagrama-outline-parser.ts`, del bloque `diagrama` anterior, que **no se toca**) solo para la sangría, luego quita viñetas (`+`) y numeración (`NUMERACION = /^\d+(?:\.\d+)*[.)]\s+/`: exige un `.` o `)` **final**), y arma el árbol con una **pila por sangría** (un nivel que salta cuelga del anterior). `esquema-a-escena.spec.ts` (≈30 pruebas) fija ese comportamiento, incluyendo «un número que es parte del texto se conserva» (`3.14 es pi`, `2024 fue bisiesto`, `100% listo`) y «el analizador viejo no se toca».
