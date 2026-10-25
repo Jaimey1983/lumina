@@ -83,7 +83,7 @@ import { MedidasCapa, type MedidaEnVivo } from "./medidas-capa.js";
 import { MenuContextual } from "./menu-contextual.js";
 import { agregarGuia, guiaCerca, guiasParaImantar, MAX_GUIAS, moverGuia, quitarGuia, type GuiaUsuario, type OrientacionGuia } from "./reglas.js";
 import { esquemaAEscena, type Esquema } from "../esquema-a-escena.js";
-import { depurarSeleccion, ejecutarComando, ordenDeTecla, seleccionPorCriterio, padreConectorDe, type Comando, type CriterioSeleccion, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
+import { depurarSeleccion, desplegarTodo, ejecutarComando, ordenDeTecla, plegarElegidas, seleccionPorCriterio, padreConectorDe, type Comando, type CriterioSeleccion, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, contextoDeMenu, type ContextoComando, type ContextoMenu } from "./comandos-registro.js";
 import {
   SELECCIONAR,
@@ -1076,6 +1076,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       capturar(e);
       return;
     }
+    // Un clic en el marcador de una rama la pliega o la despliega (Y38b): nada más (ni arrastre ni recuadro). Lo que se dibuja encima,
+    // como las asas, recibe el evento antes y gana.
+    const marcador = (e.target as Element).closest?.("[data-colapsar-id]");
+    if (marcador) {
+      e.preventDefault();
+      const id = marcador.getAttribute("data-colapsar-id") ?? "";
+      const r = plegarElegidas(actual, [id]);
+      if (r.escena !== actual) confirmar(actual, { escena: r.escena, seleccion: [id] });
+      else setSeleccion([id]);
+      if (r.anuncio) setAnuncio(r.anuncio);
+      return;
+    }
     const p = pantallaAEscena(v, pantalla);
     // Una guía se agarra en el lienzo solo si no hay ningún elemento debajo: los elementos mandan (el hit-test no cambia).
     const guiaBajo = guiaCerca(vivo.current.guias, p, 5 / v.zoom);
@@ -1504,6 +1516,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
 
   const alDobleClic = (e: RatonReact<SVGSVGElement>): void => {
     if (pincelRef.current) return; // con el pincel, el doble clic no abre el texto
+    if (vivo.current.herramienta.tipo === "seleccionar" && (e.target as Element).closest?.("[data-colapsar-id]")) return; // el marcador de una rama no abre el texto (Y38b)
     const { herramienta: h, enCurso: curso, escena: actual, vista: v } = vivo.current;
     // Doble clic sobre una guía (sin elementos debajo): se quita.
     const guiaDoble = guiaCerca(vivo.current.guias, pantallaAEscena(v, aPantalla(e)), 5 / v.zoom);
@@ -1663,6 +1676,16 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         setVista(ajustarAVentana(nueva, medir()));
         const fuera = fueraDePagina(nueva).length;
         setAnuncio(`Página girada: ${nueva.ancho} × ${nueva.alto}.${fuera > 0 ? ` ${textoFuera(fuera)}.` : ""}`);
+        return;
+      }
+      case "plegar-rama":
+      case "desplegar-todo": {
+        // Plegar o desplegar ramas (Y38b): una entrada de historial; el anuncio dice cuánto se oculta.
+        finVistaPanel();
+        const { escena: actual, seleccion: sel } = vivo.current;
+        const r = orden.tipo === "plegar-rama" ? plegarElegidas(actual, sel) : desplegarTodo(actual, sel);
+        if (r.escena !== actual) confirmar(actual, { escena: r.escena, seleccion: r.seleccion });
+        if (r.anuncio) setAnuncio(r.anuncio);
         return;
       }
       case "cuadricula":
@@ -1999,7 +2022,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         >
           <g transform={`translate(${vista.x} ${vista.y}) scale(${vista.zoom})`}>
             <rect width={escena.ancho} height={escena.alto} fill="var(--background, #fff)" stroke="var(--border, #e2e8f0)" strokeWidth={1 / vista.zoom} data-dibujo-pagina="" />
-            <NodosSvg escena={escena} />
+            <NodosSvg escena={escena} indicadoresRama="todos" />
           </g>
           {cuadricula ? (
             <g data-capa="cuadricula" pointerEvents="none" opacity={0.35}>
@@ -2084,7 +2107,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       </div>
       </div>
       <ZonaRedimensionable etiqueta="Propiedades" clave="dibujo-panel">
-        {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} crecerAlEscribir={crecer} onCrecerAlEscribir={() => ejecutarOrden({ tipo: "crecer-al-escribir" })} onAjustarAlTexto={() => ejecutarOrden({ tipo: "ajustar-al-texto" })} onPagina={aplicarPagina} />}
+        {(plegar) => <PanelPropiedades escena={escena} seleccion={seleccion} onAplicar={aplicarDelPanel} onVista={vistaDelPanel} onFinVista={finVistaPanel} onSeleccionar={seleccionarDesdeCapas} onPlegar={plegar} crecerAlEscribir={crecer} onCrecerAlEscribir={() => ejecutarOrden({ tipo: "crecer-al-escribir" })} onAjustarAlTexto={() => ejecutarOrden({ tipo: "ajustar-al-texto" })} onPagina={aplicarPagina} onRama={{ plegar: () => ejecutarOrden({ tipo: "plegar-rama" }), desplegarTodo: () => ejecutarOrden({ tipo: "desplegar-todo" }) }} />}
       </ZonaRedimensionable>
       </div>
 

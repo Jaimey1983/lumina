@@ -18,13 +18,13 @@ const TOLERANCIA_FILA = 30;
 /**
  * Los elementos visibles de la escena en orden de lectura: por filas de arriba abajo y, dentro de cada fila, de izquierda a
  * derecha. La fila se decide por el centro vertical (una forma más alta que su vecina sigue en la misma fila).
- * Los grupos no se listan (no se ven) y lo oculto tampoco.
+ * Los grupos no se listan (no se ven) y lo oculto tampoco, ni a mano ni por una rama plegada (Y38b).
  */
 export function elementosAccesibles(escena: Escena): ElementoAccesible[] {
   const capas = new Map(capasDe(escena).map((c) => [c.id, c]));
   const lista = escena.elementos.flatMap((e) => {
     const capa = capas.get(e.id);
-    if (e.tipo === "grupo" || !capa || capa.oculto) return [];
+    if (e.tipo === "grupo" || !capa || capa.oculto || capa.plegado) return [];
     const descripcion = e.descripcion?.trim();
     const caja = cajaDeElemento(escena, e);
     return [{ id: e.id, etiqueta: descripcion || capa.nombre, conDescripcion: Boolean(descripcion), centro: (caja?.y ?? 0) + (caja?.alto ?? 0) / 2, x: caja?.x ?? 0 }];

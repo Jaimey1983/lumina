@@ -13,16 +13,19 @@ import {
   eliminar,
   eliminarRama,
   filtrarFormasParaCadena,
+  fijarColapso,
   invertirSeleccion,
   LADO_HIJO_TECLADO,
   mover,
   ocultar as ocultarElementos,
+  ocultosPorColapso,
   ordenEspacialParaCadena,
   ordenParaCadena,
   reordenar,
   seleccionarIguales,
   seleccionarPorTipo,
   seleccionarRama,
+  tieneHijos,
   type Escena,
   type ModoAlineacion,
   type ModoOrden,
@@ -144,7 +147,10 @@ export type Orden =
   | { tipo: "cambiar-forma"; forma: TipoForma }
   /** Un estilo predefinido de forma (Y21) y un tema de paleta para el diagrama (Y21): los dos cambian solo el aspecto. */
   | { tipo: "aplicar-estilo"; estilo: string }
-  | { tipo: "aplicar-tema"; paleta: DiagramaPaletaId };
+  | { tipo: "aplicar-tema"; paleta: DiagramaPaletaId }
+  /** Plegar o desplegar la rama de lo elegido, o desplegarlas todas (Y38b). */
+  | { tipo: "plegar-rama" }
+  | { tipo: "desplegar-todo" };
 
 /** Elementos de primer nivel que se pueden elegir (ni ocultos ni bloqueados), en orden de apilado. */
 export function elegibles(escena: Escena): string[] {
@@ -159,7 +165,48 @@ export function elegibles(escena: Escena): string[] {
     if (e?.tipo === "grupo") e.hijos.forEach(ocultar);
   };
   for (const e of escena.elementos) if (e.oculto) ocultar(e.id);
+  // Lo que queda oculto por una rama plegada (Y38b) tampoco se elige: Tab y «Seleccionar todo» no pasan por lo que no se ve.
+  for (const id of ocultosPorColapso(escena)) ocultar(id);
   return escena.elementos.filter((e) => !hijos.has(e.id) && !bloqueados.has(e.id) && !ocultos.has(e.id)).map((e) => e.id);
+}
+
+const plural = (n: number, uno: string, varios: string): string => `${n} ${n === 1 ? uno : varios}`;
+
+/** Lo que dice el editor tras plegar o desplegar: la escena nueva, la selección depurada y el anuncio (Y38b). */
+export interface ResultadoPlegado {
+  escena: Escena;
+  seleccion: string[];
+  anuncio: string;
+}
+
+/**
+ * Pliega o despliega la rama de las formas elegidas (DY80). Actúa solo sobre las formas **con hijos**; si alguna está desplegada se
+ * pliegan todas las desplegadas (con mezcla, pliega) y si todas están plegadas se despliegan todas. Las formas sobre las que se actuó
+ * siguen elegidas; cualquier otra elegida que queda oculta por el plegado sale de la selección. Misma escena si no hay nada que hacer.
+ */
+export function plegarElegidas(escena: Escena, seleccion: readonly string[]): ResultadoPlegado {
+  const ramas = escena.elementos.filter((e) => e.tipo === "forma" && seleccion.includes(e.id) && tieneHijos(escena, e.id));
+  if (ramas.length === 0) return { escena, seleccion: [...seleccion], anuncio: "Elige una forma con ramas para plegarla." };
+  const ids = ramas.map((e) => e.id);
+  const plegar = ramas.some((e) => e.tipo === "forma" && e.colapsado !== true);
+  const nueva = fijarColapso(escena, ids, plegar);
+  if (nueva === escena) return { escena, seleccion: [...seleccion], anuncio: "" };
+  const ocultos = ocultosPorColapso(nueva);
+  const quedan = seleccion.filter((id) => ids.includes(id) || !ocultos.has(id));
+  if (!plegar) return { escena: nueva, seleccion: quedan, anuncio: ids.length === 1 ? "Rama desplegada." : `${ids.length} ramas desplegadas.` };
+  // Cuántas formas dejan de verse con este plegado (sin contar dos veces lo que cuelga de dos ramas elegidas).
+  const antes = ocultosPorColapso(escena);
+  const esForma = new Set(escena.elementos.filter((e) => e.tipo === "forma").map((e) => e.id));
+  const n = [...ocultos].filter((id) => esForma.has(id) && !antes.has(id)).length;
+  const detalle = n === 0 ? "no oculta ningún elemento" : `${plural(n, "elemento oculto", "elementos ocultos")}`;
+  return { escena: nueva, seleccion: quedan, anuncio: ids.length === 1 ? `Rama plegada: ${detalle}.` : `${ids.length} ramas plegadas: ${detalle}.` };
+}
+
+/** Quita el plegado de todas las formas: la salida cuando una rama plegada quedó escondida tras otra (Y38b). */
+export function desplegarTodo(escena: Escena, seleccion: readonly string[]): ResultadoPlegado {
+  const plegadas = escena.elementos.filter((e) => e.tipo === "forma" && e.colapsado === true).map((e) => e.id);
+  if (plegadas.length === 0) return { escena, seleccion: [...seleccion], anuncio: "No hay ramas plegadas." };
+  return { escena: fijarColapso(escena, plegadas, false), seleccion: [...seleccion], anuncio: "Todas las ramas desplegadas." };
 }
 
 /** Deja en la selección solo los ids que todavía existen. */

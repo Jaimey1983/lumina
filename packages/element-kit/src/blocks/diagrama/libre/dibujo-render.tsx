@@ -1,7 +1,7 @@
 "use client";
 
 import { createElement, useId, useMemo, type CSSProperties, type ReactElement, type ReactNode } from "react";
-import { escenaANodos, type Escena, type ModoColor, type NodoSvg } from "@lumina/drawing";
+import { escenaANodos, type Escena, type ModoColor, type NodoSvg, type OpcionesRender } from "@lumina/drawing";
 
 /** `stroke-width` → `strokeWidth`; los `data-*` y `aria-*` se dejan como están. */
 function nombreProp(nombre: string): string {
@@ -29,15 +29,20 @@ function aElemento(nodo: NodoSvg, clave: string): ReactNode {
 export interface NodosSvgProps {
   escena: Escena;
   modo?: ModoColor;
+  /** Qué marcadores de rama se dibujan (Y38b). Sin esto, los de las ramas plegadas (como siempre). */
+  indicadoresRama?: OpcionesRender["indicadoresRama"];
 }
 
 /**
  * Los elementos de la escena como contenido de un `<svg>` ya existente (sin el `<svg>` en sí):
  * lo usa el editor, que pone su propio zoom y capas encima. Mismo árbol que `DibujoSvg`.
  */
-export function NodosSvg({ escena, modo = "css" }: NodosSvgProps): ReactElement {
+export function NodosSvg({ escena, modo = "css", indicadoresRama }: NodosSvgProps): ReactElement {
   const prefijo = useId().replace(/[^A-Za-z0-9_-]/g, "");
-  const { nodos } = useMemo(() => escenaANodos(escena, { modo, prefijoIds: `dibujo${prefijo}` }), [escena, modo, prefijo]);
+  const { nodos } = useMemo(
+    () => escenaANodos(escena, { modo, prefijoIds: `dibujo${prefijo}`, ...(indicadoresRama ? { indicadoresRama } : {}) }),
+    [escena, modo, prefijo, indicadoresRama],
+  );
   return <>{nodos.map((n, i) => aElemento(n, String(i)))}</>;
 }
 

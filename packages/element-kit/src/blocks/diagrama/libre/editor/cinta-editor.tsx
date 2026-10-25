@@ -74,6 +74,8 @@ const BASE_PESTANA_POR_COMANDO: Record<string, string> = {
   "crear-hijo": "Inicio",
   "crear-hermano": "Inicio",
   "eliminar-rama": "Inicio",
+  "plegar-rama": "Inicio",
+  "desplegar-todo": "Vista",
   ...Object.fromEntries(ELEGIR.map((c) => [c.id, "Inicio"])),
   ...Object.fromEntries(CAMBIAR_FORMA.map((c) => [c.id, "Formato de forma"])),
   ...Object.fromEntries(ESTILOS_COMANDOS.map((c) => [c.id, "Formato de forma"])),
@@ -467,6 +469,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
             {boton("crear-hijo", "medium")}
             {boton("crear-hermano", "medium")}
             {boton("eliminar-rama", "medium")}
+            {boton("plegar-rama", "medium")}
           </RibbonGroup>
         </>
       ),
@@ -549,6 +552,7 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
             {boton("atajos", "medium")}
           </RibbonGroup>
           <RibbonGroup label="Página">{boton("girar-pagina", "large")}</RibbonGroup>
+          <RibbonGroup label="Ramas">{boton("desplegar-todo", "large")}</RibbonGroup>
         </>
       ),
     },
