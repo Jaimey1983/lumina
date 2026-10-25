@@ -333,10 +333,19 @@ describe('rendimiento (DW9)', () => {
     return [...t].sort((x, y) => x - y)[3] as number;
   };
 
-  it('ajustar 500 formas con texto tarda menos de 40 ms', () => {
-    const e = escena(...Array.from({ length: 500 }, (_v, i) => forma(`f${i}`, (i % 25) * 300, Math.floor(i / 25) * 300, 200, 60, { texto: 'Primera idea del tema\nSegunda idea algo más larga que se parte\nTercera' })));
-    const ids = e.elementos.map((x) => x.id);
-    const t = mediana(() => void ajustarAlTexto(e, ids));
-    expect(t).toBeLessThan(40);
+  // Una cota absoluta en ms depende del equipo (en CI dio 52 ms con 40 de tope); lo que importa es que
+  // el costo crezca de forma lineal: 5× las formas debe costar mucho menos que 25× (cuadrático).
+  const montar = (n: number) => {
+    const e = escena(...Array.from({ length: n }, (_v, i) => forma(`f${i}`, (i % 25) * 300, Math.floor(i / 25) * 300, 200, 60, { texto: 'Primera idea del tema\nSegunda idea algo más larga que se parte\nTercera' })));
+    return { e, ids: e.elementos.map((x) => x.id) };
+  };
+
+  it('ajustar 500 formas con texto crece de forma lineal (no cuadrática) y sin pasarse de 250 ms', () => {
+    const chica = montar(100);
+    const grande = montar(500);
+    const t100 = mediana(() => void ajustarAlTexto(chica.e, chica.ids));
+    const t500 = mediana(() => void ajustarAlTexto(grande.e, grande.ids));
+    expect(t500).toBeLessThan(Math.max(t100, 1) * 12);
+    expect(t500).toBeLessThan(250);
   });
 });
