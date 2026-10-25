@@ -1,0 +1,2162 @@
+[
+ {
+  "entrada": "",
+  "esquema": {
+   "nodos": [],
+   "raices": 0,
+   "niveles": 0,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "   \n\n  ",
+  "esquema": {
+   "nodos": [],
+   "raices": 0,
+   "niveles": 0,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Tema",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Tema",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    }
+   ],
+   "raices": 1,
+   "niveles": 1,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Tema\n  Idea 1\n    Detalle\n  Idea 2",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Tema",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Idea 1",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Detalle",
+     "padre": 1,
+     "nivel": 2,
+     "rama": 0
+    },
+    {
+     "texto": "Idea 2",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Tema\n\tIdea 1\n\t\tDetalle\n\tIdea 2",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Tema",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Idea 1",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Detalle",
+     "padre": 1,
+     "nivel": 2,
+     "rama": 0
+    },
+    {
+     "texto": "Idea 2",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Tema\n    Idea 1\n        Detalle\n    Idea 2",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Tema",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Idea 1",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Detalle",
+     "padre": 1,
+     "nivel": 2,
+     "rama": 0
+    },
+    {
+     "texto": "Idea 2",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "- A\n  - B\n  * C\n  + D",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "C",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    },
+    {
+     "texto": "D",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 2
+    }
+   ],
+   "raices": 1,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "• A\n  • B",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    }
+   ],
+   "raices": 1,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "1. Uno\n  2) Dos\n    1.1. Tres",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Uno",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Dos",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Tres",
+     "padre": 1,
+     "nivel": 2,
+     "rama": 0
+    }
+   ],
+   "raices": 1,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "3.14 es pi\n  2024 fue bisiesto\n  100% listo",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "3.14 es pi",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "2024 fue bisiesto",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "100% listo",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "- Raíz\n  1. Rama\n    - Hoja\n  2) Otra",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Raíz",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Rama",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Hoja",
+     "padre": 1,
+     "nivel": 2,
+     "rama": 0
+    },
+    {
+     "texto": "Otra",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "A\n\tB\n  C\n\t\tD",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "C",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    },
+    {
+     "texto": "D",
+     "padre": 2,
+     "nivel": 2,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "A\n\n   \nB\n  C",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "C",
+     "padre": 1,
+     "nivel": 1,
+     "rama": 0
+    }
+   ],
+   "raices": 2,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "A\n      B\n  C\n        D",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "C",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    },
+    {
+     "texto": "D",
+     "padre": 2,
+     "nivel": 2,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "  A\n    B\n  C",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "C",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    }
+   ],
+   "raices": 2,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "A\nB\nC",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "C",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    }
+   ],
+   "raices": 3,
+   "niveles": 1,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "1. A\n2. B\n3. C",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "C",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    }
+   ],
+   "raices": 3,
+   "niveles": 1,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "- A\n- B\n- C",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "C",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    }
+   ],
+   "raices": 3,
+   "niveles": 1,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Tema\n  1. Uno\n  2. Dos\n    a) letra",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Tema",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Uno",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Dos",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    },
+    {
+     "texto": "a) letra",
+     "padre": 2,
+     "nivel": 2,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Tema\n  1.5 litros de agua\n  2.0 es doble",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Tema",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "1.5 litros de agua",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "2.0 es doble",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "#hashtag\n  #otro",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "#hashtag",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "#otro",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    }
+   ],
+   "raices": 1,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Raíz uno\n  Hijo\nRaíz dos\n  Hijo dos\n    Nieto",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Raíz uno",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Hijo",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Raíz dos",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Hijo dos",
+     "padre": 2,
+     "nivel": 1,
+     "rama": 1
+    },
+    {
+     "texto": "Nieto",
+     "padre": 3,
+     "nivel": 2,
+     "rama": 1
+    }
+   ],
+   "raices": 2,
+   "niveles": 3,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "A\n  B\n    C\n      D\n  E\nF",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "A",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "B",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "C",
+     "padre": 1,
+     "nivel": 2,
+     "rama": 0
+    },
+    {
+     "texto": "D",
+     "padre": 2,
+     "nivel": 3,
+     "rama": 0
+    },
+    {
+     "texto": "E",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    },
+    {
+     "texto": "F",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    }
+   ],
+   "raices": 2,
+   "niveles": 4,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Tema\n  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Tema",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    }
+   ],
+   "raices": 1,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 1
+  }
+ },
+ {
+  "entrada": "Nodo 0\nNodo 1\nNodo 2\nNodo 3\nNodo 4\nNodo 5\nNodo 6\nNodo 7\nNodo 8\nNodo 9\nNodo 10\nNodo 11\nNodo 12\nNodo 13\nNodo 14\nNodo 15\nNodo 16\nNodo 17\nNodo 18\nNodo 19\nNodo 20\nNodo 21\nNodo 22\nNodo 23\nNodo 24\nNodo 25\nNodo 26\nNodo 27\nNodo 28\nNodo 29\nNodo 30\nNodo 31\nNodo 32\nNodo 33\nNodo 34\nNodo 35\nNodo 36\nNodo 37\nNodo 38\nNodo 39\nNodo 40\nNodo 41\nNodo 42\nNodo 43\nNodo 44\nNodo 45\nNodo 46\nNodo 47\nNodo 48\nNodo 49\nNodo 50\nNodo 51\nNodo 52\nNodo 53\nNodo 54\nNodo 55\nNodo 56\nNodo 57\nNodo 58\nNodo 59\nNodo 60\nNodo 61\nNodo 62\nNodo 63\nNodo 64\nNodo 65\nNodo 66\nNodo 67\nNodo 68\nNodo 69\nNodo 70\nNodo 71\nNodo 72\nNodo 73\nNodo 74\nNodo 75\nNodo 76\nNodo 77\nNodo 78\nNodo 79\nNodo 80\nNodo 81\nNodo 82\nNodo 83\nNodo 84\nNodo 85\nNodo 86\nNodo 87\nNodo 88\nNodo 89\nNodo 90\nNodo 91\nNodo 92\nNodo 93\nNodo 94\nNodo 95\nNodo 96\nNodo 97\nNodo 98\nNodo 99\nNodo 100\nNodo 101\nNodo 102\nNodo 103\nNodo 104\nNodo 105\nNodo 106\nNodo 107\nNodo 108\nNodo 109\nNodo 110\nNodo 111\nNodo 112\nNodo 113\nNodo 114\nNodo 115\nNodo 116\nNodo 117\nNodo 118\nNodo 119\nNodo 120\nNodo 121\nNodo 122\nNodo 123\nNodo 124\nNodo 125\nNodo 126\nNodo 127\nNodo 128\nNodo 129\nNodo 130\nNodo 131\nNodo 132\nNodo 133\nNodo 134\nNodo 135\nNodo 136\nNodo 137\nNodo 138\nNodo 139\nNodo 140\nNodo 141\nNodo 142\nNodo 143\nNodo 144\nNodo 145\nNodo 146\nNodo 147\nNodo 148\nNodo 149\nNodo 150\nNodo 151\nNodo 152\nNodo 153\nNodo 154\nNodo 155\nNodo 156\nNodo 157\nNodo 158\nNodo 159\nNodo 160\nNodo 161\nNodo 162\nNodo 163\nNodo 164\nNodo 165\nNodo 166\nNodo 167\nNodo 168\nNodo 169\nNodo 170\nNodo 171\nNodo 172\nNodo 173\nNodo 174\nNodo 175\nNodo 176\nNodo 177\nNodo 178\nNodo 179\nNodo 180\nNodo 181\nNodo 182\nNodo 183\nNodo 184\nNodo 185\nNodo 186\nNodo 187\nNodo 188\nNodo 189\nNodo 190\nNodo 191\nNodo 192\nNodo 193\nNodo 194\nNodo 195\nNodo 196\nNodo 197\nNodo 198\nNodo 199\nNodo 200\nNodo 201\nNodo 202\nNodo 203\nNodo 204",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Nodo 0",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 1",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 2",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 3",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 4",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 5",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 6",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 7",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 8",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 9",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 10",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 11",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 12",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 13",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 14",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 15",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 16",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 17",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 18",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 19",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 20",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 21",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 22",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 23",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 24",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 25",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 26",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 27",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 28",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 29",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 30",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 31",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 32",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 33",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 34",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 35",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 36",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 37",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 38",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 39",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 40",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 41",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 42",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 43",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 44",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 45",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 46",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 47",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 48",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 49",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 50",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 51",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 52",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 53",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 54",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 55",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 56",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 57",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 58",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 59",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 60",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 61",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 62",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 63",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 64",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 65",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 66",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 67",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 68",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 69",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 70",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 71",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 72",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 73",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 74",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 75",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 76",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 77",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 78",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 79",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 80",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 81",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 82",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 83",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 84",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 85",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 86",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 87",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 88",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 89",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 90",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 91",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 92",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 93",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 94",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 95",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 96",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 97",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 98",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 99",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 100",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 101",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 102",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 103",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 104",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 105",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 106",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 107",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 108",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 109",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 110",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 111",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 112",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 113",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 114",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 115",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 116",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 117",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 118",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 119",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 120",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 121",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 122",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 123",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 124",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 125",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 126",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 127",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 128",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 129",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 130",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 131",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 132",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 133",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 134",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 135",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 136",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 137",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 138",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 139",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 140",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 141",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 142",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 143",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 144",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 145",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 146",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 147",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 148",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 149",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 150",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 151",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 152",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 153",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 154",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 155",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 156",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 157",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 158",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 159",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 160",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 161",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 162",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 163",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 164",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 165",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 166",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 167",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 168",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 169",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 170",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 171",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 172",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 173",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 174",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 175",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 176",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 177",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 178",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 179",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 180",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 181",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 182",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 183",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 184",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 185",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 186",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 187",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 188",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 189",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 190",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 191",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 192",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 193",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 194",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 195",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 196",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 197",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 198",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 199",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    }
+   ],
+   "raices": 200,
+   "niveles": 1,
+   "sobrantes": 5,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Nodo 0\n  Nodo 1\n    Nodo 2\n      Nodo 3\nNodo 4\n  Nodo 5\n    Nodo 6\n      Nodo 7\nNodo 8\n  Nodo 9\n    Nodo 10\n      Nodo 11\nNodo 12\n  Nodo 13\n    Nodo 14\n      Nodo 15\nNodo 16\n  Nodo 17\n    Nodo 18\n      Nodo 19\nNodo 20\n  Nodo 21\n    Nodo 22\n      Nodo 23\nNodo 24\n  Nodo 25\n    Nodo 26\n      Nodo 27\nNodo 28\n  Nodo 29",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Nodo 0",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 1",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Nodo 2",
+     "padre": 1,
+     "nivel": 2,
+     "rama": 0
+    },
+    {
+     "texto": "Nodo 3",
+     "padre": 2,
+     "nivel": 3,
+     "rama": 0
+    },
+    {
+     "texto": "Nodo 4",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 5",
+     "padre": 4,
+     "nivel": 1,
+     "rama": 1
+    },
+    {
+     "texto": "Nodo 6",
+     "padre": 5,
+     "nivel": 2,
+     "rama": 1
+    },
+    {
+     "texto": "Nodo 7",
+     "padre": 6,
+     "nivel": 3,
+     "rama": 1
+    },
+    {
+     "texto": "Nodo 8",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 9",
+     "padre": 8,
+     "nivel": 1,
+     "rama": 2
+    },
+    {
+     "texto": "Nodo 10",
+     "padre": 9,
+     "nivel": 2,
+     "rama": 2
+    },
+    {
+     "texto": "Nodo 11",
+     "padre": 10,
+     "nivel": 3,
+     "rama": 2
+    },
+    {
+     "texto": "Nodo 12",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 13",
+     "padre": 12,
+     "nivel": 1,
+     "rama": 3
+    },
+    {
+     "texto": "Nodo 14",
+     "padre": 13,
+     "nivel": 2,
+     "rama": 3
+    },
+    {
+     "texto": "Nodo 15",
+     "padre": 14,
+     "nivel": 3,
+     "rama": 3
+    },
+    {
+     "texto": "Nodo 16",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 17",
+     "padre": 16,
+     "nivel": 1,
+     "rama": 4
+    },
+    {
+     "texto": "Nodo 18",
+     "padre": 17,
+     "nivel": 2,
+     "rama": 4
+    },
+    {
+     "texto": "Nodo 19",
+     "padre": 18,
+     "nivel": 3,
+     "rama": 4
+    },
+    {
+     "texto": "Nodo 20",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 21",
+     "padre": 20,
+     "nivel": 1,
+     "rama": 5
+    },
+    {
+     "texto": "Nodo 22",
+     "padre": 21,
+     "nivel": 2,
+     "rama": 5
+    },
+    {
+     "texto": "Nodo 23",
+     "padre": 22,
+     "nivel": 3,
+     "rama": 5
+    },
+    {
+     "texto": "Nodo 24",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 25",
+     "padre": 24,
+     "nivel": 1,
+     "rama": 6
+    },
+    {
+     "texto": "Nodo 26",
+     "padre": 25,
+     "nivel": 2,
+     "rama": 6
+    },
+    {
+     "texto": "Nodo 27",
+     "padre": 26,
+     "nivel": 3,
+     "rama": 6
+    },
+    {
+     "texto": "Nodo 28",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Nodo 29",
+     "padre": 28,
+     "nivel": 1,
+     "rama": 7
+    }
+   ],
+   "raices": 8,
+   "niveles": 4,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "<b>&\"'</b>\n  a & b",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "<b>&\"'</b>",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "a & b",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    }
+   ],
+   "raices": 1,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ },
+ {
+  "entrada": "Ñandú\n  Él\n  Üña",
+  "esquema": {
+   "nodos": [
+    {
+     "texto": "Ñandú",
+     "padre": null,
+     "nivel": 0,
+     "rama": null
+    },
+    {
+     "texto": "Él",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 0
+    },
+    {
+     "texto": "Üña",
+     "padre": 0,
+     "nivel": 1,
+     "rama": 1
+    }
+   ],
+   "raices": 1,
+   "niveles": 2,
+   "sobrantes": 0,
+   "recortadas": 0
+  }
+ }
+]
