@@ -20,7 +20,8 @@ describe("esquemas de antes de Y36 se leen idénticos (golden)", () => {
     expect(casos.length).toBeGreaterThanOrEqual(25);
   });
   it.each(casos.map((c, i) => [i, JSON.stringify(c.entrada).slice(0, 50), c] as const))("caso %i: %s", (_i, _t, c) => {
-    const { sinJerarquia: _nuevo, ...ahora } = analizarEsquema(c.entrada) as unknown as Record<string, unknown>;
+    const ahora = { ...analizarEsquema(c.entrada) } as unknown as Record<string, unknown>;
+    delete ahora.sinJerarquia;
     expect(ahora).toEqual(c.esquema);
   });
 });
