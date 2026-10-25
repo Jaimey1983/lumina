@@ -128,7 +128,8 @@ export function contarOcultos(escena: Escena, id: string): number {
 
 function conColapso(f: Forma, plegada: boolean): Forma {
   if (plegada) return { ...f, colapsado: true };
-  const { colapsado: _quitado, ...resto } = f;
+  const resto: Forma = { ...f };
+  delete resto.colapsado;
   return resto;
 }
 

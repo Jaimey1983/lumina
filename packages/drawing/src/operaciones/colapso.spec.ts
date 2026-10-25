@@ -123,6 +123,14 @@ describe('contarOcultos (Y38a)', () => {
     expect(contarOcultos(e, 'raiz')).toBe(5);
     expect(contarOcultos(e, 'a')).toBe(2);
   });
+  it('no cuenta lo que se sigue viendo por otro camino', () => {
+    // r → p, r → q ; p → x (solo por p), p → h y q → h (h se ve por q).
+    let e = escena(...['r', 'p', 'q', 'x', 'h'].map((id, i) => forma(id, i * 150, (i % 2) * 100)));
+    for (const [a, b] of [['r', 'p'], ['r', 'q'], ['p', 'x'], ['p', 'h'], ['q', 'h']] as const) e = conectarFormas(e, a, b);
+    const p = plegar(e, 'p');
+    expect(formasOcultas(p)).toEqual(['x']);
+    expect(contarOcultos(p, 'p')).toBe(1);
+  });
   it('0 si no está plegada o no oculta nada', () => {
     expect(contarOcultos(arbol(), 'raiz')).toBe(0);
     expect(contarOcultos(plegar(arbol(), 'a'), 'b')).toBe(0);
@@ -222,11 +230,15 @@ describe('rendimiento (DW9, Y38a)', () => {
     }
     return [...m].sort((x, y) => x - y)[3] as number;
   };
-  it('sin plegadas, `ocultosEfectivos` cuesta lo mismo que sin el cálculo de lo plegado (camino rápido)', () => {
+  it('sin plegadas, el cálculo de lo plegado cuesta como una vuelta por los elementos (camino rápido: no arma el grafo)', () => {
     const e = grande(500, false);
-    const sin = medir(() => void ocultosEfectivos(e));
-    const solo = medir(() => void ocultosPorColapso(e));
-    expect(solo).toBeLessThan(Math.max(sin, 0.05) * 2 + 0.5);
+    const vuelta = medir(() => {
+      for (let i = 0; i < 200; i++) void e.elementos.some((x) => x.tipo === 'forma' && x.colapsado === true);
+    });
+    const calculo = medir(() => {
+      for (let i = 0; i < 200; i++) void ocultosPorColapso(e);
+    });
+    expect(calculo).toBeLessThan(Math.max(vuelta, 0.05) * 15);
   });
   it('con 500 formas y muchas plegadas se calcula en poco tiempo', () => {
     const e = grande(500, true);
