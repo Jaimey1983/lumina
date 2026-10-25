@@ -90,6 +90,40 @@ export function comprimir(posiciones: Posiciones, nodos: readonly NodoDisposicio
   return salida;
 }
 
+/**
+ * Acerca los centros lo **mínimo** necesario para que la caja entre en la página (a `margen` de los bordes), cada eje por separado y sin
+ * bajar de `minimo` (por ejemplo 0,55). Como los tamaños no cambian, la caja no se encoge tanto como el factor: se busca el mayor factor
+ * que cabe. Devuelve `null` si ni con `minimo` cabe. Si ya cabía devuelve las mismas posiciones.
+ */
+export function comprimirParaQueQuepa(posiciones: Posiciones, nodos: readonly NodoDisposicion[], pagina: Pagina, margen: number, minimo: number): Posiciones | null {
+  const caja = cajaDeNodos(nodos, posiciones);
+  if (!caja) return posiciones;
+  const disponibleX = pagina.ancho - 2 * margen;
+  const disponibleY = pagina.alto - 2 * margen;
+  const e = 1e-6;
+  const factor = (eje: 'x' | 'y'): number | null => {
+    const disponible = eje === 'x' ? disponibleX : disponibleY;
+    const medida = (f: number): number => {
+      const c = cajaDeNodos(nodos, comprimir(posiciones, nodos, eje === 'x' ? { fx: f, fy: 1 } : { fx: 1, fy: f })) as CajaDeNodos;
+      return eje === 'x' ? c.ancho : c.alto;
+    };
+    if ((eje === 'x' ? caja.ancho : caja.alto) <= disponible + e) return 1;
+    if (medida(minimo) > disponible + e) return null;
+    let cabe = minimo;
+    let noCabe = 1;
+    for (let i = 0; i < 24; i++) {
+      const medio = (cabe + noCabe) / 2;
+      if (medida(medio) <= disponible + e) cabe = medio;
+      else noCabe = medio;
+    }
+    return cabe;
+  };
+  const fx = factor('x');
+  const fy = factor('y');
+  if (fx === null || fy === null) return null;
+  return comprimir(posiciones, nodos, { fx, fy });
+}
+
 /** Hay dos rectángulos que se solapan (si solo se tocan por el borde, no cuenta). */
 export function hayPisadas(nodos: readonly NodoDisposicion[], posiciones: Posiciones): boolean {
   const e = 1e-6;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NodoDisposicion, Posiciones } from './grafo.js';
-import { cajaDeNodos, comprimir, entraEnPagina, hayPisadas, MARGEN_PAGINA, superficieDeNodos, trasladarAPagina } from './pagina.js';
+import { cajaDeNodos, comprimir, comprimirParaQueQuepa, entraEnPagina, hayPisadas, MARGEN_PAGINA, superficieDeNodos, trasladarAPagina } from './pagina.js';
 
 const nodo = (id: string, ancho = 100, alto = 60): NodoDisposicion => ({ id, x: 0, y: 0, ancho, alto });
 const pos = (...e: Array<[string, number, number]>): Posiciones => new Map(e.map(([id, x, y]) => [id, { x, y }]));
@@ -123,5 +123,44 @@ describe('superficieDeNodos', () => {
   it('suma las áreas', () => {
     expect(superficieDeNodos([nodo('a', 10, 10), nodo('b', 20, 5)])).toBe(200);
     expect(superficieDeNodos([])).toBe(0);
+  });
+});
+
+describe('comprimirParaQueQuepa', () => {
+  const ns = [nodo('a', 100, 60), nodo('b', 100, 60), nodo('c', 100, 60)];
+  const p = pos(['a', 0, 0], ['b', 1100, 0], ['c', 550, 700]); // caja 1200 × 760 en una página de 1000 × 600
+  it('si ya cabía devuelve las mismas posiciones', () => {
+    const q = pos(['a', 0, 0], ['b', 300, 0], ['c', 100, 200]);
+    expect(comprimirParaQueQuepa(q, ns, PAGINA, 0, 0.55)).toBe(q);
+  });
+  it('lo acerca hasta que cabe, sin tocar los tamaños y por el mayor factor posible', () => {
+    const r = comprimirParaQueQuepa(p, ns, PAGINA, 0, 0.55) as Posiciones;
+    const caja = cajaDeNodos(ns, r) as { ancho: number; alto: number };
+    expect(caja.ancho).toBeLessThanOrEqual(1000 + 1e-6);
+    expect(caja.alto).toBeLessThanOrEqual(600 + 1e-6);
+    // «Mayor factor posible»: queda ajustado al espacio, no mucho más chico.
+    expect(caja.ancho).toBeGreaterThan(999);
+    expect(caja.alto).toBeGreaterThan(599);
+  });
+  it('cada eje por separado: el que ya cabía no se mueve', () => {
+    const q = pos(['a', 0, 0], ['b', 1100, 0], ['c', 550, 300]); // 1200 de ancho, 360 de alto
+    const r = comprimirParaQueQuepa(q, ns, PAGINA, 0, 0.55) as Posiciones;
+    expect((r.get('a') as { y: number }).y).toBe(0);
+    expect((r.get('c') as { y: number }).y).toBe(300);
+    expect(((cajaDeNodos(ns, r) as { ancho: number }).ancho)).toBeLessThanOrEqual(1000 + 1e-6);
+  });
+  it('con margen deja ese espacio', () => {
+    const r = comprimirParaQueQuepa(p, ns, PAGINA, 24, 0.55) as Posiciones;
+    const caja = cajaDeNodos(ns, r) as { ancho: number; alto: number };
+    expect(caja.ancho).toBeLessThanOrEqual(1000 - 48 + 1e-6);
+    expect(caja.alto).toBeLessThanOrEqual(600 - 48 + 1e-6);
+  });
+  it('si ni con el mínimo cabe: null', () => {
+    expect(comprimirParaQueQuepa(p, ns, PAGINA, 0, 0.95)).toBeNull();
+    expect(comprimirParaQueQuepa(pos(['a', 0, 0], ['b', 5000, 0]), ns, PAGINA, 0, 0.55)).toBeNull();
+  });
+  it('no cambia las posiciones de entrada', () => {
+    comprimirParaQueQuepa(p, ns, PAGINA, 0, 0.55);
+    expect(p.get('b')).toEqual({ x: 1100, y: 0 });
   });
 });

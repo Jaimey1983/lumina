@@ -19,6 +19,7 @@ export { disponerRadial, type OpcionesRadial } from './radial.js';
 export {
   cajaDeNodos,
   comprimir,
+  comprimirParaQueQuepa,
   entraEnPagina,
   hayPisadas,
   MARGEN_PAGINA,
