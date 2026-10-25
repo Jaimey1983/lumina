@@ -336,6 +336,9 @@ describe("Y38b — en el editor", () => {
     expect(m.cuenta()).toBe(1);
     expect(colapsado(m.ultima(), "a")).toBe(true);
     expect(m.anuncio()).toBe("Rama plegada: 2 elementos ocultos.");
+    // DY81: la forma queda elegida (el panel muestra su rama y su estado)
+    expect(document.querySelector('[data-capa-id="a"]')?.getAttribute("aria-current")).toBe("true");
+    expect(botonRama()?.textContent).toBe("Desplegar rama");
     evento("pointerdown", circuloDe("a"));
     expect(colapsado(m.ultima(), "a")).toBe(false);
     expect(m.cuenta()).toBe(2);
@@ -348,6 +351,21 @@ describe("Y38b — en el editor", () => {
     evento("pointerup", m.lienzo, { clientX: 160, clientY: 160 });
     expect(m.cuenta()).toBe(1);
     expect(getForma(m.ultima(), "a").transformacion).toEqual(getForma(arbol(), "a").transformacion);
+  });
+
+  it("con la forma elegida, el asa de la esquina gana al marcador (que cae justo debajo); fuera del asa, el marcador responde", () => {
+    const m = editor(arbol());
+    m.elegir("a");
+    const g = document.querySelector("[data-dibujo-pagina]")?.parentElement?.getAttribute("transform") ?? "";
+    const [, vx, vy, z] = (/translate\(([-\d.e]+) ([-\d.e]+)\) scale\(([-\d.e]+)\)/.exec(g) ?? []).map(Number);
+    const esquina = { x: 170 + 100, y: 140 + 60 }; // abajo a la derecha de «a»
+    const sobre = (dx: number) => ({ clientX: (vx as number) + esquina.x * (z as number) + dx, clientY: (vy as number) + esquina.y * (z as number) });
+    evento("pointerdown", circuloDe("a"), sobre(0)); // justo en el asa de tamaño «se»
+    evento("pointerup", m.lienzo, sobre(0));
+    expect(m.cuenta()).toBe(0);
+    expect(colapsado(m.ultima() ?? arbol(), "a")).toBe(false);
+    evento("pointerdown", circuloDe("a"), sobre(10)); // a 10 px: fuera de la tolerancia del asa (8 px)
+    expect(colapsado(m.ultima(), "a")).toBe(true);
   });
 
   it("un doble clic sobre el marcador no abre la edición del texto", () => {

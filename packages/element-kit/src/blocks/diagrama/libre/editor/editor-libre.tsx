@@ -1076,18 +1076,6 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       capturar(e);
       return;
     }
-    // Un clic en el marcador de una rama la pliega o la despliega (Y38b): nada más (ni arrastre ni recuadro). Lo que se dibuja encima,
-    // como las asas, recibe el evento antes y gana.
-    const marcador = (e.target as Element).closest?.("[data-colapsar-id]");
-    if (marcador) {
-      e.preventDefault();
-      const id = marcador.getAttribute("data-colapsar-id") ?? "";
-      const r = plegarElegidas(actual, [id]);
-      if (r.escena !== actual) confirmar(actual, { escena: r.escena, seleccion: [id] });
-      else setSeleccion([id]);
-      if (r.anuncio) setAnuncio(r.anuncio);
-      return;
-    }
     const p = pantallaAEscena(v, pantalla);
     // Una guía se agarra en el lienzo solo si no hay ningún elemento debajo: los elementos mandan (el hit-test no cambia).
     const guiaBajo = guiaCerca(vivo.current.guias, p, 5 / v.zoom);
@@ -1128,6 +1116,18 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     const rutas = escenaConRutas(actual);
     const actualMarco = lineaSel ? null : marcoDeSeleccion(rutas, sel);
     const asa = actualMarco ? asaEn(actualMarco, p, v.zoom) : null;
+    // Un clic en el marcador de una rama la pliega o la despliega (Y38b): nada más (ni arrastre ni recuadro). Las asas de la forma
+    // elegida (la de la esquina inferior derecha cae justo bajo el marcador) se comprueban antes y ganan.
+    const marcador = asa ? null : (e.target as Element).closest?.("[data-colapsar-id]");
+    if (marcador) {
+      e.preventDefault();
+      const id = marcador.getAttribute("data-colapsar-id") ?? "";
+      const r = plegarElegidas(actual, [id]);
+      if (r.escena !== actual) confirmar(actual, { escena: r.escena, seleccion: [id] });
+      else setSeleccion([id]);
+      if (r.anuncio) setAnuncio(r.anuncio);
+      return;
+    }
     let gesto: Gesto | null = null;
     let hit: string | undefined;
     // La forma que se toma (aunque esté dentro de un grupo): si el arrastre acaba sobre otra forma, esta es la que se conecta.
