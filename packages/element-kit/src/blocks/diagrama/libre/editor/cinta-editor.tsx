@@ -17,6 +17,7 @@ import type { DiagramaPaletaId } from "@lumina/types/slide";
 import { PALETAS_DIAGRAMA } from "../../diagrama-temas.js";
 import { ESTILOS_FORMA } from "./estilos-forma.js";
 import { Conmutador } from "./propiedades-campos.js";
+import { GaleriaIconos } from "./galeria-iconos.js";
 import { AlineacionHorizontal, BotonFormatoTexto, ColorContorno, ColorRelleno, datosDeFormato, GrosorContorno, TamanoLetra, type AccionesDeFormato } from "./mini-barra-capa.js";
 import { cambiarEsquinas, cambiarExtremo, cambiarTrazado, EXTREMOS_OPCIONES, hayExtremoLibre, valorComun } from "./conectores.js";
 
@@ -486,6 +487,9 @@ export function CintaEditor({ contexto, lineas, pestana, onPestana, onOrden, her
             {boton("esquema", "large")}
           </RibbonGroup>
           {gruposDeFormas}
+          <RibbonGroup label="Iconos">
+            <GaleriaIconos contexto={contexto} onOrden={onOrden} {...(onColocarForma ? { onColocarForma } : {})} />
+          </RibbonGroup>
         </>
       ),
     },

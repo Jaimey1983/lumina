@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TIPOS_FORMA } from "@lumina/drawing";
+import { TIPOS_FORMA, TIPOS_ICONO } from "@lumina/drawing";
 import { COMANDOS, comando, comandoDeTecla, estadoComando, textoDeAtajo, type ContextoComando } from "./comandos-registro.js";
 import type { TeclaEvento } from "./comandos.js";
 import { SELECCIONAR } from "./herramientas.js";
@@ -30,7 +30,8 @@ describe("registro de comandos (DY3)", () => {
 
   it("hay un comando de insertar por cada forma del catálogo", () => {
     for (const f of TIPOS_FORMA) expect(COMANDOS.some((c) => c.orden.tipo === "herramienta-forma" && c.orden.forma === f)).toBe(true);
-    expect(COMANDOS.filter((c) => c.grupo === "formas")).toHaveLength(TIPOS_FORMA.length);
+    // Con los iconos (Y32b) el grupo `formas` trae las 22 y los 30 iconos: este caso se ajustó a la suma.
+    expect(COMANDOS.filter((c) => c.grupo === "formas")).toHaveLength(TIPOS_FORMA.length + TIPOS_ICONO.length);
   });
 
   it("un id que no existe es un error de programación", () => {

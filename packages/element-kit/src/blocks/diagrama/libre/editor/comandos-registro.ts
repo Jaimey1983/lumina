@@ -5,7 +5,7 @@
 // lado. Sin React: los iconos son componentes de `lucide-react` (referencias, no JSX).
 
 import type { ComponentType } from "react";
-import { FORMAS, TIPOS_FORMA, tieneHijos, type Escena, type TipoForma } from "@lumina/drawing";
+import { FORMAS, TIPOS_FORMA, TIPOS_ICONO, tieneHijos, type Escena, type TipoForma } from "@lumina/drawing";
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -342,6 +342,16 @@ const FORMAS_COMANDOS: DefinicionComando[] = TIPOS_FORMA.map((forma) => ({
   sinMenu: true as const,
 }));
 
+/** Los 30 iconos (Y32): se insertan como una forma más, con la misma herramienta; el prefijo `forma-` los manda a la pestaña «Insertar». */
+export const ICONOS_COMANDOS: readonly DefinicionComando[] = TIPOS_ICONO.map((forma) => ({
+  id: `forma-${forma}`,
+  etiqueta: `Insertar icono ${FORMAS[forma].nombre}`,
+  grupo: "formas" as const,
+  orden: { tipo: "herramienta-forma" as const, forma },
+  activo: (c: ContextoComando) => esMismaHerramienta(c.herramienta, { tipo: "forma", forma }),
+  sinMenu: true as const,
+}));
+
 const organizar = (id: string, etiqueta: string, modo: ModoOrganizar, direccion: DireccionOrganizar | undefined, icono: ComponentType<{ className?: string }>): DefinicionComando => ({
   id,
   etiqueta,
@@ -385,6 +395,7 @@ export const COMANDOS: readonly DefinicionComando[] = [
   herramienta("flecha", "Flecha", { tipo: "linea", flecha: true }, "a", ArrowRight, { tipo: "herramienta", herramienta: "flecha" }),
   herramienta("texto", "Texto", { tipo: "texto" }, "t", Type, { tipo: "herramienta", herramienta: "texto" }),
   ...FORMAS_COMANDOS,
+  ...ICONOS_COMANDOS,
 
   // Edición
   // Portapapeles (Y12a): los atajos los resuelve el navegador con sus eventos; el editor solo los muestra.
