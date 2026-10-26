@@ -132,7 +132,7 @@ export function GaleriaIconos(props: GaleriaIconosProps): ReactElement {
       <PopoverTrigger asChild>
         <RibbonButton label="Iconos" size="large" icon={<Smile />} data-galeria-iconos="" />
       </PopoverTrigger>
-      <PopoverContent align="start" aria-label="Iconos" className="max-h-96 w-80 overflow-y-auto p-2">
+      <PopoverContent align="start" aria-label="Iconos" className="max-h-[30rem] w-80 overflow-y-auto p-2">
         <ContenidoGaleriaIconos {...props} alElegir={() => setAbierto(false)} />
       </PopoverContent>
     </Popover>
