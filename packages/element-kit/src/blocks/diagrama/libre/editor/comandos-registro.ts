@@ -343,7 +343,7 @@ const FORMAS_COMANDOS: DefinicionComando[] = TIPOS_FORMA.map((forma) => ({
 }));
 
 /** Los 30 iconos (Y32): se insertan como una forma más, con la misma herramienta; el prefijo `forma-` los manda a la pestaña «Insertar». */
-const ICONOS_COMANDOS: DefinicionComando[] = TIPOS_ICONO.map((forma) => ({
+export const ICONOS_COMANDOS: readonly DefinicionComando[] = TIPOS_ICONO.map((forma) => ({
   id: `forma-${forma}`,
   etiqueta: `Insertar icono ${FORMAS[forma].nombre}`,
   grupo: "formas" as const,

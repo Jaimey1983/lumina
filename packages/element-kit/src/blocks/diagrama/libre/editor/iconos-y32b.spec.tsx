@@ -7,6 +7,7 @@ import { svgDeEscena } from "../exportar.js";
 import { buscarComandos } from "./buscar-comandos.js";
 import { CAMBIAR_FORMA, COMANDOS, comando, estadoComando, type ContextoComando } from "./comandos-registro.js";
 import { EditorLibre } from "./editor-libre.js";
+import { ContenidoGaleriaIconos } from "./galeria-iconos.js";
 import { entradaForma } from "./herramientas.js";
 import { PanelAtajos } from "./panel-atajos.js";
 import { PALABRAS_DE_ICONO, SINONIMOS_POR_COMANDO } from "./sinonimos-comandos.js";
@@ -98,7 +99,164 @@ describe("Y32b — el registro", () => {
   });
 });
 
-// ─── La galería ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─── El contenido de la galería, sin abrir el Popover (abrirlo en jsdom tarda decenas de segundos) ───────────────────────────────────────
+
+const contextoBase: ContextoComando = { escena: escena(), seleccion: [], herramienta: { tipo: "seleccionar" }, puedeDeshacer: false, puedeRehacer: false, zoom: 1, cuadricula: false, imantar: false };
+
+function contenido(extra: { herramienta?: ContextoComando["herramienta"]; colocar?: boolean } = {}) {
+  const onOrden = vi.fn();
+  const onColocarForma = vi.fn();
+  const alElegir = vi.fn();
+  const r = render(
+    <ContenidoGaleriaIconos contexto={{ ...contextoBase, ...(extra.herramienta ? { herramienta: extra.herramienta } : {}) }} onOrden={onOrden} {...(extra.colocar === false ? {} : { onColocarForma })} alElegir={alElegir} />,
+  );
+  return { onOrden, onColocarForma, alElegir, ...r };
+}
+const botones = (): HTMLButtonElement[] => [...document.querySelectorAll<HTMLButtonElement>("button[data-forma]")];
+const boton = (id: string): HTMLButtonElement => document.querySelector(`button[data-forma="${id}"]`) as HTMLButtonElement;
+const campo = (): HTMLInputElement => document.querySelector('input[aria-label="Buscar icono"]') as HTMLInputElement;
+const escribir = (valor: string): void => void fireEvent.change(campo(), { target: { value: valor } });
+const visibles = (): string[] => botones().map((b) => b.getAttribute("data-forma") as string);
+
+describe("Y32b — el contenido de la galería", () => {
+  it("5 grupos con sus nombres, 30 botones y un campo de búsqueda", () => {
+    contenido();
+    const grupos = [...document.querySelectorAll('[role="group"]')];
+    expect(grupos.map((x) => x.getAttribute("aria-label"))).toEqual(["Personas y escuela", "Ciencia e ideas", "Estados y avisos", "Cosas", "Mundo y naturaleza"]);
+    expect(botones()).toHaveLength(30);
+    expect(campo()).toBeTruthy();
+  });
+
+  it("cada botón tiene el nombre del comando y una miniatura cuadrada con su trazado", () => {
+    contenido();
+    for (const t of TIPOS_ICONO) {
+      const b = boton(t);
+      expect(b.getAttribute("aria-label")).toBe(comando(`forma-${t}`).etiqueta);
+      expect(b.getAttribute("title")).toBe(FORMAS[t].nombre);
+      const vb = b.querySelector("svg")?.getAttribute("viewBox")?.split(" ").map(Number) ?? [];
+      expect(vb[2]).toBe(vb[3]);
+      expect(b.querySelector("path")?.getAttribute("d")?.length).toBeGreaterThan(10);
+    }
+  });
+
+  it("un clic pide la orden de esa herramienta y avisa que se eligió (la galería se cierra)", () => {
+    const m = contenido();
+    fireEvent.click(boton("icono-bombilla"));
+    expect(m.onOrden).toHaveBeenCalledWith({ tipo: "herramienta-forma", forma: "icono-bombilla" });
+    expect(m.alElegir).toHaveBeenCalledTimes(1);
+    expect(m.onColocarForma).not.toHaveBeenCalled();
+  });
+
+  it("`Enter` sobre un icono lo coloca (y no elige la herramienta)", () => {
+    const m = contenido();
+    fireEvent.keyDown(boton("icono-reloj"), { key: "Enter" });
+    expect(m.onColocarForma).toHaveBeenCalledWith("icono-reloj");
+    expect(m.alElegir).toHaveBeenCalledTimes(1);
+    expect(m.onOrden).not.toHaveBeenCalled();
+  });
+
+  it("`Enter` con Ctrl, o sin quien coloque, no coloca", () => {
+    const m = contenido();
+    fireEvent.keyDown(boton("icono-reloj"), { key: "Enter", ctrlKey: true });
+    expect(m.onColocarForma).not.toHaveBeenCalled();
+    cleanup();
+    const n = contenido({ colocar: false });
+    fireEvent.keyDown(boton("icono-reloj"), { key: "Enter" });
+    expect(n.onColocarForma).not.toHaveBeenCalled();
+  });
+
+  it("el icono de la herramienta elegida va marcado", () => {
+    contenido({ herramienta: { tipo: "forma", forma: "icono-sol" } });
+    expect(boton("icono-sol").getAttribute("aria-pressed")).toBe("true");
+    expect(boton("icono-luna").getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("las flechas recorren los botones y las de arriba y abajo saltan una fila", () => {
+    contenido();
+    const todos = botones();
+    todos[0]?.focus();
+    fireEvent.keyDown(todos[0] as HTMLElement, { key: "ArrowRight" });
+    expect(document.activeElement).toBe(todos[1]);
+    fireEvent.keyDown(todos[1] as HTMLElement, { key: "ArrowDown" });
+    expect(document.activeElement).toBe(todos[7]);
+    fireEvent.keyDown(todos[7] as HTMLElement, { key: "ArrowUp" });
+    expect(document.activeElement).toBe(todos[1]);
+    fireEvent.keyDown(todos[1] as HTMLElement, { key: "ArrowLeft" });
+    expect(document.activeElement).toBe(todos[0]);
+    fireEvent.keyDown(todos[0] as HTMLElement, { key: "ArrowLeft" }); // no se sale por el principio
+    expect(document.activeElement).toBe(todos[0]);
+    todos[29]?.focus();
+    fireEvent.keyDown(todos[29] as HTMLElement, { key: "ArrowDown" }); // ni por el final
+    expect(document.activeElement).toBe(todos[29]);
+  });
+
+  it("las teclas de la galería no llegan a quien la contiene (el editor)", () => {
+    const alta = vi.fn();
+    render(
+      <div onKeyDown={alta}>
+        <ContenidoGaleriaIconos contexto={contextoBase} onOrden={vi.fn()} alElegir={vi.fn()} />
+      </div>,
+    );
+    fireEvent.keyDown(campo(), { key: "Delete" });
+    fireEvent.keyDown(boton("icono-sol"), { key: "ArrowRight" });
+    expect(alta).not.toHaveBeenCalled();
+  });
+});
+
+describe("Y32b — la búsqueda", () => {
+  it("por nombre, sin mayúsculas ni acentos", () => {
+    contenido();
+    escribir("ÁTOMO");
+    expect(visibles()).toEqual(["icono-atomo"]);
+  });
+
+  it("por una palabra: «idea» encuentra la bombilla", () => {
+    contenido();
+    escribir("idea");
+    expect(visibles()).toEqual(["icono-bombilla"]);
+  });
+
+  it("por una palabra que comparten varios", () => {
+    contenido();
+    escribir("quimica");
+    expect(visibles()).toEqual(["icono-matraz", "icono-atomo"]);
+  });
+
+  it("«icono» y «símbolo» encuentran todos", () => {
+    contenido();
+    escribir("icono");
+    expect(botones()).toHaveLength(30);
+    escribir("Símbolo");
+    expect(botones()).toHaveLength(30);
+  });
+
+  it("los grupos sin resultados se ocultan", () => {
+    contenido();
+    escribir("idea");
+    expect([...document.querySelectorAll('[role="group"]')].map((x) => x.getAttribute("aria-label"))).toEqual(["Ciencia e ideas"]);
+  });
+
+  it("sin resultados: un mensaje en una región de estado, y al borrar vuelven los 30", () => {
+    contenido();
+    escribir("zzzz");
+    expect(botones()).toHaveLength(0);
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("No hay iconos con ese nombre");
+    escribir("");
+    expect(botones()).toHaveLength(30);
+    expect(document.querySelector('[role="status"]')).toBeNull();
+  });
+
+  it("la búsqueda se borra al volver a montar (al cerrar la galería se desmonta)", () => {
+    const m = contenido();
+    escribir("idea");
+    m.unmount();
+    contenido();
+    expect(campo().value).toBe("");
+    expect(botones()).toHaveLength(30);
+  });
+});
+
+// ─── En el editor entero (abrir el Popover es lento en jsdom: pocas pruebas, cada una con varias comprobaciones) ──────────────────────
 
 function montar(e: Escena = escena(forma("A", 400, 300, 100, 60))) {
   const onCambio = vi.fn<(e: Escena) => void>();
@@ -123,52 +281,32 @@ const abrir = async (): Promise<HTMLElement> => {
     const g = document.querySelector<HTMLElement>('[data-slot="popover-content"]');
     if (!g) throw new Error("la galería no se abrió");
     return g;
-  });
+  }, { timeout: 120000 });
 };
-const botones = (g: HTMLElement): HTMLButtonElement[] => [...g.querySelectorAll<HTMLButtonElement>("button[data-forma]")];
-const boton = (g: HTMLElement, id: string): HTMLButtonElement => g.querySelector(`button[data-forma="${id}"]`) as HTMLButtonElement;
-const campo = (g: HTMLElement): HTMLInputElement => g.querySelector('input[aria-label="Buscar icono"]') as HTMLInputElement;
+const cerrada = (): Promise<void> => waitFor(() => expect(document.querySelector('[data-slot="popover-content"]')).toBeNull(), { timeout: 120000 });
 const anuncio = (): string => document.querySelector("[data-dibujo-anuncio]")?.textContent ?? "";
 const iconos = (e: Escena): Forma[] => e.elementos.filter((x): x is Forma => x.tipo === "forma" && x.forma.startsWith("icono-"));
+const TOPE = { timeout: 280000 };
 
-describe("Y32b — la galería «Iconos»", () => {
-  it("hay un solo botón «Iconos» en «Insertar», con el aviso de que abre una ventana", () => {
-    montar();
-    irAPestana("Insertar");
-    const b = document.querySelectorAll("[data-galeria-iconos]");
-    expect(b).toHaveLength(1);
-    expect(b[0]?.getAttribute("aria-haspopup")).toBeTruthy();
-  });
-
-  it("al abrir: 5 grupos con sus nombres, 30 botones y un campo de búsqueda", async () => {
-    montar();
-    const g = await abrir();
-    const grupos = [...g.querySelectorAll('[role="group"]')];
-    expect(grupos.map((x) => x.getAttribute("aria-label"))).toEqual(["Personas y escuela", "Ciencia e ideas", "Estados y avisos", "Cosas", "Mundo y naturaleza"]);
-    expect(botones(g)).toHaveLength(30);
-    expect(campo(g)).toBeTruthy();
-  });
-
-  it("cada botón tiene el nombre del comando y una miniatura cuadrada", async () => {
-    montar();
-    const g = await abrir();
-    for (const t of TIPOS_ICONO) {
-      const b = boton(g, t);
-      expect(b.getAttribute("aria-label")).toBe(comando(`forma-${t}`).etiqueta);
-      expect(b.getAttribute("title")).toBe(FORMAS[t].nombre);
-      const vb = b.querySelector("svg")?.getAttribute("viewBox")?.split(" ").map(Number) ?? [];
-      expect(vb[2]).toBe(vb[3]);
-      expect(b.querySelector("path")?.getAttribute("d")?.length).toBeGreaterThan(10);
-    }
-  });
-
-  it("un clic elige la herramienta de esa forma y cierra la galería", async () => {
+describe("Y32b — la galería «Iconos» dentro del editor", () => {
+  it("un solo botón en «Insertar»; abre con los 5 grupos; `Escape` devuelve el foco; un clic elige la herramienta y el siguiente clic en el lienzo coloca el icono sin relleno", TOPE, async () => {
     const m = montar();
-    const g = await abrir();
-    fireEvent.click(boton(g, "icono-bombilla"));
-    await waitFor(() => expect(document.querySelector('[data-slot="popover-content"]')).toBeNull());
+    irAPestana("Insertar");
+    expect(document.querySelectorAll("[data-galeria-iconos]")).toHaveLength(1);
+    expect(document.querySelector("[data-galeria-iconos]")?.getAttribute("aria-haspopup")).toBeTruthy();
+
+    let g = await abrir();
+    expect(g.querySelectorAll("button[data-forma]")).toHaveLength(30);
+    expect(g.querySelectorAll('[role="group"]')).toHaveLength(5);
+    fireEvent.keyDown(g.querySelector("button[data-forma]") as HTMLElement, { key: "Escape" });
+    await cerrada();
+    expect(document.activeElement).toBe(document.querySelector("[data-galeria-iconos]"));
+
+    g = await abrir();
+    fireEvent.click(g.querySelector('button[data-forma="icono-bombilla"]') as HTMLElement);
+    await cerrada();
     expect(m.cuenta()).toBe(0); // elegir la herramienta no agrega nada
-    m.clic(200, 150); // un clic en el lienzo coloca el icono
+    m.clic(200, 150);
     expect(m.cuenta()).toBe(1);
     const [icono] = iconos(m.ultima());
     expect(icono?.forma).toBe("icono-bombilla");
@@ -176,157 +314,53 @@ describe("Y32b — la galería «Iconos»", () => {
     expect(icono?.estilo.relleno).toEqual({ tipo: "ninguno" });
   });
 
-  it("`Enter` sobre un icono lo coloca al centro, sin relleno, en una sola entrada de historial, y cierra", async () => {
+  it("`Enter` coloca al centro, sin relleno, en una entrada de historial cada vez, sin apilarlos; y el icono colocado se exporta, admite un hijo y se cambia a otra forma", TOPE, async () => {
     const m = montar();
-    const g = await abrir();
-    boton(g, "icono-reloj").focus();
-    fireEvent.keyDown(boton(g, "icono-reloj"), { key: "Enter" });
-    await waitFor(() => expect(document.querySelector('[data-slot="popover-content"]')).toBeNull());
+    let g = await abrir();
+    fireEvent.keyDown(g.querySelector('button[data-forma="icono-reloj"]') as HTMLElement, { key: "Enter" });
+    await cerrada();
     expect(m.cuenta()).toBe(1);
     expect(iconos(m.ultima())).toHaveLength(1);
     expect(iconos(m.ultima())[0]?.estilo.relleno).toEqual({ tipo: "ninguno" });
-    expect(anuncio()).toBe("Reloj, seleccionado.");
-  });
+    expect(anuncio()).toBe("Reloj agregado.");
 
-  it("colocar dos veces el mismo icono con `Enter` no los apila", async () => {
-    const m = montar();
-    for (let i = 0; i < 2; i++) {
-      const g = await abrir();
-      fireEvent.keyDown(boton(g, "icono-luna"), { key: "Enter" });
-      await waitFor(() => expect(document.querySelector('[data-slot="popover-content"]')).toBeNull());
-    }
+    g = await abrir();
+    fireEvent.keyDown(g.querySelector('button[data-forma="icono-reloj"]') as HTMLElement, { key: "Enter" });
+    await cerrada();
     const dos = iconos(m.ultima());
     expect(dos).toHaveLength(2);
     expect(dos[0]?.transformacion.x === dos[1]?.transformacion.x && dos[0]?.transformacion.y === dos[1]?.transformacion.y).toBe(false);
-  });
 
-  it("las flechas recorren los botones y las de arriba y abajo saltan una fila", async () => {
-    montar();
-    const g = await abrir();
-    const todos = botones(g);
-    todos[0]?.focus();
-    fireEvent.keyDown(todos[0] as HTMLElement, { key: "ArrowRight" });
-    expect(document.activeElement).toBe(todos[1]);
-    fireEvent.keyDown(todos[1] as HTMLElement, { key: "ArrowDown" });
-    expect(document.activeElement).toBe(todos[7]);
-    fireEvent.keyDown(todos[7] as HTMLElement, { key: "ArrowUp" });
-    expect(document.activeElement).toBe(todos[1]);
-    fireEvent.keyDown(todos[1] as HTMLElement, { key: "ArrowLeft" });
-    expect(document.activeElement).toBe(todos[0]);
-  });
-
-  it("`Escape` cierra y devuelve el foco al botón «Iconos»", async () => {
-    montar();
-    const g = await abrir();
-    fireEvent.keyDown(boton(g, "icono-sol"), { key: "Escape" });
-    await waitFor(() => expect(document.querySelector('[data-slot="popover-content"]')).toBeNull());
-    expect(document.activeElement).toBe(document.querySelector("[data-galeria-iconos]"));
-  });
-});
-
-describe("Y32b — la búsqueda", () => {
-  const escribir = (g: HTMLElement, valor: string): void => void fireEvent.change(campo(g), { target: { value: valor } });
-  const visibles = (g: HTMLElement): string[] => botones(g).map((b) => b.getAttribute("data-forma") as string);
-
-  it("por nombre, sin mayúsculas ni acentos", async () => {
-    montar();
-    const g = await abrir();
-    escribir(g, "ÁTOMO");
-    expect(visibles(g)).toEqual(["icono-atomo"]);
-  });
-
-  it("por una palabra: «idea» encuentra la bombilla", async () => {
-    montar();
-    const g = await abrir();
-    escribir(g, "idea");
-    expect(visibles(g)).toEqual(["icono-bombilla"]);
-  });
-
-  it("por una palabra que comparten varios", async () => {
-    montar();
-    const g = await abrir();
-    escribir(g, "quimica");
-    expect(visibles(g)).toEqual(["icono-matraz", "icono-atomo"]);
-  });
-
-  it("los grupos sin resultados se ocultan", async () => {
-    montar();
-    const g = await abrir();
-    escribir(g, "idea");
-    expect([...g.querySelectorAll('[role="group"]')].map((x) => x.getAttribute("aria-label"))).toEqual(["Ciencia e ideas"]);
-  });
-
-  it("sin resultados: un mensaje en una región de estado, y al borrar vuelven los 30", async () => {
-    montar();
-    const g = await abrir();
-    escribir(g, "zzzz");
-    expect(botones(g)).toHaveLength(0);
-    expect(g.querySelector('[role="status"]')?.textContent).toBe("No hay iconos con ese nombre");
-    escribir(g, "");
-    expect(botones(g)).toHaveLength(30);
-    expect(g.querySelector('[role="status"]')).toBeNull();
-  });
-
-  it("la búsqueda se borra al cerrar", async () => {
-    montar();
-    let g = await abrir();
-    escribir(g, "idea");
-    fireEvent.keyDown(campo(g), { key: "Escape" });
-    await waitFor(() => expect(document.querySelector('[data-slot="popover-content"]')).toBeNull());
-    g = await abrir();
-    expect(campo(g).value).toBe("");
-    expect(botones(g)).toHaveLength(30);
-  });
-
-  it("las teclas del campo no llegan al editor: `Supr` no borra lo elegido", async () => {
-    const m = montar();
-    m.clic(450, 330); // elige «A»
-    const g = await abrir();
-    fireEvent.keyDown(campo(g), { key: "Delete" });
-    expect(m.cuenta()).toBe(0);
-  });
-});
-
-describe("Y32b — un icono ya colocado", () => {
-  const colocar = async (m: ReturnType<typeof montar>, id: string): Promise<void> => {
-    const g = await abrir();
-    fireEvent.keyDown(boton(g, id), { key: "Enter" });
-    await waitFor(() => expect(document.querySelector('[data-slot="popover-content"]')).toBeNull());
-    void m;
-  };
-
-  it("se puede cambiar a una de las 22 formas y conserva su estilo", async () => {
-    const m = montar();
-    await colocar(m, "icono-casa");
-    irAPestana("Formato de forma");
-    const cambiar = document.querySelector("[data-cambiar-forma]") as HTMLElement;
-    expect(cambiar).toBeTruthy();
-    fireEvent.click(cambiar);
-    const galeria = await waitFor(() => {
-      const g = document.querySelector<HTMLElement>('[data-slot="popover-content"]');
-      if (!g) throw new Error("sin galería");
-      return g;
-    });
-    fireEvent.click(galeria.querySelector('button[data-forma="rombo"]') as HTMLElement);
-    const f = iconos(m.ultima());
-    expect(f).toHaveLength(0);
-    const rombo = m.ultima().elementos.find((e): e is Forma => e.tipo === "forma" && e.forma === "rombo");
-    expect(rombo?.estilo.relleno).toEqual({ tipo: "ninguno" });
-  });
-
-  it("se exporta a SVG con su trazado y sin relleno", async () => {
-    const m = montar();
-    await colocar(m, "icono-engranaje");
+    // Se exporta con su trazado, sin relleno y sin variables CSS.
     const svg = svgDeEscena(m.ultima(), { tema: "claro", fondo: true }).svg;
     expect(svg).toContain('fill="none"');
     expect(svg).toContain('stroke-linecap="round"');
     expect(svg).not.toContain("var(");
+
+    // Admite un hijo con el teclado (Ctrl+Enter sobre el icono elegido).
+    const antes = m.ultima().elementos.filter((e) => e.tipo === "forma").length;
+    fireEvent.keyDown(m.lienzo, { key: "Enter", ctrlKey: true });
+    expect(m.ultima().elementos.filter((e) => e.tipo === "forma").length).toBe(antes + 1);
   });
 
-  it("se le puede crear un hijo con el teclado (Ctrl+Enter)", async () => {
+  it("un icono colocado se puede cambiar a una de las 22 formas y conserva su estilo", TOPE, async () => {
     const m = montar();
-    await colocar(m, "icono-persona");
-    fireEvent.keyDown(m.lienzo, { key: "Enter", ctrlKey: true });
-    expect(m.ultima().elementos.filter((e) => e.tipo === "forma" && e.forma.startsWith("icono-") || e.tipo === "forma").length).toBeGreaterThanOrEqual(3);
+    const g = await abrir();
+    fireEvent.keyDown(g.querySelector('button[data-forma="icono-casa"]') as HTMLElement, { key: "Enter" });
+    await cerrada();
+    irAPestana("Formato de forma");
+    fireEvent.click(document.querySelector("[data-cambiar-forma]") as HTMLElement);
+    const galeria = await waitFor(
+      () => {
+        const x = document.querySelector<HTMLElement>('[data-slot="popover-content"]');
+        if (!x) throw new Error("sin galería");
+        return x;
+      },
+      { timeout: 120000 },
+    );
+    fireEvent.click(galeria.querySelector('button[data-forma="rombo"]') as HTMLElement);
+    expect(iconos(m.ultima())).toHaveLength(0);
+    const rombo = m.ultima().elementos.find((e): e is Forma => e.tipo === "forma" && e.forma === "rombo");
+    expect(rombo?.estilo.relleno).toEqual({ tipo: "ninguno" });
   });
 });

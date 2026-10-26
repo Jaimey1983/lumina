@@ -37,23 +37,22 @@ export interface GaleriaIconosProps {
   onColocarForma?: (forma: TipoForma) => void;
 }
 
+export interface ContenidoGaleriaProps extends GaleriaIconosProps {
+  /** Se llama tras elegir o colocar un icono: la galería se cierra. */
+  alElegir: () => void;
+}
+
 /**
- * «Iconos» (Y32b): un botón que abre una galería con los 30 iconos del catálogo, en sus 5 grupos y con un campo para buscarlos. Cada
- * icono es un comando del registro («Insertar icono Persona»): un clic elige la herramienta de esa forma (se coloca con un clic en el
- * lienzo) y `Enter` la coloca al centro. Las flechas recorren los botones; `Escape` cierra. No se arrastran desde acá (DY92).
+ * Lo de adentro de la galería (Y32b): el campo de búsqueda y los 5 grupos de botones. Vive aparte del `Popover` para poder probarse sin
+ * abrirlo (abrir un `Popover` de Radix en jsdom tarda decenas de segundos). La búsqueda es estado de este componente: al cerrarse la
+ * galería se desmonta y se borra sola.
  */
-export function GaleriaIconos({ contexto, onOrden, onColocarForma }: GaleriaIconosProps): ReactElement {
-  const [abierto, setAbierto] = useState(false);
+export function ContenidoGaleriaIconos({ contexto, onOrden, onColocarForma, alElegir }: ContenidoGaleriaProps): ReactElement {
   const [texto, setTexto] = useState("");
   const consulta = normalizarBusqueda(texto);
   const grupos = iconosPorGrupo()
     .map((g) => ({ ...g, formas: g.formas.filter((f) => coincide(consulta, f.nombre, f.id as TipoIcono)) }))
     .filter((g) => g.formas.length > 0);
-
-  const alCambiar = (valor: boolean): void => {
-    setAbierto(valor);
-    if (!valor) setTexto("");
-  };
 
   const alTeclear = (e: KeyboardEvent<HTMLDivElement>): void => {
     e.stopPropagation(); // ni las flechas ni las letras llegan al editor (ni Escape lo cierra)
@@ -67,60 +66,74 @@ export function GaleriaIconos({ contexto, onOrden, onColocarForma }: GaleriaIcon
   };
 
   return (
-    <Popover open={abierto} onOpenChange={alCambiar}>
+    <div data-galeria-iconos-contenido="" onKeyDown={alTeclear}>
+      <input
+        type="search"
+        aria-label="Buscar icono"
+        placeholder="Buscar icono"
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        className="mb-2 h-8 w-full rounded-md border bg-background px-2 text-xs outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+      />
+      {grupos.length === 0 ? (
+        <p role="status" className="px-1 py-3 text-center text-xs text-muted-foreground">
+          No hay iconos con ese nombre
+        </p>
+      ) : (
+        grupos.map((g) => (
+          <div key={g.id} role="group" aria-label={g.nombre} className="mb-2 last:mb-0">
+            <p className="mb-1 text-[11px] text-muted-foreground">{g.nombre}</p>
+            <div className="grid grid-cols-6 gap-1">
+              {g.formas.map((f) => {
+                const def = comando(`forma-${f.id}`);
+                const estado = estadoComando(def, contexto);
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    data-forma={f.id}
+                    data-comando={def.id}
+                    title={f.nombre}
+                    aria-label={def.etiqueta}
+                    aria-pressed={estado.activo === true}
+                    className="flex h-9 items-center justify-center rounded-md border outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-pressed:bg-accent aria-pressed:ring-2 aria-pressed:ring-primary"
+                    onClick={() => {
+                      onOrden(def.orden);
+                      alElegir();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" || e.ctrlKey || e.metaKey || e.altKey || !onColocarForma) return;
+                      e.preventDefault(); // sin esto el Enter también «haría clic» y elegiría la herramienta
+                      onColocarForma(f.id);
+                      alElegir();
+                    }}
+                  >
+                    <MiniaturaIcono forma={f.id} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+/**
+ * «Iconos» (Y32b): un botón que abre una galería con los 30 iconos del catálogo, en sus 5 grupos y con un campo para buscarlos. Cada
+ * icono es un comando del registro («Insertar icono Persona»): un clic elige la herramienta de esa forma (se coloca con un clic en el
+ * lienzo) y `Enter` la coloca al centro. Las flechas recorren los botones; `Escape` cierra. No se arrastran desde acá (DY92).
+ */
+export function GaleriaIconos(props: GaleriaIconosProps): ReactElement {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <Popover open={abierto} onOpenChange={setAbierto}>
       <PopoverTrigger asChild>
         <RibbonButton label="Iconos" size="large" icon={<Smile />} data-galeria-iconos="" />
       </PopoverTrigger>
-      <PopoverContent align="start" aria-label="Iconos" className="max-h-96 w-80 overflow-y-auto p-2" onKeyDown={alTeclear}>
-        <input
-          type="search"
-          aria-label="Buscar icono"
-          placeholder="Buscar icono"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          className="mb-2 h-8 w-full rounded-md border bg-background px-2 text-xs outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        {grupos.length === 0 ? (
-          <p role="status" className="px-1 py-3 text-center text-xs text-muted-foreground">
-            No hay iconos con ese nombre
-          </p>
-        ) : (
-          grupos.map((g) => (
-            <div key={g.id} role="group" aria-label={g.nombre} className="mb-2 last:mb-0">
-              <p className="mb-1 text-[11px] text-muted-foreground">{g.nombre}</p>
-              <div className="grid grid-cols-6 gap-1">
-                {g.formas.map((f) => {
-                  const def = comando(`forma-${f.id}`);
-                  const estado = estadoComando(def, contexto);
-                  return (
-                    <button
-                      key={f.id}
-                      type="button"
-                      data-forma={f.id}
-                      data-comando={def.id}
-                      title={f.nombre}
-                      aria-label={def.etiqueta}
-                      aria-pressed={estado.activo === true}
-                      className="flex h-9 items-center justify-center rounded-md border outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-pressed:bg-accent aria-pressed:ring-2 aria-pressed:ring-primary"
-                      onClick={() => {
-                        onOrden(def.orden);
-                        alCambiar(false);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key !== "Enter" || e.ctrlKey || e.metaKey || e.altKey || !onColocarForma) return;
-                        e.preventDefault(); // sin esto el Enter también «haría clic» y elegiría la herramienta
-                        onColocarForma(f.id);
-                        alCambiar(false);
-                      }}
-                    >
-                      <MiniaturaIcono forma={f.id} />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))
-        )}
+      <PopoverContent align="start" aria-label="Iconos" className="max-h-96 w-80 overflow-y-auto p-2">
+        <ContenidoGaleriaIconos {...props} alElegir={() => setAbierto(false)} />
       </PopoverContent>
     </Popover>
   );
