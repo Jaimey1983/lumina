@@ -68,8 +68,8 @@ export function agarresDeConector(escena: Escena, linea: Linea): Agarre[] {
 }
 
 /** Asa bajo `punto` (coordenadas de escena): extremos y puntos intermedios mandan sobre los de crear uno nuevo. */
-export function agarreEn(escena: Escena, linea: Linea, punto: Punto, zoom: number): Agarre | null {
-  const tol = TOLERANCIA_AGARRE_PX / zoom;
+export function agarreEn(escena: Escena, linea: Linea, punto: Punto, zoom: number, toleranciaPx = TOLERANCIA_AGARRE_PX): Agarre | null {
+  const tol = toleranciaPx / zoom;
   const cerca = (a: Agarre): boolean => Math.hypot(a.punto.x - punto.x, a.punto.y - punto.y) <= tol;
   const todos = agarresDeConector(escena, linea);
   for (const tipo of ["extremo", "via", "insertar"] as const) {
