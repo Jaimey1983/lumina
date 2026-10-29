@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import { cajaDeElemento, resumenDeColapso, tieneHijos, type Escena } from "@lumina/drawing";
+import { destinosPorOrigen } from "./editor/accesibilidad-y35.js";
 import { capasDe } from "./editor/propiedades.js";
 
 export interface ElementoAccesible {
@@ -12,6 +13,8 @@ export interface ElementoAccesible {
   conDescripcion: boolean;
   /** Solo en las formas con hijos (Y38c): si su rama está plegada y cuántos elementos oculta. */
   rama?: { plegada: boolean; ocultos: number };
+  /** Solo en las formas con conectores que salen de ellas (Y35): a qué se conectan, con el nombre de cada una. */
+  conexiones?: string[];
 }
 
 /** Dos elementos están «en la misma fila» si sus centros verticales distan menos que esto (unidades de escena). */
@@ -25,13 +28,14 @@ const TOLERANCIA_FILA = 30;
 export function elementosAccesibles(escena: Escena): ElementoAccesible[] {
   const capas = new Map(capasDe(escena).map((c) => [c.id, c]));
   const { cuentas } = resumenDeColapso(escena);
+  const destinos = destinosPorOrigen(escena, (d) => capas.get(d.id)?.nombre ?? d.id);
   const lista = escena.elementos.flatMap((e) => {
     const capa = capas.get(e.id);
     if (e.tipo === "grupo" || !capa || capa.oculto || capa.plegado) return [];
     const descripcion = e.descripcion?.trim();
     const caja = cajaDeElemento(escena, e);
     const rama = e.tipo === "forma" && tieneHijos(escena, e.id) ? { plegada: e.colapsado === true, ocultos: cuentas.get(e.id) ?? 0 } : undefined;
-    return [{ id: e.id, etiqueta: descripcion || capa.nombre, conDescripcion: Boolean(descripcion), ...(rama ? { rama } : {}), centro: (caja?.y ?? 0) + (caja?.alto ?? 0) / 2, x: caja?.x ?? 0 }];
+    return [{ id: e.id, etiqueta: descripcion || capa.nombre, conDescripcion: Boolean(descripcion), ...(rama ? { rama } : {}), ...(destinos.has(e.id) ? { conexiones: destinos.get(e.id) } : {}), centro: (caja?.y ?? 0) + (caja?.alto ?? 0) / 2, x: caja?.x ?? 0 }];
   });
   const porAltura = [...lista].sort((a, b) => a.centro - b.centro);
   const filas: (typeof lista)[] = [];
@@ -40,7 +44,7 @@ export function elementosAccesibles(escena: Escena): ElementoAccesible[] {
     if (fila && item.centro - (fila[0]?.centro ?? 0) < TOLERANCIA_FILA) fila.push(item);
     else filas.push([item]);
   }
-  return filas.flatMap((fila) => fila.sort((a, b) => a.x - b.x)).map(({ id, etiqueta, conDescripcion, rama }) => ({ id, etiqueta, conDescripcion, ...(rama ? { rama } : {}) }));
+  return filas.flatMap((fila) => fila.sort((a, b) => a.x - b.x)).map(({ id, etiqueta, conDescripcion, rama, conexiones }) => ({ id, etiqueta, conDescripcion, ...(rama ? { rama } : {}), ...(conexiones ? { conexiones } : {}) }));
 }
 
 /**
@@ -74,6 +78,11 @@ export function ListaAccesible({ escena, onElegir, onAlternarRama }: { escena: E
           ) : (
             e.etiqueta
           )}
+          {e.conexiones ? (
+            <span data-conexiones-lista={e.id} className="px-2 text-muted-foreground">
+              {`conecta con ${e.conexiones.length <= 1 ? (e.conexiones[0] ?? "") : `${e.conexiones.slice(0, -1).join(", ")} y ${e.conexiones[e.conexiones.length - 1]}`}`}
+            </span>
+          ) : null}
           {onAlternarRama && e.rama ? (
             <button
               type="button"

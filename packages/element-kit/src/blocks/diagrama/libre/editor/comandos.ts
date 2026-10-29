@@ -21,7 +21,9 @@ import {
   ocultosPorColapso,
   ordenEspacialParaCadena,
   ordenParaCadena,
+  redimensionar,
   reordenar,
+  rotar,
   seleccionarIguales,
   seleccionarPorTipo,
   seleccionarRama,
@@ -50,6 +52,9 @@ export type Comando =
   | { tipo: "agrupar" }
   | { tipo: "desagrupar" }
   | { tipo: "mover"; dx: number; dy: number }
+  /** Transformar con el teclado (Y35): cambiar el tamaño desde la esquina superior izquierda (DY101) o girar. */
+  | { tipo: "transformar"; operacion: "tamano"; dx: number; dy: number }
+  | { tipo: "transformar"; operacion: "girar"; grados: number }
   | { tipo: "orden"; modo: ModoOrden }
   | { tipo: "alinear"; modo: ModoAlineacion }
   | { tipo: "distribuir"; eje: "horizontal" | "vertical" }
@@ -121,6 +126,8 @@ export type Orden =
   | { tipo: "aceptar" }
   | { tipo: "buscar-comando" }
   | { tipo: "ver-atajos" }
+  /** «Describir el dibujo» (Y35): lo anuncia el editor, que es quien tiene la región viva. */
+  | { tipo: "describir-dibujo" }
   /** Portapapeles (Y12a): las hace el editor, que es quien tiene el `clipboardData` y la vista. */
   | { tipo: "copiar" }
   | { tipo: "cortar" }
@@ -251,6 +258,10 @@ export function ejecutarComando(estado: EstadoEditor, c: Comando): EstadoEditor 
     }
     case "mover": {
       const nueva = mover(escena, seleccion, c.dx, c.dy);
+      return nueva === escena ? null : { escena: nueva, seleccion };
+    }
+    case "transformar": {
+      const nueva = c.operacion === "tamano" ? redimensionar(escena, seleccion, "se", c.dx, c.dy) : rotar(escena, seleccion, c.grados);
       return nueva === escena ? null : { escena: nueva, seleccion };
     }
     case "orden": {

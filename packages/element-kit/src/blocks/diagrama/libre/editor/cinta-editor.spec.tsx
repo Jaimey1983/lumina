@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Escena } from "@lumina/drawing";
 import { EditorLibre } from "./editor-libre.js";
-import { CAMBIAR_FORMA, COMANDOS, ESTILOS_COMANDOS, ICONOS_COMANDOS, textoDeAtajo, ORGANIZAR, ELEGIR } from "./comandos-registro.js";
+import { CAMBIAR_FORMA, COMANDOS, ESTILOS_COMANDOS, ICONOS_COMANDOS, textoDeAtajo, ORGANIZAR, ELEGIR, TRANSFORMAR_COMANDOS } from "./comandos-registro.js";
 import { botonCinta, deshabilitado, escena, forma, ids, irAPestana, linea } from "./util-pruebas.js";
 
 afterEach(cleanup);
@@ -32,7 +32,8 @@ describe("cinta del editor", () => {
     // «Cambiar a …» (Y19) salen en la galería «Cambiar forma» de esa pestaña contextual, en el menú contextual y en Ctrl+K.
     // Los 30 iconos (Y32b) se insertan desde la galería «Iconos» (un solo botón de «Insertar»), no con un botón cada uno.
     // Las variantes de «Organizar automáticamente» (Y13) viven en el menú de su flecha, no como botones sueltos.
-    const sinBoton = new Set(["seleccionar-todo", ...ELEGIR.map((c) => c.id), ...COMANDOS.filter((c) => c.soloMenu).map((c) => c.id), "listo", "buscar-comando", "pegar-al-mas-cercano", "negrita", "cursiva", "subrayado", "vinetas-puntos", "vinetas-numeros", "ajustar-al-texto", "crecer-al-escribir", ...CAMBIAR_FORMA.map((c) => c.id), ...ICONOS_COMANDOS.map((c) => c.id), ...ESTILOS_COMANDOS.map((c) => c.id), ...ORGANIZAR.filter((c) => c.id !== "organizar-auto").map((c) => c.id)]);
+    // Transformar con el teclado y «Describir el dibujo» (Y35) son solo de teclado, de `Ctrl+K` y del panel de atajos: no tienen botón (DY100).
+    const sinBoton = new Set(["seleccionar-todo", ...TRANSFORMAR_COMANDOS.map((c) => c.id), "describir-dibujo", ...ELEGIR.map((c) => c.id), ...COMANDOS.filter((c) => c.soloMenu).map((c) => c.id), "listo", "buscar-comando", "pegar-al-mas-cercano", "negrita", "cursiva", "subrayado", "vinetas-puntos", "vinetas-numeros", "ajustar-al-texto", "crecer-al-escribir", ...CAMBIAR_FORMA.map((c) => c.id), ...ICONOS_COMANDOS.map((c) => c.id), ...ESTILOS_COMANDOS.map((c) => c.id), ...ORGANIZAR.filter((c) => c.id !== "organizar-auto").map((c) => c.id)]);
     const faltan: string[] = [];
     for (const nombre of ["Inicio", "Insertar", "Organizar", "Diseño", "Vista"]) {
       irAPestana(nombre);
