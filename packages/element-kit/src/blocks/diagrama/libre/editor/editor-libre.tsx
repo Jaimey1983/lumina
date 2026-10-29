@@ -139,6 +139,7 @@ import {
   type Gesto,
 } from "./gestos.js";
 import { ajustarAVentana, desplazar, escenaAPantalla, pantallaAEscena, zoomEn, type Vista } from "./vista.js";
+import { Dedos, RADIO_ACIERTO_TACTIL_PX, RADIO_ASA_GIRO_TACTIL_PX, TAMANO_ASA_TACTIL_PX, vistaConDosDedos, type ParDeDedos } from "./tactil.js";
 
 const COLOR_SELECCION = "#2563eb";
 
@@ -254,7 +255,8 @@ function contornoDeElemento(escena: Escena, e: Elemento, vista: Vista): ReactEle
   return <rect key={e.id} x={a.x} y={a.y} width={caja.ancho * vista.zoom} height={caja.alto * vista.zoom} fill="none" stroke={COLOR_SELECCION} strokeWidth={1} strokeDasharray="4 3" />;
 }
 
-function CapaSeleccion({ escena, seleccion, vista, marco }: { escena: Escena; seleccion: readonly string[]; vista: Vista; marco: Marco | null }): ReactElement {
+function CapaSeleccion({ escena, seleccion, vista, marco, tactil = false }: { escena: Escena; seleccion: readonly string[]; vista: Vista; marco: Marco | null; tactil?: boolean }): ReactElement {
+  const lado = tactil ? TAMANO_ASA_TACTIL_PX : TAMANO_ASA_PX;
   const elegidos = escena.elementos.filter((e) => seleccion.includes(e.id));
   const asas = marco ? posicionesDeAsas(marco, vista.zoom) : null;
   const esquinasMarco = marco ? porVista(vista, esquinas({ x: marco.x, y: marco.y, ancho: marco.ancho, alto: marco.alto, rotacion: marco.rotacion })) : "";
@@ -267,10 +269,10 @@ function CapaSeleccion({ escena, seleccion, vista, marco }: { escena: Escena; se
       {marco?.editable && asas && rotar && arriba ? (
         <>
           <line x1={arriba.x} y1={arriba.y} x2={rotar.x} y2={rotar.y} stroke={COLOR_SELECCION} strokeWidth={1} />
-          <circle cx={rotar.x} cy={rotar.y} r={5} fill="#fff" stroke={COLOR_SELECCION} strokeWidth={1.5} data-asa="rotar" />
+          <circle cx={rotar.x} cy={rotar.y} r={tactil ? RADIO_ASA_GIRO_TACTIL_PX : 5} fill="#fff" stroke={COLOR_SELECCION} strokeWidth={1.5} data-asa="rotar" />
           {(["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const).map((k) => {
             const p = escenaAPantalla(vista, asas[k]);
-            return <rect key={k} x={p.x - TAMANO_ASA_PX / 2} y={p.y - TAMANO_ASA_PX / 2} width={TAMANO_ASA_PX} height={TAMANO_ASA_PX} fill="#fff" stroke={COLOR_SELECCION} strokeWidth={1.5} data-asa={k} />;
+            return <rect key={k} x={p.x - lado / 2} y={p.y - lado / 2} width={lado} height={lado} fill="#fff" stroke={COLOR_SELECCION} strokeWidth={1.5} data-asa={k} />;
           })}
         </>
       ) : null}
@@ -402,6 +404,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const tipoPuntero = useRef<string>("mouse");
   /** Lo mismo como estado, para que los puertos se dibujen más grandes en cuanto el puntero es un dedo. */
   const [tactil, setTactil] = useState(false);
+  /** Dedos apretados sobre el lienzo (Y30): dos forman el pellizco; un tercero se ignora. */
+  const dedos = useRef(new Dedos());
+  /** Todo puntero táctil apretado: mientras haya alguno después de un pellizco, el dedo que queda no inicia gestos. */
+  const tocando = useRef(new Set<number>());
+  /** El pellizco en curso: la vista y los dedos con que empezó. */
+  const pellizco = useRef<{ base: Vista; inicio: ParDeDedos } | null>(null);
+  /** Hubo un pellizco y aún quedan dedos en pantalla: ninguno inicia un gesto hasta que se levanten todos (DY96). */
+  const esperarSoltar = useRef(false);
   /** Puerto de cada punto de la línea que se está dibujando (alineado con `enCurso`). */
   const conexionesCurso = useRef<Array<Conexion | undefined>>([]);
   const edicionRef = useRef<Edicion | null>(null);
@@ -1042,6 +1052,74 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     return { x: e.clientX - (r?.left ?? 0), y: e.clientY - (r?.top ?? 0) };
   };
 
+  /** Radio de acierto en píxeles con el dedo (44 px); con ratón `normal`, o `undefined` para el valor de siempre (DY97). */
+  const toleranciaTactil = (normal?: number): number | undefined => (tipoPuntero.current === "touch" ? RADIO_ACIERTO_TACTIL_PX : normal);
+
+  /**
+   * Dedos de Y30. Devuelve `true` si el evento ya se atendió acá (parte de un pellizco o de lo que queda tras uno) y el manejador
+   * normal no debe seguir. El segundo dedo cancela el gesto en curso como `Escape` (DY5, DY95).
+   */
+  const apretarDedo = (e: PunteroReact<SVGSVGElement>, pantalla: Punto): boolean => {
+    if (e.pointerType !== "touch") return false;
+    if (e.isPrimary) {
+      // El primer dedo de un toque nuevo: si se perdió algún `pointerup` (un dedo que salió de la ventana), no queda nada arrastrado.
+      tocando.current.clear();
+      dedos.current.limpiar();
+      pellizco.current = null;
+      esperarSoltar.current = false;
+    }
+    const habiaDedos = tocando.current.size > 0;
+    tocando.current.add(e.pointerId);
+    if (!habiaDedos) {
+      dedos.current.limpiar();
+      dedos.current.apretar(e.pointerId, pantalla);
+      return false;
+    }
+    // Segundo dedo (o más): nunca empieza un gesto.
+    if (dedos.current.apretar(e.pointerId, pantalla) && dedos.current.cantidad === 2 && !esperarSoltar.current) {
+      if (accion.current) alCancelarPuntero();
+      esperarSoltar.current = true;
+      const par = dedos.current.par();
+      if (par) pellizco.current = { base: vivo.current.vista, inicio: par };
+      capturar(e);
+    }
+    return true;
+  };
+
+  /** Un dedo se levanta o se pierde. `true` = el evento era de un pellizco o del dedo que queda: no hay nada más que hacer. */
+  const soltarDedo = (e: PunteroReact<SVGSVGElement>): boolean => {
+    if (e.pointerType !== "touch") return false;
+    const enPellizco = esperarSoltar.current;
+    tocando.current.delete(e.pointerId);
+    dedos.current.soltar(e.pointerId);
+    if (pellizco.current && dedos.current.cantidad < 2) {
+      pellizco.current = null;
+      setAnuncio(`Zoom ${Math.round(vivo.current.vista.zoom * 100)} %.`);
+    }
+    if (tocando.current.size === 0) {
+      esperarSoltar.current = false;
+      dedos.current.limpiar();
+    }
+    return enPellizco;
+  };
+
+  /** El marcador de rama bajo el puntero; con el dedo vale también el que esté a menos de 22 px de su centro (DY97). */
+  const marcadorBajo = (e: PunteroReact<SVGSVGElement>): Element | null => {
+    const directo = (e.target as Element).closest?.("[data-colapsar-id]") ?? null;
+    if (directo || e.pointerType !== "touch") return directo;
+    let mejor: Element | null = null;
+    let mejorDistancia = RADIO_ACIERTO_TACTIL_PX;
+    svgRef.current?.querySelectorAll("[data-colapsar-id]").forEach((m) => {
+      const r = m.getBoundingClientRect();
+      const d = Math.hypot(r.left + r.width / 2 - e.clientX, r.top + r.height / 2 - e.clientY);
+      if (d <= mejorDistancia) {
+        mejor = m;
+        mejorDistancia = d;
+      }
+    });
+    return mejor;
+  };
+
   const alApretar = (e: PunteroReact<SVGSVGElement>): void => {
     finVistaPanel();
     svgRef.current?.focus();
@@ -1049,6 +1127,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     setTactil(tipoPuntero.current === "touch");
     setFormaHover(null);
     const pantalla = aPantalla(e);
+    if (apretarDedo(e, pantalla)) return;
     if (e.button === 1 || (e.button === 0 && espacio.current)) {
       accion.current = { modo: "pan", gesto: null, activo: true, origen: pantalla, ultimo: pantalla, shift: false };
       capturar(e);
@@ -1106,7 +1185,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
     // Una línea elegida: sus extremos y puntos intermedios se agarran antes que las asas de tamaño.
     const lineaSel = lineaUnica(actual, sel);
-    const agarre = lineaSel ? agarreEn(actual, lineaSel, p, v.zoom) : null;
+    const agarre = lineaSel ? agarreEn(actual, lineaSel, p, v.zoom, toleranciaTactil()) : null;
     if (lineaSel && agarre) {
       setGestoEnCurso(true);
       accion.current = { modo: "conector", gesto: null, conector: iniciarConector(actual, lineaSel.id, agarre), activo: false, origen: pantalla, ultimo: pantalla, shift: e.shiftKey };
@@ -1115,10 +1194,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
     const rutas = escenaConRutas(actual);
     const actualMarco = lineaSel ? null : marcoDeSeleccion(rutas, sel);
-    const asa = actualMarco ? asaEn(actualMarco, p, v.zoom) : null;
+    const asa = actualMarco ? asaEn(actualMarco, p, v.zoom, toleranciaTactil(8)) : null;
     // Un clic en el marcador de una rama la pliega o la despliega (Y38b): nada más (ni arrastre ni recuadro). Las asas de la forma
     // elegida (la de la esquina inferior derecha cae justo bajo el marcador) se comprueban antes y ganan.
-    const marcador = asa ? null : (e.target as Element).closest?.("[data-colapsar-id]");
+    const marcador = asa ? null : marcadorBajo(e);
     if (marcador) {
       e.preventDefault();
       const id = marcador.getAttribute("data-colapsar-id") ?? "";
@@ -1164,6 +1243,14 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   const alMover = (e: PunteroReact<SVGSVGElement>): void => {
     const a = accion.current;
     const pantalla = aPantalla(e);
+    if (e.pointerType === "touch" && esperarSoltar.current) {
+      // Dos dedos: la vista, no la herramienta. El dedo que queda tras un pellizco no hace nada (DY96).
+      dedos.current.mover(e.pointerId, pantalla);
+      const par = dedos.current.par();
+      const p = pellizco.current;
+      if (p && par) setVista(vistaConDosDedos(p.base, p.inicio, par));
+      return;
+    }
     cursorEstado.current?.(pantallaAEscena(vivo.current.vista, pantalla));
     if (e.pointerType) {
       tipoPuntero.current = e.pointerType;
@@ -1193,9 +1280,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       // Con el cursor sobre una forma se ven sus puertos (con histéresis para poder llegar a uno sin que se apaguen).
       setFormaHover((previa) => formaConPuertosVisibles(actual, puntoEscena, v.zoom, previa, radioDePuertoPx(tipoPuntero.current)));
       const lineaSel = lineaUnica(actual, sel);
-      const sobreAgarre = lineaSel ? agarreEn(actual, lineaSel, puntoEscena, v.zoom) : null;
+      const sobreAgarre = lineaSel ? agarreEn(actual, lineaSel, puntoEscena, v.zoom, toleranciaTactil()) : null;
       const m = lineaSel ? null : marcoDeSeleccion(escenaConRutas(actual), sel);
-      const asa: TipoAsa | null = m ? asaEn(m, puntoEscena, v.zoom) : null;
+      const asa: TipoAsa | null = m ? asaEn(m, puntoEscena, v.zoom, toleranciaTactil(8)) : null;
       const formaAj = formaConAsasAjuste({ escena: actual, herramienta: h, seleccion: sel, gestoEnCurso: false, edicionAbierta: edicionRef.current !== null, menuAbierto, pincel: false });
       const sobreAjuste = formaAj ? asaAjusteEn(formaAj, puntoEscena, v, tipoPuntero.current === "touch") !== null : false;
       const guiaSobre = asa || sobreAgarre || sobreAjuste ? null : guiaCerca(vivo.current.guias, puntoEscena, 5 / v.zoom);
@@ -1302,6 +1389,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
   };
 
   const alSoltar = (e: PunteroReact<SVGSVGElement>): void => {
+    if (soltarDedo(e)) {
+      liberar(e);
+      return;
+    }
     const a = accion.current;
     accion.current = null;
     setGestoEnCurso(false);
@@ -1532,7 +1623,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
     }
     if (h.tipo !== "seleccionar") return;
     const lineaSel = lineaUnica(actual, vivo.current.seleccion);
-    const agarre = lineaSel ? agarreEn(actual, lineaSel, pantallaAEscena(v, aPantalla(e)), v.zoom) : null;
+    const agarre = lineaSel ? agarreEn(actual, lineaSel, pantallaAEscena(v, aPantalla(e)), v.zoom, toleranciaTactil()) : null;
     if (lineaSel && agarre) {
       // Doble clic en un punto intermedio lo quita (la línea se vuelve a enrutar sola); en un extremo no hace nada.
       if (agarre.tipo === "via") {
@@ -1944,7 +2035,8 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       aria-modal="true"
       aria-label={titulo?.trim() ? `Editor de dibujo: ${titulo.trim()}` : "Editor de dibujo"}
       data-dibujo-editor=""
-      className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
+      // Objetivos de 44 px en los dispositivos táctiles (Y30, DY97). Es una consulta de medios y no el último puntero: cambiar el tamaño de la cinta en pleno toque movía el lienzo bajo el dedo.
+      className="fixed inset-0 z-[100] flex touch-manipulation flex-col bg-background text-foreground pointer-coarse:[&_:is(button,[role=tab],[role=menuitem],input,select)]:min-h-[44px] pointer-coarse:[&_:is(button,[role=tab],[role=menuitem])]:min-w-[44px]"
       onKeyDown={alTeclear}
       onKeyUp={alSoltarTecla}
       onCopy={(e) => {
@@ -2012,7 +2104,10 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
           onPointerDown={alApretar}
           onPointerMove={alMover}
           onPointerUp={alSoltar}
-          onPointerCancel={alCancelarPuntero}
+          onPointerCancel={(e) => {
+            if (soltarDedo(e)) return;
+            alCancelarPuntero();
+          }}
           onPointerLeave={() => {
             cursorEstado.current?.(null);
             setFormaHover(null);
@@ -2034,7 +2129,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
               ))}
             </g>
           ) : null}
-          <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} />
+          <CapaSeleccion escena={escenaRutas} seleccion={lineaElegida ? [] : seleccion} vista={vista} marco={marco} tactil={tactil} />
           <CapaAsasAjuste forma={formaConAsasAjuste({ escena, herramienta, seleccion, gestoEnCurso, edicionAbierta: edicion !== null, menuAbierto, pincel: pincel !== null })} vista={vista} tactil={tactil} />
           <CapaAsasHijo escena={escena} vista={vista} herramienta={herramienta} seleccion={seleccion} gestoEnCurso={gestoEnCurso} edicionAbierta={edicion !== null} tactil={tactil} />
           {fantasmaGaleria ? <CapaFantasmaForma vista={vista} forma={fantasmaGaleria.forma} centro={fantasmaGaleria.centro} /> : null}
