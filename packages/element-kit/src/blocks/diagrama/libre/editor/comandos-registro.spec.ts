@@ -84,17 +84,24 @@ describe("registro de comandos (DY3)", () => {
     expect(comandoDeTecla(tecla("Delete", { ctrlKey: true }))?.id).toBe("eliminar-rama");
   });
 
-  it("solo las letras de herramienta y los atajos de mapa mental están limitados al lienzo", () => {
+  it("solo las letras de herramienta, los atajos de mapa mental y los de transformar y describir (Y35) están limitados al lienzo", () => {
     expect(COMANDOS.filter((c) => c.soloLienzo).map((c) => c.id)).toEqual([
       "seleccionar",
       "linea",
       "flecha",
       "texto",
+      "agrandar-ancho",
+      "achicar-ancho",
+      "agrandar-alto",
+      "achicar-alto",
+      "girar-izquierda",
+      "girar-derecha",
       "crear-hijo",
       "crear-hermano",
       "eliminar-rama",
       "plegar-rama",
       "conectar-cadena",
+      "describir-dibujo",
     ]);
   });
 });

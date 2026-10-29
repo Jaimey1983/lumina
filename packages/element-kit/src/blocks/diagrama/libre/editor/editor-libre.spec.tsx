@@ -138,7 +138,8 @@ describe("selección", () => {
   it("Tab recorre los elementos y lo anuncia; Mayús+Tab va hacia atrás", () => {
     const m = montar(base());
     fireEvent.keyDown(m.lienzo, { key: "Tab" });
-    expect(document.querySelector("[data-dibujo-anuncio]")?.textContent).toBe("Rectángulo, seleccionado.");
+    // Y35: el anuncio de `Tab` dice además cuál es de cuántos.
+    expect(document.querySelector("[data-dibujo-anuncio]")?.textContent).toBe("Rectángulo, seleccionado, 1 de 3.");
     fireEvent.keyDown(m.lienzo, { key: "Tab" });
     fireEvent.keyDown(m.lienzo, { key: "Tab", shiftKey: true });
     expect(estado()).toContain("1 seleccionado");

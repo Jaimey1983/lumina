@@ -311,6 +311,32 @@ const conExtremoLibre = (c: ContextoComando): boolean => hayConectorConExtremoLi
 const ctrl = (tecla: string, extra: Omit<Atajo, "tecla" | "ctrl"> = {}): Atajo => ({ tecla, ctrl: true, ...extra });
 const letra = (tecla: string): Atajo => ({ tecla, shift: false, alt: false });
 
+/** Pasos del teclado al transformar (Y35, DY100). */
+export const PASO_TAMANO_TECLADO = 10;
+export const PASO_GIRO_TECLADO = 15;
+
+const transformar = (id: string, etiqueta: string, atajo: Atajo, orden: Extract<Orden, { tipo: "transformar" }>): DefinicionComando => ({
+  id,
+  etiqueta,
+  grupo: "edicion",
+  atajos: [atajo],
+  orden,
+  soloLienzo: true,
+  sinMenu: true,
+  habilitado: hay,
+});
+const ctrlMayus = (tecla: string): Atajo => ({ tecla, ctrl: true, shift: true, alt: false });
+
+/** Seis comandos: ancho y alto más y menos (`Ctrl+Mayús+flechas`) y giro a izquierda y derecha (`Re Pág` / `Av Pág`). */
+export const TRANSFORMAR_COMANDOS: readonly DefinicionComando[] = [
+  transformar("agrandar-ancho", "Agrandar el ancho", ctrlMayus("ArrowRight"), { tipo: "transformar", operacion: "tamano", dx: PASO_TAMANO_TECLADO, dy: 0 }),
+  transformar("achicar-ancho", "Achicar el ancho", ctrlMayus("ArrowLeft"), { tipo: "transformar", operacion: "tamano", dx: -PASO_TAMANO_TECLADO, dy: 0 }),
+  transformar("agrandar-alto", "Agrandar el alto", ctrlMayus("ArrowDown"), { tipo: "transformar", operacion: "tamano", dx: 0, dy: PASO_TAMANO_TECLADO }),
+  transformar("achicar-alto", "Achicar el alto", ctrlMayus("ArrowUp"), { tipo: "transformar", operacion: "tamano", dx: 0, dy: -PASO_TAMANO_TECLADO }),
+  transformar("girar-izquierda", "Girar a la izquierda", letra("PageUp"), { tipo: "transformar", operacion: "girar", grados: -PASO_GIRO_TECLADO }),
+  transformar("girar-derecha", "Girar a la derecha", letra("PageDown"), { tipo: "transformar", operacion: "girar", grados: PASO_GIRO_TECLADO }),
+];
+
 const herramienta = (id: string, etiqueta: string, h: Herramienta, tecla: string, icono: ComponentType<{ className?: string }>, nombre: Orden): DefinicionComando => ({
   id,
   etiqueta,
@@ -419,6 +445,8 @@ export const COMANDOS: readonly DefinicionComando[] = [
     habilitado: (c) => (c.formatoGuardado !== true ? "Copia un formato primero" : c.seleccion.length > 0 ? true : "Elige un elemento"),
   },
   { id: "duplicar", menu: { forma: { grupo: "edicion" } }, etiqueta: "Duplicar", icono: Copy, grupo: "edicion", atajos: [ctrl("d")], orden: { tipo: "duplicar" }, habilitado: hay },
+  // Transformar con el teclado (Y35): pasos fijos de 10 unidades y 15° (DY100); lo exacto va en los campos del panel.
+  ...TRANSFORMAR_COMANDOS,
   { id: "eliminar", menu: { forma: { grupo: "edicion" }, conector: { grupo: "edicion" } }, etiqueta: "Eliminar", icono: Trash2, grupo: "edicion", atajos: [{ tecla: "Delete" }, { tecla: "Backspace" }], orden: { tipo: "eliminar" }, habilitado: hay },
   {
     id: "crear-hijo", menu: { forma: { grupo: "jerarquia" } },
@@ -546,6 +574,7 @@ export const COMANDOS: readonly DefinicionComando[] = [
   { id: "reglas", menu: { vacio: { grupo: "vista" } }, etiqueta: "Reglas", icono: Ruler, grupo: "vista", orden: { tipo: "reglas" }, activo: (c) => c.reglas === true },
   { id: "quitar-guias", sinMenu: true, etiqueta: "Quitar guías", icono: Eraser, grupo: "vista", orden: { tipo: "quitar-guias" }, habilitado: (c) => ((c.guias ?? 0) > 0 ? true : "No hay guías") },
   { id: "buscar-comando", sinMenu: true, etiqueta: "Buscar comando", icono: Search, grupo: "vista", atajos: [ctrl("k")], orden: { tipo: "buscar-comando" } },
+  { id: "describir-dibujo", sinMenu: true, etiqueta: "Describir el dibujo", grupo: "vista", atajos: [letra("i")], soloLienzo: true, orden: { tipo: "describir-dibujo" } },
   { id: "atajos", sinMenu: true, etiqueta: "Atajos de teclado", icono: Keyboard, grupo: "vista", atajos: [{ tecla: "?", shift: true }], orden: { tipo: "ver-atajos" } },
 
   // Cierre

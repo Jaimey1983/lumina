@@ -83,7 +83,7 @@ import { MedidasCapa, type MedidaEnVivo } from "./medidas-capa.js";
 import { MenuContextual } from "./menu-contextual.js";
 import { agregarGuia, guiaCerca, guiasParaImantar, MAX_GUIAS, moverGuia, quitarGuia, type GuiaUsuario, type OrientacionGuia } from "./reglas.js";
 import { esquemaAEscena, type Esquema } from "../esquema-a-escena.js";
-import { depurarSeleccion, desplegarTodo, ejecutarComando, ordenDeTecla, plegarElegidas, seleccionPorCriterio, padreConectorDe, type Comando, type CriterioSeleccion, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
+import { depurarSeleccion, desplegarTodo, ejecutarComando, elegibles, ordenDeTecla, plegarElegidas, seleccionPorCriterio, padreConectorDe, type Comando, type CriterioSeleccion, type EstadoEditor, type NombreHerramienta, type Orden } from "./comandos.js";
 import { comandoDeTecla, contextoDeMenu, type ContextoComando, type ContextoMenu } from "./comandos-registro.js";
 import {
   SELECCIONAR,
@@ -139,6 +139,7 @@ import {
   type Gesto,
 } from "./gestos.js";
 import { ajustarAVentana, desplazar, escenaAPantalla, pantallaAEscena, zoomEn, type Vista } from "./vista.js";
+import { anuncioDeGiro, anuncioDeMovimiento, anuncioDeRecorrido, anuncioDeTamano, describirDibujo } from "./accesibilidad-y35.js";
 import { Dedos, RADIO_ACIERTO_TACTIL_PX, RADIO_ASA_GIRO_TACTIL_PX, TAMANO_ASA_TACTIL_PX, vistaConDosDedos, type ParDeDedos } from "./tactil.js";
 
 const COLOR_SELECCION = "#2563eb";
@@ -562,10 +563,17 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       const abrirTexto = c.tipo === "crear-hijo" || c.tipo === "crear-hermano";
       if (r.escena === actual) {
         setSeleccion(r.seleccion);
-        setAnuncio(describirSeleccion(actual, r.seleccion));
+        // `Tab` dice cuál es de cuántos (Y35); lo demás, lo de siempre.
+        const lista = c.tipo === "siguiente" ? elegibles(actual) : [];
+        const lugar = lista.indexOf(r.seleccion[0] ?? "");
+        const elegido = actual.elementos.find((x) => x.id === r.seleccion[0]);
+        setAnuncio(lugar >= 0 && elegido ? anuncioDeRecorrido(describirElemento(elegido), lugar, lista.length) : describirSeleccion(actual, r.seleccion));
       } else {
         confirmar(actual, r);
         if (abrirTexto && r.seleccion[0]) abrirEdicionEn(r.seleccion[0], r.escena);
+        // Mover, cambiar el tamaño y girar dicen dónde quedó lo elegido (Y35), no solo que sigue elegido.
+        if (c.tipo === "mover") setAnuncio(anuncioDeMovimiento(r.escena, r.seleccion, describirElemento, c.dx, c.dy));
+        else if (c.tipo === "transformar") setAnuncio(c.operacion === "tamano" ? anuncioDeTamano(r.escena, r.seleccion, describirElemento) : anuncioDeGiro(r.escena, r.seleccion, describirElemento, c.grados));
       }
       return true;
     },
@@ -1789,6 +1797,9 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
         setAtajosAbiertos(false);
         setBuscadorAbierto(true);
         return;
+      case "describir-dibujo":
+        setAnuncio(describirDibujo(vivo.current.escena, describirElemento));
+        return;
       case "ver-atajos":
         setBuscadorAbierto(false);
         setAtajosAbiertos(true);
@@ -2220,7 +2231,7 @@ export function EditorLibre({ escena: escenaInicial, titulo, onCambio, onCerrar,
       />
 
       <p id={ayudaId} className="sr-only">
-        Flechas mueven lo seleccionado una unidad; con Mayús, diez. Tab recorre los elementos. Ctrl+Z deshace, Ctrl+Y rehace. Supr elimina. Escape quita la selección y, sin selección, cierra el editor.
+        Flechas mueven lo seleccionado una unidad; con Mayús, diez. Control, Mayús y flechas cambian su tamaño de diez en diez; Re Pág y Av Pág lo giran quince grados. Tab recorre los elementos. La tecla I describe el dibujo entero. Ctrl+Z deshace, Ctrl+Y rehace. Supr elimina. Escape quita la selección y, sin selección, cierra el editor.
       </p>
       <div aria-live="polite" role="status" className="sr-only" data-dibujo-anuncio="">
         {anuncio}
